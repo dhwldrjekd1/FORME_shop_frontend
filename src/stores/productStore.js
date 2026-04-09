@@ -1,4 +1,4 @@
-import { defineStore } from "pinia";
+﻿import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 
 export const useProductStore = defineStore("product", () => {
@@ -297,9 +297,9 @@ function getMockProducts() {
       price: 45000,
       image: "/images/levis/204.jpg",
       images: [
-        "/images/carhartt/204.jpg", // 정면
-        "/images/carhartt/204_2.jpg", // 측면
-        "/images/carhartt/204_3.jpg", // 디테일
+        "/images/levis/204.jpg", // 정면
+        "/images/levis/204_2.jpg", // 측면
+        "/images/levis/204_3.jpg", // 디테일
       ],
       sizes: ["S", "M", "L", "XL"],
       colors: ["White"],
@@ -322,9 +322,9 @@ function getMockProducts() {
       price: 109000,
       image: "/images/levis/205.jpg",
       images: [
-        "/images/carhartt/205.jpg", // 정면
-        "/images/carhartt/205_2.jpg", // 측면
-        "/images/carhartt/205_3.jpg", // 디테일
+        "/images/levis/205.jpg", // 정면
+        "/images/levis/205_2.jpg", // 측면
+        "/images/levis/205_3.jpg", // 디테일
       ],
       sizes: ["S", "M", "L", "XL"],
       colors: ["Ivory"],
@@ -347,9 +347,9 @@ function getMockProducts() {
       price: 35000,
       image: "/images/levis/206.jpg",
       images: [
-        "/images/carhartt/206.jpg", // 정면
-        "/images/carhartt/206_2.jpg", // 측면
-        "/images/carhartt/206_3.jpg", // 디테일
+        "/images/levis/206.jpg", // 정면
+        "/images/levis/206_2.jpg", // 측면
+        "/images/levis/206_3.jpg", // 디테일
       ],
       sizes: ["S", "M", "L", "XL"],
       colors: ["White"],
@@ -397,9 +397,9 @@ function getMockProducts() {
       price: 99000,
       image: "/images/levis/202.jpg",
       images: [
-        "/images/carhartt/202.jpg", // 정면
-        "/images/carhartt/202_2.jpg", // 측면
-        "/images/carhartt/202_3.jpg", // 디테일
+        "/images/levis/202.jpg", // 정면
+        "/images/levis/202_2.jpg", // 측면
+        "/images/levis/202_3.jpg", // 디테일
       ],
       sizes: ["28", "30", "32", "34", "36"],
       colors: ["Dark Indigo Flat Finish"],
@@ -422,9 +422,9 @@ function getMockProducts() {
       price: 169000,
       image: "/images/levis/203.jpg",
       images: [
-        "/images/carhartt/203.jpg", // 정면
-        "/images/carhartt/203_2.jpg", // 측면
-        "/images/carhartt/203_3.jpg", // 디테일
+        "/images/levis/203.jpg", // 정면
+        "/images/levis/203_2.jpg", // 측면
+        "/images/levis/203_3.jpg", // 디테일
       ],
       sizes: ["28", "30", "32", "34", "36"],
       colors: ["Light Wash"],
@@ -449,9 +449,9 @@ function getMockProducts() {
       price: 69000,
       image: "/images/dickies/304.jpg",
       images: [
-        "/images/carhartt/304.jpg", // 정면
-        "/images/carhartt/304_2.jpg", // 측면
-        "/images/carhartt/304_3.jpg", // 디테일
+        "/images/dickies/304.jpg", // 정면
+        "/images/dickies/304_2.jpg", // 측면
+        "/images/dickies/304_3.jpg", // 디테일
       ],
       sizes: ["S", "M", "L", "XL"],
       colors: ["Melange"],
@@ -474,9 +474,9 @@ function getMockProducts() {
       price: 59000,
       image: "/images/dickies/305.jpg",
       images: [
-        "/images/carhartt/305.jpg", // 정면
-        "/images/carhartt/305_2.jpg", // 측면
-        "/images/carhartt/305_3.jpg", // 디테일
+        "/images/dickies/305.jpg", // 정면
+        "/images/dickies/305_2.jpg", // 측면
+        "/images/dickies/305_3.jpg", // 디테일
       ],
       sizes: ["S", "M", "L", "XL"],
       colors: ["Gray"],
@@ -499,9 +499,9 @@ function getMockProducts() {
       price: 59000,
       image: "/images/dickies/306.jpg",
       images: [
-        "/images/carhartt/306.jpg", // 정면
-        "/images/carhartt/306_2.jpg", // 측면
-        "/images/carhartt/306_3.jpg", // 디테일
+        "/images/dickies/306.jpg", // 정면
+        "/images/dickies/306_2.jpg", // 측면
+        "/images/dickies/306_3.jpg", // 디테일
       ],
       sizes: ["S", "M", "L", "XL"],
       colors: ["Black"],
@@ -524,9 +524,9 @@ function getMockProducts() {
       price: 105000,
       image: "/images/dickies/301.jpg",
       images: [
-        "/images/carhartt/301.jpg", // 정면
-        "/images/carhartt/301_2.jpg", // 측면
-        "/images/carhartt/301_3.jpg", // 디테일
+        "/images/dickies/301.jpg", // 정면
+        "/images/dickies/301_2.jpg", // 측면
+        "/images/dickies/301_3.jpg", // 디테일
       ],
       sizes: ["28", "30", "32", "34", "36"],
       colors: ["Medium Blue"],
@@ -549,9 +549,9 @@ function getMockProducts() {
       price: 119000,
       image: "/images/dickies/302.jpg",
       images: [
-        "/images/carhartt/302.jpg", // 정면
-        "/images/carhartt/302_2.jpg", // 측면
-        "/images/carhartt/302_3.jpg", // 디테일
+        "/images/dickies/302.jpg", // 정면
+        "/images/dickies/302_2.jpg", // 측면
+        "/images/dickies/302_3.jpg", // 디테일
       ],
       sizes: ["28", "30", "32", "34", "36"],
       colors: ["Black"],
@@ -574,9 +574,9 @@ function getMockProducts() {
       price: 99000,
       image: "/images/dickies/303.jpg",
       images: [
-        "/images/carhartt/303.jpg", // 정면
-        "/images/carhartt/303_2.jpg", // 측면
-        "/images/carhartt/303_3.jpg", // 디테일
+        "/images/dickies/303.jpg", // 정면
+        "/images/dickies/303_2.jpg", // 측면
+        "/images/dickies/303_3.jpg", // 디테일
       ],
       sizes: ["28", "30", "32", "34"],
       colors: ["Black"],
@@ -601,9 +601,9 @@ function getMockProducts() {
       price: 159000,
       image: "/images/beanpole/404.jpg",
       images: [
-        "/images/carhartt/404.jpg", // 정면
-        "/images/carhartt/404_2.jpg", // 측면
-        "/images/carhartt/404_3.jpg", // 디테일
+        "/images/beanpole/404.jpg", // 정면
+        "/images/beanpole/404_2.jpg", // 측면
+        "/images/beanpole/404_3.jpg", // 디테일
       ],
       sizes: ["S", "M", "L", "XL"],
       colors: ["Navy"],
@@ -626,9 +626,9 @@ function getMockProducts() {
       price: 149000,
       image: "/images/beanpole/405.jpg",
       images: [
-        "/images/carhartt/405.jpg", // 정면
-        "/images/carhartt/405_2.jpg", // 측면
-        "/images/carhartt/405_3.jpg", // 디테일
+        "/images/beanpole/405.jpg", // 정면
+        "/images/beanpole/405_2.jpg", // 측면
+        "/images/beanpole/405_3.jpg", // 디테일
       ],
       sizes: ["S", "M", "L", "XL"],
       colors: ["Khaki"],
@@ -651,9 +651,9 @@ function getMockProducts() {
       price: 89000,
       image: "/images/beanpole/406.jpg",
       images: [
-        "/images/carhartt/406.jpg", // 정면
-        "/images/carhartt/406_2.jpg", // 측면
-        "/images/carhartt/406_3.jpg", // 디테일
+        "/images/beanpole/406.jpg", // 정면
+        "/images/beanpole/406_2.jpg", // 측면
+        "/images/beanpole/406_3.jpg", // 디테일
       ],
       sizes: ["S", "M", "L", "XL"],
       colors: ["White"],
@@ -676,9 +676,9 @@ function getMockProducts() {
       price: 239000,
       image: "/images/beanpole/401.jpg",
       images: [
-        "/images/carhartt/401.jpg", // 정면
-        "/images/carhartt/401_2.jpg", // 측면
-        "/images/carhartt/401_3.jpg", // 디테일
+        "/images/beanpole/401.jpg", // 정면
+        "/images/beanpole/401_2.jpg", // 측면
+        "/images/beanpole/401_3.jpg", // 디테일
       ],
       sizes: ["29", "30", "31", "32", "33", "34", "36", "38"],
       colors: ["Beige"],
@@ -701,9 +701,9 @@ function getMockProducts() {
       price: 219000,
       image: "/images/beanpole/402.jpg",
       images: [
-        "/images/carhartt/402.jpg", // 정면
-        "/images/carhartt/402_2.jpg", // 측면
-        "/images/carhartt/403_3.jpg", // 디테일
+        "/images/beanpole/402.jpg", // 정면
+        "/images/beanpole/402_2.jpg", // 측면
+        "/images/beanpole/402_3.jpg", // 디테일
       ],
       sizes: ["29", "30", "31", "32", "33", "34", "35", "36", "37", "38"],
       colors: ["Black"],
@@ -726,9 +726,9 @@ function getMockProducts() {
       price: 239000,
       image: "/images/beanpole/403.jpg",
       images: [
-        "/images/carhartt/403.jpg", // 정면
-        "/images/carhartt/403_2.jpg", // 측면
-        "/images/carhartt/403_3.jpg", // 디테일
+        "/images/beanpole/403.jpg", // 정면
+        "/images/beanpole/403_2.jpg", // 측면
+        "/images/beanpole/402_3.jpg", // 디테일
       ],
       sizes: ["30", "32", "34", "36"],
       colors: ["Navy"],
