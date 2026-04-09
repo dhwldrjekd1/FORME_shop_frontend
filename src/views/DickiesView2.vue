@@ -6,15 +6,15 @@
         <p class="dk-hero__since">Est. 1922 / Fort Worth, Texas</p>
         <h1 class="dk-hero__title">DICKIES</h1>
         <p class="dk-hero__desc">
-          A century of purpose-built garments for those who shape the world.
-          Defined by resilience, the archive re-emerges as the modern industrial
-          uniform.
+          세상을 만드는 사람들을 위해 설계된 한 세기의 작업복. <br />
+          견고함으로 정의된 디키즈 아카이브가 현대적인 워크웨어로 다시
+          태어납니다.
         </p>
         <button class="dk-hero__btn">Discover the Collection</button>
       </div>
       <div class="dk-hero__img-wrap">
         <img
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUDbo3A1n6B25b5IzZh9l_rbdH3V5OuTvMnXbOTfMrud522x_tBOPi-fhKPHvzcm-tCFANc0A8kN5rmrQ1d75rE-m4LAnCa6It268MFBWoxLqxoe-naL_sflBscYviDb7UVzk5fc2pJhHCkBe6W08qFaE-9tZT_2_tArH-RNc2mMvG9IY560pCDmUislARziUo1NGQDDOtgZvEvXdvcOFKRT0VefMTxMBM1pZ4tmViNSGYe8-r12iMpyvfB3jtAtuNT6dz4hugFLOy"
+          src="/images/dickies/dickies_hero.png"
           alt="Dickies Hero"
           class="dk-hero__img"
         />
@@ -50,7 +50,11 @@
               <h3 class="dk-card__name">{{ product.name }}</h3>
             </div>
             <p class="dk-card__price">
-              {{ product.price != null ? "₩" + product.price.toLocaleString() : "" }}
+              {{
+                product.price != null
+                  ? "₩" + product.price.toLocaleString()
+                  : ""
+              }}
             </p>
           </div>
         </RouterLink>

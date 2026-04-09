@@ -3,7 +3,7 @@
     <!-- ── 히어로 섹션 ── -->
     <section class="bp-hero">
       <div class="bp-hero__text">
-        <p class="ch-hero__since">Since 1989</p>
+        <p class="ch-hero__since">Est. 1989 / Seoul</p>
         <h1 class="bp-hero__title">BEANPOLE</h1>
         <p class="bp-hero__desc">
           1989년 서울에서 시작된 빈폴. <br />

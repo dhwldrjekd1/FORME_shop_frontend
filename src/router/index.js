@@ -14,6 +14,8 @@ const CarharttView = () => import("@/views/CarharttView2.vue");
 const LevisView = () => import("@/views/LevisView2.vue");
 const DickiesView = () => import("@/views/DickiesView2.vue");
 const BeanpoleView = () => import("@/views/BeanpoleView2.vue");
+const FaqView = () => import("@/views/FaqView.vue");
+const QnaView = () => import("@/views/QnaView.vue");
 
 const routes = [
   {
@@ -73,6 +75,16 @@ const routes = [
     path: "/beanpole",
     name: "Beanpole",
     component: BeanpoleView,
+  },
+  {
+    path: "/faq",
+    name: "Faq",
+    component: FaqView,
+  },
+  {
+    path: "/qna",
+    name: "Qna",
+    component: QnaView,
   },
   {
     path: "/:pathMatch(.*)*", // 없는 경로 접근 시 홈으로 리다이렉트

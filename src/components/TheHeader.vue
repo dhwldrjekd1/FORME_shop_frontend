@@ -4,18 +4,10 @@
       <!-- 왼쪽: 브랜드 로고 -->
       <RouterLink to="/" class="header__logo">FORME</RouterLink>
 
-      <!-- 로고 오른쪽: About -->
-      <RouterLink
-        :to="{ path: '/products', query: { brand: 'about' } }"
-        class="header__about-link"
-      >
-        About
-      </RouterLink>
-
       <!-- 가운데: 브랜드 카테고리 메뉴 -->
       <nav class="header__nav">
         <RouterLink
-          v-for="brand in brands.filter((b) => b.slug !== 'about')"
+          v-for="brand in brands"
           :key="brand.name"
           :to="brand.path"
           class="header__nav-link"
@@ -32,8 +24,16 @@
         </RouterLink>
       </nav>
 
-      <!-- 오른쪽: 아이콘들 -->
+      <!-- 오른쪽: 서비스 링크 + 아이콘들 -->
       <div class="header__actions">
+
+        <!-- FAQ / Q&A / About 링크 -->
+        <nav class="header__service-nav">
+          <RouterLink to="/faq" class="header__service-link">FAQ</RouterLink>
+          <RouterLink to="/qna" class="header__service-link">Q&A</RouterLink>
+          <RouterLink to="/about" class="header__service-link">About</RouterLink>
+        </nav>
+
         <!-- 검색 -->
         <button class="header__icon-btn" aria-label="검색">
           <span class="material-symbols-outlined">search</span>
@@ -107,7 +107,6 @@ const brands = [
   { name: "Carhartt", slug: "carhartt", logo: carharttLogo, path: "/carhartt" },
   { name: "Levi's", slug: "levis", logo: levisLogo, path: "/levis" },
   { name: "Dickies", slug: "dickies", logo: diciesLogo, path: "/dickies" },
-  { name: "About", slug: "about", logo: null, path: "/products" },
 ];
 </script>
 
@@ -247,19 +246,23 @@ const brands = [
   height: 16px;
 }
 
-/* About 링크 */
-.header__about-link {
-  font-size: 0.8125rem;
-  font-weight: 300;
-  color: #71717a;
-  letter-spacing: 0.03em;
-  transition: color 0.2s;
-  margin-left: 2rem;
-  position: relative;
-  top: 5px;
+/* 서비스 링크 (FAQ / Q&A / About) */
+.header__service-nav {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-right: 1.5rem;
 }
 
-.header__about-link:hover {
+.header__service-link {
+  font-size: 0.75rem;
+  font-weight: 300;
+  color: #71717a;
+  letter-spacing: 0.05em;
+  transition: color 0.2s;
+}
+
+.header__service-link:hover {
   color: #18181b;
 }
 
