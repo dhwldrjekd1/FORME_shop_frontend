@@ -13,7 +13,7 @@
       </div>
       <div class="lv-hero__img-wrap">
         <img
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOlRVZXJlDIro5LiGgSXbU1Ro0dWv0nQZIYs0ixbvWdooCprmdjxKY21t_eKXe7atldwQOOo-06olPEZLleosi7Fe4AcCvyVMIEQ0Lvc2Jqh5AcYSuRB7qpDq1e79j-nTj4k1yBmAcCGbX3XQECb5vhS3hirb4lgTsMzBI4vu5IUy593e8khO9TekYbo3xwV-15vTz69ZQ2KnI2kWCaI_h4jL8nFH2CV59KEX5gI2zHDrHw3SMrrAM3lWBN7Q8WaJeqNnol-Ip0FzJ"
+          src="/images/levis/levis_hero.png"
           alt="Levi's Hero"
           class="lv-hero__img"
         />

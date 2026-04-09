@@ -6,9 +6,12 @@
         <p class="ch-hero__since">Since 1889</p>
         <h1 class="ch-hero__title">CARHARTT</h1>
         <p class="ch-hero__desc">
-          Established 1889 in Detroit. Built on the rugged honesty of American
+          <!-- Established 1889 in Detroit. Built on the rugged honesty of American
           craftsmanship. Iconic workwear engineered for the individuals who move
-          the world forward.
+          the world forward. -->
+          1889년 디트로이트에서 탄생했습니다. 미국 장인
+          정신의 투박한 진정성을 바탕으로, 세상을 움직이는 사람들을 위한
+          아이코닉 워크웨어를 만들어왔습니다.
         </p>
         <RouterLink to="/products" class="ch-hero__btn">
           Shop Collection
@@ -17,7 +20,7 @@
       </div>
       <div class="ch-hero__img-wrap">
         <img
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuA6MSFZ500OpgZKo6SGRIaWMoOtC173Oo7theKznqnm6jfBhZ6HVMgL7igZ4H2s795oN370Wv7h2Td94ZpjFr5nHz9TthGCbRl4KArY3pLbv3uJPZ-ulAK1uN5VishOVbyqQgtsxKVcBWkw9V0zhZNZo75gNjb6GbORJm5XCze6dDqpRqV2scwvO8fgDlUpmmQL5a05AUtV1vblVDJJexjvxz_RlLp2C6JtYatunpWlLA7Q_90UBliuK5BEmTzc_cyn_VvG9fMQbGYg"
+          src="/images/carhartt/carhero.png"
           alt="Carhartt Hero"
           class="ch-hero__img"
         />
@@ -160,7 +163,7 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: grayscale(20%);
+  filter: grayscale(80%);
   transition: transform 0.7s;
 }
 

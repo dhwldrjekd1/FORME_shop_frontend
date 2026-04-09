@@ -12,12 +12,12 @@
         <!-- 하단 그라데이션 오버레이 -->
         <div class="hero__overlay"></div>
         <div class="hero__content">
-          <span class="hero__curation">Curation 0{{ panel.id }}</span>
+          <span class="hero__curation">Brand Edit 0{{ panel.id }}</span>
           <h2 class="hero__title">{{ panel.title }}</h2>
           <!-- 호버 시에만 보이는 버튼 -->
           <div class="hero__cta">
             <RouterLink to="/products" class="hero__btn"
-              >Explore Persona</RouterLink
+              >Explore Brand</RouterLink
             >
           </div>
         </div>
@@ -29,9 +29,8 @@
       <div class="arrivals__header container--full">
         <div>
           <span class="arrivals__label">New Arrivals</span>
-          <h3 class="arrivals__title">The SS24 Atelier Selection</h3>
+          <h3 class="arrivals__title">The Latest Edit from FORME</h3>
         </div>
-        <!-- 좌우 스크롤 버튼 -->
         <div class="arrivals__nav">
           <button
             class="arrivals__nav-btn"
@@ -50,7 +49,6 @@
         </div>
       </div>
 
-      <!-- ref: JS에서 DOM 직접 접근할 때 사용 -->
       <div class="arrivals__carousel container--full" ref="carouselRef">
         <RouterLink
           v-for="product in products"
@@ -70,9 +68,8 @@
               <h4 class="product-card__name">{{ product.name }}</h4>
               <p class="product-card__category">{{ product.category }}</p>
             </div>
-            <!-- toLocaleString(): 1850 → 1,850 -->
             <span class="product-card__price"
-              >${{ product.price.toLocaleString() }}</span
+              >₩{{ product.price.toLocaleString() }}</span
             >
           </div>
         </RouterLink>
@@ -82,15 +79,17 @@
     <section class="story">
       <div class="story__inner container--full">
         <div class="story__text">
-          <span class="story__label">Tactile Excellence</span>
-          <h3 class="story__title">The Integrity of Fabric.</h3>
+          <span class="story__label">Curated Perspective</span>
+          <h3 class="story__title">The Standard of Selection.</h3>
           <p class="story__desc">
-            Every piece in our Atelier collection begins with a thread. We
-            source exclusive silks and recycled wools from historic mills across
-            the Biella region, ensuring that the touch of the garment is as
-            profound as its silhouette.
+            FORME selects brands that balance heritage with a modern point of
+            view. From silhouette and versatility to character and longevity,
+            our edit is shaped by pieces that stay relevant beyond the season.
+            FORME은 헤리티지와 현대적 시각의 균형을 갖춘 브랜드를 선별합니다.
+            실루엣과 활용성, 브랜드 고유의 성격과 지속성을 기준으로 시즌을 넘어
+            오래 입을 수 있는 옷들로 구성됩니다.
           </p>
-          <a href="#" class="story__link">Read The Fabric Story</a>
+          <a href="#" class="story__link">Read Our Curation</a>
         </div>
 
         <!-- 호버 시 모델 사진 → 원단 텍스처로 전환 -->
@@ -100,14 +99,14 @@
           @mouseleave="showTexture = false"
         >
           <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmIhUbDbYcPm8yaZZiOZD2hzDc7E8cE-aztWTc5lWA3QaM4WJY2JPkFCQZ01PXzwNp2XcNRpj1qiND7unbrUcxKo6VKTq-Lu3Aiy1zt7hRngNHt0C4nqJ7gS3kKnEWzit6NJEkWIDnPRngHvDA4jcIsBpqCCs7lhSt-kOe_7ui5spLssSpvMRjxNHmq27PcKm2H02p-Vf05xKhGGxt5p_QDX3u5R9h3GLzFiLbccsHfNLW1XjelABgO1FfwGkqifsyMGNXazAA0Yk0"
+            src="/images/story/story1.jpg"
             alt="Model"
             class="story__img story__img--model"
             :class="{ 'story__img--hidden': showTexture }"
           />
           <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuC3TWOmLGlqBBlkocnfZuY2gghxQ5-VuZ9Tg4DqE6Anl6s132_c-H4NPnIKIVv-VtSDQAcf_th5Y_ObEL5WshMhVLfCQuq2zPq5SrF4_xCIyvpCQnbwInGCDIOTz5clHFUd4Okbn2CR-cD1EWtCMLMiyna_vTcQqvm7r-kqmbTCnrV_Gd2WkO6JPh2ehC40p5L_IobrfLC4fhaPhorSFenIwLQk5amq5DZBqJ20INsVAo9XHXwj2yz-uGCgSLdbSkTLrGasTqzb0z3V"
-            alt="Fabric texture"
+            src="/images/story/story2.jpg"
+            alt="FORME texture detail"
             class="story__img story__img--texture"
             :class="{ 'story__img--visible': showTexture }"
           />
@@ -131,31 +130,32 @@
             class="bento__main-img"
           />
           <div class="bento__main-overlay">
-            <h4 class="bento__main-title">Visit The Atelier</h4>
+            <h4 class="bento__main-title">Explore the Seasonal Edit</h4>
             <p class="bento__main-desc">
-              Experience our seasonal curation in person at our flagship spaces
-              in Milan and Tokyo.
+              Discover a selection of brands and pieces curated for a modern
+              wardrobe. Classic foundations, refined with a contemporary
+              attitude.
             </p>
-            <button class="bento__main-btn">Store Locator</button>
+            <button class="bento__main-btn">View Editorial</button>
           </div>
         </div>
 
         <div class="bento__side">
           <!-- 뉴스레터 -->
           <div class="bento__newsletter">
-            <h4 class="bento__newsletter-title">Join The Circle.</h4>
+            <h4 class="bento__newsletter-title">Join the FORME Edit.</h4>
             <p class="bento__newsletter-desc">
-              Early access to archive sales and exclusive invitations to
-              editorial previews.
+              Be the first to receive new arrivals, seasonal selections, and
+              curated brand stories from FORME.
             </p>
             <div class="bento__newsletter-form">
               <input
                 v-model="newsletterEmail"
                 type="email"
-                placeholder="Email Address"
+                placeholder="Enter your email"
                 class="bento__newsletter-input"
               />
-              <button class="bento__newsletter-btn">Sign Up</button>
+              <button class="bento__newsletter-btn">Subscribe</button>
             </div>
           </div>
 
@@ -164,10 +164,11 @@
             <span class="material-symbols-outlined bento__circular-icon"
               >eco</span
             >
-            <h4 class="bento__circular-title">Circular Promise</h4>
+            <h4 class="bento__circular-title">Our Selection Philosophy</h4>
             <p class="bento__circular-desc">
-              Our buy-back program allows you to return any Atelier piece for
-              store credit, fostering a truly sustainable ecosystem.
+              We focus on garments with lasting character — considered
+              silhouette, trusted construction, and a point of view that holds
+              beyond the season.
             </p>
           </div>
         </div>

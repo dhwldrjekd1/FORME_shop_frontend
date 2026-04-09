@@ -3,18 +3,18 @@
     <!-- ── 히어로 섹션 ── -->
     <section class="bp-hero">
       <div class="bp-hero__text">
-        <p class="bp-hero__since">Fall / Winter 2024</p>
+        <p class="ch-hero__since">Since 1989</p>
         <h1 class="bp-hero__title">BEANPOLE</h1>
         <p class="bp-hero__desc">
-          A refined collection celebrating British heritage through
-          architectural tailoring, heavy-gauge knits, and the enduring charm of
-          collegiate style.
+          1989년 서울에서 시작된 빈폴. <br />
+          클래식의 가치를 현대적 감각으로 재해석하며 한국 패션의 헤리티지를
+          이어가고 있습니다.
         </p>
         <button class="bp-hero__btn">Discover the Collection</button>
       </div>
       <div class="bp-hero__img-wrap">
         <img
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuAm_jlY8ZNkW20KAwnUW7ZFzH5mUJoUkUk17JKbJal7REHJnwL1MoWIbsr2Gv_flst-U4UL50gVAprVbZBu0x9Gd2iXd_tYYo1WydFdD4Wu4nBE3zgFuMCybbxqWQCFJHYyvL3_pojKDUMor95fdFQl5f3uWO5G5gFOJMpMK8s2HM2I3poQCKGotl6w3fHdrjB3yGnL6qzChZHnNlADpvHk6FXYKQh78TnPszYikqb7qPYaGdaLYlK3-yqauP3Hc2S4wm7EXHFhcX6X"
+          src="/images/beanpole/beanpole_hero.png"
           alt="Beanpole Hero"
           class="bp-hero__img"
         />
@@ -50,7 +50,11 @@
               <h3 class="bp-card__name">{{ product.name }}</h3>
             </div>
             <p class="bp-card__price">
-              {{ product.price != null ? "₩" + product.price.toLocaleString() : "" }}
+              {{
+                product.price != null
+                  ? "₩" + product.price.toLocaleString()
+                  : ""
+              }}
             </p>
           </div>
         </RouterLink>
