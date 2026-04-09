@@ -3,7 +3,7 @@
     <!-- ── 히어로 섹션 ── -->
     <section class="ch-hero">
       <div class="ch-hero__text">
-        <p class="ch-hero__since">Est. 1889 / Detroit</p>
+        <p class="ch-hero__since">Since 1889</p>
         <h1 class="ch-hero__title">CARHARTT</h1>
         <p class="ch-hero__desc">
           <!-- Established 1889 in Detroit. Built on the rugged honesty of American
