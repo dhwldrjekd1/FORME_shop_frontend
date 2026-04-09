@@ -1,0 +1,137 @@
+/* =============================================
+   FORME 쇼핑몰 전역 스타일
+   ============================================= */
+
+/* ── 전역 변수 선언 ──────────────────────────
+   CSS 변수를 한 곳에 모아두면
+   나중에 디자인 수정 시 여기만 바꾸면 됨
+   ─────────────────────────────────────────── */
+:root {
+  /* 폰트: 용도별로 분리 */
+  --font-headline: "Noto Serif", serif; /* 제목 (h1, h2 등) */
+  --font-body: "Work Sans", sans-serif; /* 본문, 버튼, 라벨 */
+  --font-accent: "Playfair Display", serif; /* 포인트 (로그인 버튼 등) */
+
+  /* 주요 색상 */
+  --color-primary: #000000; /* 브랜드 컬러 (검정) */
+  --color-on-primary: #e2e2e2; /* primary 위 텍스트 색 */
+  --color-primary-container: #3b3b3b; /* 선택 영역 배경 */
+
+  /* 배경 계층 (숫자 없음 → lowest 순으로 밝음) */
+  --color-surface: #f9f9f9; /* 기본 페이지 배경 */
+  --color-surface-container: #eeeeee; /* 카드, 박스 배경 */
+  --color-surface-container-low: #f3f3f4; /* 필터바 등 살짝 어두운 배경 */
+  --color-surface-container-high: #e8e8e8; /* 더 어두운 배경 */
+  --color-surface-container-lowest: #ffffff; /* 가장 밝은 배경 (순백) */
+
+  /* 텍스트 색상 */
+  --color-on-surface: #1a1c1c; /* 기본 텍스트 */
+  --color-on-surface-variant: #474747; /* 보조 텍스트 (회색) */
+
+  /* 테두리 색상 */
+  --color-outline: #777777; /* 보조 테두리 */
+  --color-outline-variant: #c6c6c6; /* 연한 테두리 (인풋 하단선 등) */
+
+  /* 기타 */
+  --color-secondary: #5e5e5e; /* 보조 색상 (가격, 카테고리 등) */
+  --color-error: #ba1a1a; /* 에러 메시지 */
+
+  /* 레이아웃 */
+  --header-height: 80px; /* 헤더 높이 → page-wrapper padding-top에 사용 */
+  --max-width: 1920px; /* 전체 레이아웃 최대 너비 */
+  --content-width: 1280px; /* 콘텐츠 영역 최대 너비 */
+}
+
+/* ── 리셋 ────────────────────────────────────
+   브라우저마다 기본 스타일이 달라서
+   전부 초기화하고 시작하는 게 일반적
+   ─────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box; /* padding, border가 width 안에 포함되도록 */
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px; /* rem 기준값 (1rem = 16px) */
+  -webkit-font-smoothing: antialiased; /* Mac에서 폰트 렌더링 부드럽게 */
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+  min-height: 100dvh; /* dvh: 모바일 주소창 포함한 실제 뷰포트 높이 */
+}
+
+/* 링크 기본 스타일 제거 (색상, 밑줄) */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* 버튼 기본 스타일 제거 */
+button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: inherit; /* 버튼은 기본적으로 폰트 상속 안 해서 명시 필요 */
+}
+
+/* 인풋 기본 스타일 제거 */
+input,
+select,
+textarea {
+  font-family: inherit;
+  outline: none; /* 포커스 테두리 제거 (커스텀으로 대체) */
+}
+
+/* ── Material Icons 설정 ─────────────────────
+   구글 Material Symbols 아이콘 폰트
+   font-variation-settings로 굵기, 채움 등 조절
+   ─────────────────────────────────────────── */
+.material-symbols-outlined {
+  font-variation-settings:
+    "FILL" 0,
+    /* 0 = 아웃라인, 1 = 채움 */ "wght" 300,
+    /* 아이콘 굵기 */ "GRAD" 0,
+    /* 그라데이션 (보통 0) */ "opsz" 24; /* 기본 사이즈 24px */
+  user-select: none; /* 아이콘 텍스트 드래그 선택 방지 */
+}
+
+/* ── 공통 레이아웃 클래스 ────────────────────
+   페이지 콘텐츠를 가운데 정렬하고
+   좌우 여백을 주는 래퍼
+   ─────────────────────────────────────────── */
+
+/* 일반 콘텐츠용 (최대 1280px) */
+.container {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 0 2rem; /* 좌우 32px 여백 */
+}
+
+/* 풀 와이드 콘텐츠용 (최대 1920px, 히어로 등) */
+.container--full {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+/* ── 페이지 공통 상단 여백 ───────────────────
+   헤더가 fixed라서 콘텐츠가 헤더 뒤로 숨음
+   헤더 높이만큼 padding-top으로 밀어내는 클래스
+   ─────────────────────────────────────────── */
+.page-wrapper {
+  padding-top: var(--header-height); /* = 80px */
+}
+
+/* ── 텍스트 선택 색상 ────────────────────────
+   드래그해서 텍스트 선택할 때 나오는 색상
+   ─────────────────────────────────────────── */
+::selection {
+  background-color: var(--color-primary-container); /* 어두운 회색 배경 */
+  color: #ffffff;
+}
