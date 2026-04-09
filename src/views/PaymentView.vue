@@ -234,7 +234,7 @@ function handleSubmit() {
   // TODO: Spring Boot 연결 시 API 호출로 교체
   alert("주문이 완료되었습니다!");
   cartStore.clearCart(); // 결제 완료 후 장바구니 비우기
-  router.push("/");
+  router.push("/order-complete");
 }
 </script>
 
