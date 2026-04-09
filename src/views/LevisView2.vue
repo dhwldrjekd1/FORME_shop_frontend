@@ -6,8 +6,8 @@
         <p class="lv-hero__since">Est. 1873 / San Francisco</p>
         <h1 class="lv-hero__title">LEVI'S</h1>
         <p class="lv-hero__desc">
-          A curated exploration of the blueprints of modern dress. Re-issuing
-          the icons that built the American West.
+          현대 복식의 원형을 탐구하는 큐레이션. <br />아메리칸 웨스트를 만들어온
+          아이코닉한 제품들을 다시 만납니다.
         </p>
         <button class="lv-hero__btn">Discover the Collection</button>
       </div>

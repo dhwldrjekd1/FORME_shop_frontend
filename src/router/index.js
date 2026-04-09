@@ -16,6 +16,10 @@ const DickiesView = () => import("@/views/DickiesView2.vue");
 const BeanpoleView = () => import("@/views/BeanpoleView2.vue");
 const FaqView = () => import("@/views/FaqView.vue");
 const QnaView = () => import("@/views/QnaView.vue");
+const AdminDashboard = () => import("@/views/admin/AdminDashboard.vue");
+const AdminProducts  = () => import("@/views/admin/AdminProducts.vue");
+const AdminOrders    = () => import("@/views/admin/AdminOrders.vue");
+const AdminQna       = () => import("@/views/admin/AdminQna.vue");
 
 const routes = [
   {
@@ -86,6 +90,10 @@ const routes = [
     name: "Qna",
     component: QnaView,
   },
+  { path: "/admin",          name: "AdminDashboard", component: AdminDashboard },
+  { path: "/admin/products", name: "AdminProducts",  component: AdminProducts  },
+  { path: "/admin/orders",   name: "AdminOrders",    component: AdminOrders    },
+  { path: "/admin/qna",      name: "AdminQna",       component: AdminQna       },
   {
     path: "/:pathMatch(.*)*", // 없는 경로 접근 시 홈으로 리다이렉트
     redirect: "/",
