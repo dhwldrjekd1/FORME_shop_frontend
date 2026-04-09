@@ -43,6 +43,14 @@
               :alt="product.name"
               class="bp-card__img"
             />
+            <button
+              class="bp-card__wish"
+              :class="{ 'bp-card__wish--active': wishlistStore.isWished(product.id) }"
+              @click.prevent="wishlistStore.toggle(product)"
+              aria-label="찜하기"
+            >
+              <span class="material-symbols-outlined">favorite</span>
+            </button>
           </div>
           <div class="bp-card__info">
             <div>
@@ -66,10 +74,12 @@
 <script setup>
 import { onMounted, computed } from "vue";
 import { useProductStore } from "@/stores/productStore";
+import { useWishlistStore } from "@/stores/wishlistStore";
 import { storeToRefs } from "pinia";
 
 const productStore = useProductStore();
 const { products } = storeToRefs(productStore);
+const wishlistStore = useWishlistStore();
 
 // 빈폴 상품만 필터 (id 400번대)
 const beanpoleProducts = computed(() =>
@@ -220,6 +230,38 @@ onMounted(() => {
   overflow: hidden;
   background-color: var(--color-surface-container-low);
   margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.bp-card__wish {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 0.75rem;
+  background: rgba(255,255,255,0.85);
+  border: none;
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, color 0.2s;
+  color: #aaa;
+}
+
+.bp-card:hover .bp-card__wish {
+  opacity: 1;
+}
+
+.bp-card__wish--active {
+  opacity: 1 !important;
+  color: var(--color-primary);
+}
+
+.bp-card__wish .material-symbols-outlined {
+  font-size: 1rem;
 }
 
 .bp-card__img {

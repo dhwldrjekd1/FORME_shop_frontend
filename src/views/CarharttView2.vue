@@ -49,6 +49,14 @@
               :alt="product.name"
               class="ch-card__img"
             />
+            <button
+              class="ch-card__wish"
+              :class="{ 'ch-card__wish--active': wishlistStore.isWished(product.id) }"
+              @click.prevent="wishlistStore.toggle(product)"
+              aria-label="찜하기"
+            >
+              <span class="material-symbols-outlined">favorite</span>
+            </button>
           </div>
           <div class="ch-card__info">
             <div>
@@ -72,10 +80,12 @@
 <script setup>
 import { onMounted, computed } from "vue";
 import { useProductStore } from "@/stores/productStore";
+import { useWishlistStore } from "@/stores/wishlistStore";
 import { storeToRefs } from "pinia";
 
 const productStore = useProductStore();
 const { products } = storeToRefs(productStore);
+const wishlistStore = useWishlistStore();
 
 // 칼하트 상품만 필터 (id 100번대)
 const carharttProducts = computed(() =>
@@ -187,7 +197,7 @@ onMounted(() => {
 .ch-products__title {
   font-family: var(--font-headline);
   font-size: 2.5rem;
-  font-weight: 900;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: -0.02em;
   margin-bottom: 0.75rem;
@@ -227,6 +237,38 @@ onMounted(() => {
   overflow: hidden;
   background-color: var(--color-surface-container);
   margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.ch-card__wish {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 0.75rem;
+  background: rgba(255,255,255,0.85);
+  border: none;
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, color 0.2s;
+  color: #aaa;
+}
+
+.ch-card:hover .ch-card__wish {
+  opacity: 1;
+}
+
+.ch-card__wish--active {
+  opacity: 1 !important;
+  color: var(--color-primary);
+}
+
+.ch-card__wish .material-symbols-outlined {
+  font-size: 1rem;
 }
 
 .ch-card__img {
@@ -259,7 +301,7 @@ onMounted(() => {
 }
 
 .ch-card__name {
-  font-family: var(--font-body);
+  font-family: var(--font-headline);
   font-size: 1.0625rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -268,5 +310,6 @@ onMounted(() => {
 
 .ch-card__price {
   font-size: 1.0625rem;
+  font-weight: 700;
 }
 </style>

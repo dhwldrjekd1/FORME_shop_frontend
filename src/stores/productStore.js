@@ -109,6 +109,7 @@ function getMockProducts() {
       id: 104,
       name: "디어본 루즈핏 포켓 티셔츠",
       category: "T-shirt",
+      keywords: ['칼하트', '티셔츠', '티', '상의', '블랙', '포켓'],
       price: 44000,
       image: "/images/carhartt/104.png",
       images: [
@@ -134,6 +135,7 @@ function getMockProducts() {
       id: 105,
       name: "디어본 릴랙스드 샴록 티셔츠",
       category: "T-shirt",
+      keywords: ['칼하트', '티셔츠', '티', '상의', '베이지', '그래픽'],
       price: 52300,
       image: "/images/carhartt/105.png",
       images: [
@@ -159,6 +161,7 @@ function getMockProducts() {
       id: 106,
       name: "칼하트 포스 릴랙스 티셔츠",
       category: "T-shirt",
+      keywords: ['칼하트', '티셔츠', '티', '상의', '화이트', '흰색'],
       price: 57500,
       image: "/images/carhartt/106.png",
       images: [
@@ -184,6 +187,7 @@ function getMockProducts() {
       id: 101,
       name: "루즈핏 캔버스 유틸리티 워크 팬츠",
       category: "Pants",
+      keywords: ['칼하트', '바지', '팬츠', '워크팬츠', '베이지', '브라운'],
       price: 140000,
       image: "/images/carhartt/101.png",
       images: [
@@ -225,6 +229,7 @@ function getMockProducts() {
       id: 102,
       name: "루즈 스트레이트 러기드 플렉스 덕 트라우저",
       category: "Pants",
+      keywords: ['칼하트', '바지', '팬츠', '블랙', '다크', '트라우저'],
       price: 122000,
       image: "/images/carhartt/102.png",
       images: [
@@ -251,6 +256,7 @@ function getMockProducts() {
       id: 103,
       name: "아이코닉 B01 펌 덕 더블 프론트 트라우저",
       category: "Pants",
+      keywords: ['칼하트', '바지', '팬츠', '브라운', '워크팬츠', '트라우저'],
       price: 209000,
       image: "/images/carhartt/103.png",
       images: [
@@ -294,6 +300,7 @@ function getMockProducts() {
       id: 204,
       name: "NAS 밴드 티",
       category: "T-Shirt",
+      keywords: ['리바이스', '리바이', '티셔츠', '티', '상의', '화이트', '흰색', '그래픽'],
       price: 45000,
       image: "/images/levis/204.jpg",
       images: [
@@ -319,6 +326,7 @@ function getMockProducts() {
       id: 205,
       name: "LEVI'S® X BARBOUR 그래픽 티셔츠",
       category: "T-Shirt",
+      keywords: ['리바이스', '리바이', '티셔츠', '티', '상의', '아이보리', '콜라보', '그래픽'],
       price: 109000,
       image: "/images/levis/205.jpg",
       images: [
@@ -344,6 +352,7 @@ function getMockProducts() {
       id: 206,
       name: "헤비웨이트 포켓 티셔츠",
       category: "T-Shirt",
+      keywords: ['리바이스', '리바이', '티셔츠', '티', '상의', '화이트', '흰색', '포켓'],
       price: 35000,
       image: "/images/levis/206.jpg",
       images: [
@@ -369,6 +378,7 @@ function getMockProducts() {
       id: 201,
       name: "555™ 릴렉스 스트레이트 진",
       category: "Denim",
+      keywords: ['리바이스', '리바이', '바지', '데님', '진', '청바지', '인디고', '네이비'],
       price: 159000,
       image: "/images/levis/201.jpg",
       images: [
@@ -394,6 +404,7 @@ function getMockProducts() {
       id: 202,
       name: "565™ 루즈 스트레이트 진",
       category: "Denim",
+      keywords: ['리바이스', '리바이', '바지', '데님', '진', '청바지', '인디고'],
       price: 99000,
       image: "/images/levis/202.jpg",
       images: [
@@ -419,6 +430,7 @@ function getMockProducts() {
       id: 203,
       name: "505™ 레귤러 라이트웨이트 진",
       category: "Denim",
+      keywords: ['리바이스', '리바이', '바지', '데님', '진', '청바지', '라이트', '연청'],
       price: 169000,
       image: "/images/levis/203.jpg",
       images: [
@@ -446,6 +458,7 @@ function getMockProducts() {
       id: 304,
       name: "트리 로고 레이어드 롱슬리브",
       category: "T-shirt",
+      keywords: ['디키즈', '티셔츠', '티', '상의', '롱슬리브', '긴팔', '그레이', '회색'],
       price: 69000,
       image: "/images/dickies/304.jpg",
       images: [
@@ -471,6 +484,7 @@ function getMockProducts() {
       id: 305,
       name: "파인 스트라이프 포켓 티셔츠",
       category: "T-shirt",
+      keywords: ['디키즈', '티셔츠', '티', '상의', '그레이', '회색', '스트라이프', '포켓'],
       price: 59000,
       image: "/images/dickies/305.jpg",
       images: [
@@ -496,6 +510,7 @@ function getMockProducts() {
       id: 306,
       name: "워시드 스네이크 로고 티셔츠",
       category: "T-shirt",
+      keywords: ['디키즈', '티셔츠', '티', '상의', '블랙', '검정', '로고'],
       price: 59000,
       image: "/images/dickies/306.jpg",
       images: [
@@ -521,6 +536,7 @@ function getMockProducts() {
       id: 301,
       name: "루즈핏 카펜터 유틸리티 데님 팬츠",
       category: "Denim",
+      keywords: ['디키즈', '바지', '팬츠', '데님', '진', '청바지', '카펜터', '블루'],
       price: 105000,
       image: "/images/dickies/301.jpg",
       images: [
@@ -546,6 +562,7 @@ function getMockProducts() {
       id: 302,
       name: "워시드 스네이크 더블니 팬츠",
       category: "Pants",
+      keywords: ['디키즈', '바지', '팬츠', '블랙', '검정', '워크팬츠'],
       price: 119000,
       image: "/images/dickies/302.jpg",
       images: [
@@ -571,6 +588,7 @@ function getMockProducts() {
       id: 303,
       name: "더블니 카펜터 데님 팬츠",
       category: "Denim",
+      keywords: ['디키즈', '바지', '팬츠', '데님', '진', '청바지', '블랙', '검정', '카펜터'],
       price: 99000,
       image: "/images/dickies/303.jpg",
       images: [
@@ -598,6 +616,7 @@ function getMockProducts() {
       id: 404,
       name: "헤리티지클럽 스트라이프 칼라넥 티셔츠",
       category: "T-shirt",
+      keywords: ['빈폴', '티셔츠', '티', '상의', '네이비', '남색', '스트라이프', '폴로'],
       price: 159000,
       image: "/images/beanpole/404.jpg",
       images: [
@@ -623,6 +642,7 @@ function getMockProducts() {
       id: 405,
       name: "피케 칼라넥 반소매 티셔츠",
       category: "T-shirt",
+      keywords: ['빈폴', '티셔츠', '티', '상의', '카키', '폴로', '반소매'],
       price: 149000,
       image: "/images/beanpole/405.jpg",
       images: [
@@ -648,6 +668,7 @@ function getMockProducts() {
       id: 406,
       name: "헤리티지클럽 라운드넥 반소매 티셔츠",
       category: "T-shirt",
+      keywords: ['빈폴', '티셔츠', '티', '상의', '화이트', '흰색', '반소매'],
       price: 89000,
       image: "/images/beanpole/406.jpg",
       images: [
@@ -673,6 +694,7 @@ function getMockProducts() {
       id: 401,
       name: "피그먼트 워싱 컴포트핏 치노 팬츠",
       category: "Pants",
+      keywords: ['빈폴', '바지', '치노', '팬츠', '베이지'],
       price: 239000,
       image: "/images/beanpole/401.jpg",
       images: [
@@ -698,6 +720,7 @@ function getMockProducts() {
       id: 402,
       name: "리넨 혼방 옥스포드 스탠다드핏 팬츠",
       category: "Pants",
+      keywords: ['빈폴', '바지', '팬츠', '블랙', '검정', '리넨'],
       price: 219000,
       image: "/images/beanpole/402.jpg",
       images: [
@@ -723,6 +746,7 @@ function getMockProducts() {
       id: 403,
       name: "가먼트다잉 세미와이드 팬츠",
       category: "Pants",
+      keywords: ['빈폴', '바지', '팬츠', '네이비', '남색', '와이드'],
       price: 239000,
       image: "/images/beanpole/403.jpg",
       images: [

@@ -123,6 +123,15 @@
               </div>
             </div>
 
+            <!-- 찜하기 버튼 -->
+            <button class="detail-wish-btn" @click="toggleWish">
+              <span
+                class="material-symbols-outlined"
+                :style="isWished ? 'font-variation-settings: \"FILL\" 1' : ''"
+              >favorite</span>
+              {{ isWished ? '찜 해제' : '찜하기' }}
+            </button>
+
             <!-- 장바구니 버튼 -->
             <button class="detail-add-btn" @click="addToCart">
               Add to Collection — ₩{{ product?.price?.toLocaleString() }}
@@ -253,6 +262,7 @@ import { ref, computed, onMounted, reactive } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useProductStore } from "@/stores/productStore";
 import { useCartStore } from "@/stores/cartStore";
+import { useWishlistStore } from "@/stores/wishlistStore";
 import { storeToRefs } from "pinia";
 
 // ── props / store ──
@@ -262,6 +272,14 @@ const route = useRoute();
 const router = useRouter();
 const productStore = useProductStore();
 const cartStore = useCartStore();
+const wishlistStore = useWishlistStore();
+
+const isWished = computed(() => product.value ? wishlistStore.isWished(product.value.id) : false);
+
+function toggleWish() {
+  if (!product.value) return;
+  wishlistStore.toggle(product.value);
+}
 
 const {
   currentProduct: product,
@@ -872,6 +890,35 @@ function addToCart() {
 .detail-size-btn--active {
   background-color: var(--color-primary);
   color: var(--color-on-primary);
+}
+
+/* ── 찜하기 버튼 ── */
+.detail-wish-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 1px solid var(--color-outline-variant);
+  background: #fff;
+  color: var(--color-on-surface);
+  font-size: 0.8125rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  margin-bottom: 0.75rem;
+}
+
+.detail-wish-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.detail-wish-btn .material-symbols-outlined {
+  font-size: 1.1rem;
+  color: var(--color-primary);
 }
 
 /* ── 장바구니 버튼 ── */

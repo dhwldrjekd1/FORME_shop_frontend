@@ -125,7 +125,7 @@
       <div class="bento__inner container--full">
         <div class="bento__main">
           <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4Oe74e_qYKjXfYH27bIXCbQxNtrwN3wXS7e36812qxwoOPzcSaycQeqEq1DfS-imYsQBGfa--NWKetULaBOEoST_eTeWeiQM0kcxpWEMOJY6c5VYgLkjjHtnOiGonUstK4h2JVVCSvcdObySIdZAuMVUJqb50R0lBKyxj1vP7XDr9ksAGUkAI_3Ptubt2GwYOEqs3k_dFd4Z7XjmwYdM4IxVw2Ewy5G-81wP5L9vLIW5mbK_3P6xu0HIJevERWerJtclczjQyuc0r"
+            src="/images/bento.png"
             alt="Atelier store"
             class="bento__main-img"
           />

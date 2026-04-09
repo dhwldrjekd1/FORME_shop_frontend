@@ -75,6 +75,36 @@
         </div>
       </section>
 
+      <!-- 찜 목록 -->
+      <section v-if="activeTab === 'wishlist'" class="mypage-section">
+        <div v-if="wishlistStore.items.length === 0" class="mypage-empty">
+          <span class="material-symbols-outlined">favorite</span>
+          <p>찜한 상품이 없습니다.</p>
+        </div>
+        <div v-else class="mypage-wish-grid">
+          <RouterLink
+            v-for="item in wishlistStore.items"
+            :key="item.id"
+            :to="`/products/${item.id}`"
+            class="mypage-wish-card"
+          >
+            <div class="mypage-wish-card__img-wrap">
+              <img :src="item.image" :alt="item.name" class="mypage-wish-card__img" />
+              <button
+                class="mypage-wish-card__remove"
+                @click.prevent="wishlistStore.remove(item.id)"
+                aria-label="찜 해제"
+              >
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <p class="mypage-wish-card__category">{{ item.category }}</p>
+            <p class="mypage-wish-card__name">{{ item.name }}</p>
+            <p class="mypage-wish-card__price">₩{{ item.price.toLocaleString() }}</p>
+          </RouterLink>
+        </div>
+      </section>
+
       <!-- 회원 정보 -->
       <section v-if="activeTab === 'profile'" class="mypage-section">
         <div class="mypage-profile">
@@ -139,18 +169,22 @@
 
 <script setup>
 import { ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/authStore";
+import { useWishlistStore } from "@/stores/wishlistStore";
 
 const router = useRouter();
+const route = useRoute();
 const authStore = useAuthStore();
+const wishlistStore = useWishlistStore();
 
 // ── 탭 ──
 const tabs = [
   { key: "orders", label: "주문 내역" },
+  { key: "wishlist", label: "찜 목록" },
   { key: "profile", label: "회원 정보" },
 ];
-const activeTab = ref("orders");
+const activeTab = ref(route.query.tab ?? "orders");
 
 // ── 회원 정보 ──
 const isEditing = ref(false);
@@ -515,5 +549,81 @@ function logout() {
 }
 .mypage-btn:hover {
   opacity: 0.8;
+}
+
+/* 찜 목록 */
+.mypage-wish-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 2rem;
+}
+
+.mypage-wish-card {
+  display: block;
+  cursor: pointer;
+}
+
+.mypage-wish-card__img-wrap {
+  position: relative;
+  aspect-ratio: 3/4;
+  overflow: hidden;
+  background-color: var(--color-surface-container-low);
+  margin-bottom: 0.75rem;
+}
+
+.mypage-wish-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.mypage-wish-card:hover .mypage-wish-card__img {
+  transform: scale(1.03);
+}
+
+.mypage-wish-card__remove {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(255,255,255,0.9);
+  border: none;
+  border-radius: 50%;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+  color: #555;
+}
+
+.mypage-wish-card:hover .mypage-wish-card__remove {
+  opacity: 1;
+}
+
+.mypage-wish-card__remove .material-symbols-outlined {
+  font-size: 0.875rem;
+}
+
+.mypage-wish-card__category {
+  font-size: 0.5625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--color-outline);
+  margin-bottom: 0.25rem;
+}
+
+.mypage-wish-card__name {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.mypage-wish-card__price {
+  font-size: 0.8125rem;
+  color: var(--color-on-surface-variant);
 }
 </style>

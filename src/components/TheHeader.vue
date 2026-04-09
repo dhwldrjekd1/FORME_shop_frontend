@@ -35,9 +35,19 @@
         </nav>
 
         <!-- 검색 -->
-        <button class="header__icon-btn" aria-label="검색">
+        <button class="header__icon-btn" aria-label="검색" @click="openSearch">
           <span class="material-symbols-outlined">search</span>
         </button>
+
+        <!-- 찜 목록 -->
+        <RouterLink
+          to="/mypage?tab=wishlist"
+          class="header__icon-btn header__cart-btn"
+          aria-label="찜 목록"
+        >
+          <span class="material-symbols-outlined">favorite</span>
+          <span v-if="wishlistCount > 0" class="header__cart-badge">{{ wishlistCount }}</span>
+        </RouterLink>
 
         <!-- 마이페이지 -->
         <RouterLink
@@ -73,6 +83,70 @@
       </div>
     </div>
   </header>
+
+  <!-- 검색 오버레이 -->
+  <Teleport to="body">
+    <div v-if="isSearchOpen" class="search-overlay" @click.self="closeSearch">
+      <div class="search-modal">
+
+        <!-- 검색 입력 -->
+        <div class="search-modal__input-wrap">
+          <span class="material-symbols-outlined search-modal__icon">search</span>
+          <input
+            ref="searchInput"
+            v-model="searchQuery"
+            type="text"
+            placeholder="상품명, 브랜드 검색"
+            class="search-modal__input"
+            @keydown.esc="closeSearch"
+          />
+          <button class="search-modal__close" @click="closeSearch">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <!-- 검색 결과 -->
+        <div class="search-modal__results">
+
+          <!-- 결과 없음 -->
+          <div v-if="searchQuery && searchResults.length === 0" class="search-modal__empty">
+            <p>"{{ searchQuery }}" 에 대한 검색 결과가 없습니다.</p>
+          </div>
+
+          <!-- 초기 상태 -->
+          <div v-else-if="!searchQuery" class="search-modal__hint">
+            <p>브랜드명 또는 상품명을 입력해주세요.</p>
+          </div>
+
+          <!-- 결과 목록 -->
+          <div v-else class="search-modal__list">
+            <p class="search-modal__count">검색 결과 {{ searchResults.length }}개</p>
+            <RouterLink
+              v-for="product in searchResults"
+              :key="product.id"
+              :to="`/products/${product.id}`"
+              class="search-result-item"
+              @click="closeSearch"
+            >
+              <div class="search-result-item__img-wrap">
+                <img
+                  :src="product.image"
+                  :alt="product.name"
+                  class="search-result-item__img"
+                />
+              </div>
+              <div class="search-result-item__info">
+                <p class="search-result-item__category">{{ product.category }}</p>
+                <p class="search-result-item__name">{{ product.name }}</p>
+                <p class="search-result-item__price">₩{{ product.price.toLocaleString() }}</p>
+              </div>
+            </RouterLink>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -80,17 +154,22 @@ import levisLogo from "@/assets/levis.svg";
 import diciesLogo from "@/assets/dickies.svg";
 import carharttLogo from "@/assets/carhartt.svg";
 import beanpoleLogo from "@/assets/beanpole.svg";
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, nextTick } from "vue";
 import { useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/authStore";
 import { useCartStore } from "@/stores/cartStore";
+import { useProductStore } from "@/stores/productStore";
+import { useWishlistStore } from "@/stores/wishlistStore";
 
 const route = useRoute();
 const authStore = useAuthStore();
 const cartStore = useCartStore();
+const productStore = useProductStore();
 
+const wishlistStore = useWishlistStore();
 const isLoggedIn = computed(() => authStore.isLoggedIn);
 const cartCount = computed(() => cartStore.totalCount);
+const wishlistCount = computed(() => wishlistStore.count);
 
 // 스크롤 감지: 20px 이상 내려가면 header--scrolled 클래스 추가
 // → 그림자, 테두리 표시
@@ -100,6 +179,43 @@ function handleScroll() {
 }
 onMounted(() => window.addEventListener("scroll", handleScroll));
 onUnmounted(() => window.removeEventListener("scroll", handleScroll)); // 메모리 누수 방지
+
+// ── 검색 ──
+const isSearchOpen = ref(false);
+const searchQuery  = ref("");
+const searchInput  = ref(null);
+
+const searchResults = computed(() => {
+  if (!searchQuery.value.trim()) return [];
+  const q = searchQuery.value.toLowerCase();
+  return productStore.products.filter(p => {
+    const matchName     = p.name.toLowerCase().includes(q);
+    const matchCategory = p.category.toLowerCase().includes(q);
+    const matchKeywords = p.keywords?.some(k => k.toLowerCase().includes(q)) ?? false;
+    return matchName || matchCategory || matchKeywords;
+  }).slice(0, 8);
+});
+
+async function openSearch() {
+  await productStore.fetchProducts();
+  isSearchOpen.value = true;
+  await nextTick();
+  searchInput.value?.focus();
+  document.body.style.overflow = "hidden";
+}
+
+function closeSearch() {
+  isSearchOpen.value = false;
+  searchQuery.value  = "";
+  document.body.style.overflow = "";
+}
+
+function handleKeydown(e) {
+  if (e.key === "Escape") closeSearch();
+}
+
+onMounted(() => window.addEventListener("keydown", handleKeydown));
+onUnmounted(() => window.removeEventListener("keydown", handleKeydown));
 
 // 브랜드 메뉴 목록
 const brands = [
@@ -278,5 +394,141 @@ const brands = [
   .header__nav {
     display: none;
   }
+}
+
+/* ── 검색 오버레이 ── */
+.search-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 200;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 8rem;
+  backdrop-filter: blur(4px);
+}
+
+.search-modal {
+  width: 100%;
+  max-width: 680px;
+  background-color: #fff;
+  margin: 0 1.5rem;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.search-modal__input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+}
+
+.search-modal__icon {
+  color: var(--color-outline);
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.search-modal__input {
+  flex: 1;
+  font-size: 1rem;
+  font-family: var(--font-body);
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--color-on-surface);
+}
+
+.search-modal__input::placeholder {
+  color: var(--color-outline);
+}
+
+.search-modal__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-outline);
+  display: flex;
+  align-items: center;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+.search-modal__close:hover { color: var(--color-primary); }
+
+.search-modal__results {
+  overflow-y: auto;
+  max-height: calc(80vh - 72px);
+}
+
+.search-modal__empty,
+.search-modal__hint {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--color-outline);
+}
+
+.search-modal__count {
+  padding: 1rem 1.5rem 0.5rem;
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--color-outline);
+}
+
+.search-modal__list {
+  padding-bottom: 1rem;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1.5rem;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+
+.search-result-item:hover {
+  background-color: var(--color-surface-container-low);
+}
+
+.search-result-item__img-wrap {
+  width: 56px;
+  height: 64px;
+  background-color: var(--color-surface-container-low);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.search-result-item__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(0.05);
+}
+
+.search-result-item__category {
+  font-size: 0.5625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--color-outline);
+  margin-bottom: 0.25rem;
+}
+
+.search-result-item__name {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.search-result-item__price {
+  font-size: 0.8125rem;
+  color: var(--color-on-surface-variant);
+  margin-top: 0.25rem;
 }
 </style>

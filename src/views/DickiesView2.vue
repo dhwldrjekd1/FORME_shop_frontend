@@ -43,6 +43,14 @@
               :alt="product.name"
               class="dk-card__img"
             />
+            <button
+              class="dk-card__wish"
+              :class="{ 'dk-card__wish--active': wishlistStore.isWished(product.id) }"
+              @click.prevent="wishlistStore.toggle(product)"
+              aria-label="찜하기"
+            >
+              <span class="material-symbols-outlined">favorite</span>
+            </button>
           </div>
           <div class="dk-card__info">
             <div>
@@ -66,10 +74,12 @@
 <script setup>
 import { onMounted, computed } from "vue";
 import { useProductStore } from "@/stores/productStore";
+import { useWishlistStore } from "@/stores/wishlistStore";
 import { storeToRefs } from "pinia";
 
 const productStore = useProductStore();
 const { products } = storeToRefs(productStore);
+const wishlistStore = useWishlistStore();
 
 // 디키즈 상품만 필터 (id 300번대)
 const dickiesProducts = computed(() =>
@@ -178,7 +188,7 @@ onMounted(() => {
 .dk-products__title {
   font-family: var(--font-headline);
   font-size: 2.5rem;
-  font-weight: 900;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: -0.02em;
   margin-bottom: 0.75rem;
@@ -218,6 +228,38 @@ onMounted(() => {
   overflow: hidden;
   background-color: var(--color-surface-container);
   margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.dk-card__wish {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 0.75rem;
+  background: rgba(255,255,255,0.85);
+  border: none;
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, color 0.2s;
+  color: #aaa;
+}
+
+.dk-card:hover .dk-card__wish {
+  opacity: 1;
+}
+
+.dk-card__wish--active {
+  opacity: 1 !important;
+  color: var(--color-primary);
+}
+
+.dk-card__wish .material-symbols-outlined {
+  font-size: 1rem;
 }
 
 .dk-card__img {

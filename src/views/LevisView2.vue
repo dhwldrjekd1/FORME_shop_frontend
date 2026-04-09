@@ -42,6 +42,14 @@
               :alt="product.name"
               class="lv-card__img"
             />
+            <button
+              class="lv-card__wish"
+              :class="{ 'lv-card__wish--active': wishlistStore.isWished(product.id) }"
+              @click.prevent="wishlistStore.toggle(product)"
+              aria-label="찜하기"
+            >
+              <span class="material-symbols-outlined">favorite</span>
+            </button>
           </div>
           <div class="lv-card__info">
             <div>
@@ -59,10 +67,12 @@
 <script setup>
 import { onMounted, computed } from "vue";
 import { useProductStore } from "@/stores/productStore";
+import { useWishlistStore } from "@/stores/wishlistStore";
 import { storeToRefs } from "pinia";
 
 const productStore = useProductStore();
 const { products } = storeToRefs(productStore);
+const wishlistStore = useWishlistStore();
 
 // 리바이스 상품만 필터 (id 200번대)
 const levisProducts = computed(() =>
@@ -180,8 +190,8 @@ onMounted(() => {
 }
 
 .lv-products__underline {
-  width: 6rem;
-  height: 1px;
+  width: 3rem;
+  height: 4px;
   background-color: var(--color-primary);
 }
 
@@ -213,6 +223,38 @@ onMounted(() => {
   overflow: hidden;
   background-color: var(--color-surface-container-low);
   margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.lv-card__wish {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 0.75rem;
+  background: rgba(255,255,255,0.85);
+  border: none;
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, color 0.2s;
+  color: #aaa;
+}
+
+.lv-card:hover .lv-card__wish {
+  opacity: 1;
+}
+
+.lv-card__wish--active {
+  opacity: 1 !important;
+  color: var(--color-primary);
+}
+
+.lv-card__wish .material-symbols-outlined {
+  font-size: 1rem;
 }
 
 .lv-card__img {
@@ -238,9 +280,9 @@ onMounted(() => {
 
 .lv-card__category {
   font-size: 0.625rem;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--color-secondary);
+  color: var(--color-outline);
   margin-bottom: 0.375rem;
 }
 
