@@ -42,12 +42,9 @@ const Forme27Home = () => import("@/views/forme27/HomeView.vue");
 const Forme28Home = () => import("@/views/forme28/HomeView.vue");
 const Forme29Home = () => import("@/views/forme29/HomeView.vue");
 const Forme30Home = () => import("@/views/forme30/HomeView.vue");
-const Forme31Home = () => import("@/views/forme31/HomeView.vue");
-const Forme32Home = () => import("@/views/forme32/HomeView.vue");
 const DesignPicker = () => import("@/views/forme/DesignPicker.vue");
 const HeaderPicker = () => import("@/views/forme/HeaderPicker.vue");
 const FooterPicker = () => import("@/views/forme/FooterPicker.vue");
-const IconPicker = () => import("@/views/forme/IconPicker.vue");
 const ListView = () => import("@/views/ListView.vue");
 const DetailView = () => import("@/views/DetailView.vue");
 const CartView = () => import("@/views/CartView.vue");
@@ -80,7 +77,6 @@ const routes = [
   { path: "/forme",           name: "DesignPicker", component: DesignPicker },
   { path: "/forme/ui/header",  name: "HeaderPicker", component: HeaderPicker },
   { path: "/forme/ui/footer",  name: "FooterPicker", component: FooterPicker },
-  { path: "/forme/ui/icons",   name: "IconPicker",   component: IconPicker },
   { path: "/forme01", name: "Forme01", component: Forme01Home },
   { path: "/forme02", name: "Forme02", component: Forme02Home },
   { path: "/forme03", name: "Forme03", component: Forme03Home },
@@ -111,8 +107,6 @@ const routes = [
   { path: "/forme28", name: "Forme28", component: Forme28Home },
   { path: "/forme29", name: "Forme29", component: Forme29Home },
   { path: "/forme30", name: "Forme30", component: Forme30Home },
-  { path: "/forme31", name: "Forme31", component: Forme31Home },
-  { path: "/forme32", name: "Forme32", component: Forme32Home },
   {
     path: "/products",
     name: "List",

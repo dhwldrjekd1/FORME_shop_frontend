@@ -28,7 +28,7 @@ const isAuthPage = computed(() => {
   if (["/login", "/signup"].includes(p)) return true;
   // /forme 로 시작하는 모든 디자인 톤/선택기 페이지는 전역 헤더 숨김
   // 매칭: /forme, /forme/, /forme01 ~ /forme25, /forme/ui/header 등
-  if (/^\/forme(\/|$|0[1-9]|[12][0-9]|3[0-2])/.test(p)) return true;
+  if (/^\/forme(\/|$|0[1-9]|[12][0-9]|30)/.test(p)) return true;
   return false;
 });
 </script>
