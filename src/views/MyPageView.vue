@@ -6,6 +6,11 @@
         <div>
           <span class="mypage-header__label">My Account</span>
           <h1 class="mypage-header__title">마이페이지</h1>
+          <div class="mypage-header__grade" :class="`mypage-header__grade--${gradeKey}`">
+            <span class="material-symbols-outlined">workspace_premium</span>
+            <span class="mypage-header__grade-name">{{ gradeLabel }} Member</span>
+            <span class="mypage-header__grade-sub">{{ authStore.userName || profile.name }}님</span>
+          </div>
         </div>
         <button class="mypage-logout" @click="logout">로그아웃</button>
       </header>
@@ -138,6 +143,16 @@
             />
           </div>
 
+          <div class="mypage-profile__group">
+            <label class="mypage-profile__label">회원 등급</label>
+            <div class="mypage-profile__grade-row">
+              <span class="mypage-profile__grade-badge" :class="`mypage-profile__grade-badge--${gradeKey}`">
+                {{ gradeLabel }}
+              </span>
+              <span class="mypage-profile__grade-desc">{{ gradeDesc }}</span>
+            </div>
+          </div>
+
           <div class="mypage-profile__actions">
             <button
               v-if="!isEditing"
@@ -168,7 +183,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/authStore";
 import { useWishlistStore } from "@/stores/wishlistStore";
@@ -177,6 +192,28 @@ const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 const wishlistStore = useWishlistStore();
+
+// ── 회원 등급 ──
+// 백엔드 member.grade 값 (BRONZE / SILVER / GOLD / VIP) 을 표시
+const GRADE_INFO = {
+  BRONZE: { label: "Bronze", desc: "기본 회원 · 누적 구매 0~50만원" },
+  SILVER: { label: "Silver", desc: "실버 회원 · 누적 구매 50~150만원, 5% 적립" },
+  GOLD:   { label: "Gold",   desc: "골드 회원 · 누적 구매 150만원 이상, 8% 적립" },
+  VIP:    { label: "VIP",    desc: "VIP 회원 · 무료배송 + 12% 적립 + 단독 혜택" },
+};
+
+const gradeKey = computed(() => {
+  const g = (authStore.user?.grade || "BRONZE").toUpperCase();
+  return GRADE_INFO[g] ? g.toLowerCase() : "bronze";
+});
+const gradeLabel = computed(() => {
+  const g = (authStore.user?.grade || "BRONZE").toUpperCase();
+  return GRADE_INFO[g]?.label ?? "Bronze";
+});
+const gradeDesc = computed(() => {
+  const g = (authStore.user?.grade || "BRONZE").toUpperCase();
+  return GRADE_INFO[g]?.desc ?? GRADE_INFO.BRONZE.desc;
+});
 
 // ── 탭 ──
 const tabs = [
@@ -189,9 +226,9 @@ const activeTab = ref(route.query.tab ?? "orders");
 // ── 회원 정보 ──
 const isEditing = ref(false);
 const profile = ref({
-  name: "김보경",
-  email: "bokyung@example.com",
-  phone: "010-1234-5678",
+  name: authStore.user?.name ?? "",
+  email: authStore.user?.email ?? "",
+  phone: "",
 });
 
 function saveProfile() {
@@ -259,173 +296,242 @@ function logout() {
 
 <style scoped>
 .mypage {
-  padding: 3rem 0 6rem;
+  padding: 5rem 0 8rem;
+  background-color: var(--color-surface);
 }
 
 .mypage-inner {
-  max-width: 860px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 0 2rem;
 }
 
-/* 헤더 */
+/* ── 헤더 ── */
 .mypage-header {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  margin-bottom: 3rem;
+  padding-bottom: 3rem;
+  margin-bottom: 4rem;
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
 }
 
 .mypage-header__label {
   display: block;
-  font-size: 0.625rem;
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.25em;
+  letter-spacing: 0.3em;
   color: var(--color-outline);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.875rem;
 }
 
 .mypage-header__title {
   font-family: var(--font-headline);
-  font-size: clamp(2rem, 5vw, 3rem);
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-size: clamp(2.25rem, 5vw, 3.25rem);
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  color: var(--color-on-surface);
 }
 
-.mypage-logout {
-  font-size: 0.75rem;
+/* ── 헤더 등급 뱃지 ── */
+.mypage-header__grade {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-top: 1.25rem;
+  padding: 0.625rem 1rem 0.625rem 0.875rem;
+  border: 0.5px solid var(--color-outline-variant);
+  background-color: var(--color-surface-container-lowest);
+}
+
+.mypage-header__grade .material-symbols-outlined {
+  font-size: 1.125rem;
+  font-variation-settings: "FILL" 1, "wght" 300;
+}
+
+.mypage-header__grade-name {
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+}
+
+.mypage-header__grade-sub {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--color-on-surface-variant);
+  margin-left: 0.5rem;
+  padding-left: 0.75rem;
+  border-left: 0.5px solid var(--color-outline-variant);
+}
+
+.mypage-header__grade--bronze .material-symbols-outlined { color: #B5651D; }
+.mypage-header__grade--bronze .mypage-header__grade-name { color: #B5651D; }
+.mypage-header__grade--silver .material-symbols-outlined { color: #8A8A8A; }
+.mypage-header__grade--silver .mypage-header__grade-name { color: #5C5C5C; }
+.mypage-header__grade--gold   .material-symbols-outlined { color: #C9A86B; }
+.mypage-header__grade--gold   .mypage-header__grade-name { color: #8B7437; }
+.mypage-header__grade--vip    .material-symbols-outlined { color: #1A1A1A; }
+.mypage-header__grade--vip    .mypage-header__grade-name { color: #1A1A1A; }
+
+.mypage-logout {
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
   color: var(--color-outline);
   background: none;
   border: none;
+  border-bottom: 0.5px solid transparent;
+  padding-bottom: 4px;
   cursor: pointer;
-  transition: color 0.2s;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
 }
 
 .mypage-logout:hover {
   color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
 }
 
-/* 탭 */
+/* ── 탭 ── */
 .mypage-tabs {
   display: flex;
   gap: 0;
   border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
-  margin-bottom: 2.5rem;
+  margin-bottom: 3rem;
 }
 
 .mypage-tab {
-  padding: 0.875rem 1.5rem;
-  font-size: 0.75rem;
+  padding: 1rem 1.75rem;
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.2em;
   color: var(--color-outline);
-  border-bottom: 2px solid transparent;
+  border-bottom: 1px solid transparent;
   cursor: pointer;
   background: none;
   border-top: none;
   border-left: none;
   border-right: none;
+  margin-bottom: -1px;
   transition:
     color 0.2s,
     border-color 0.2s;
 }
 
 .mypage-tab:hover {
-  color: var(--color-primary);
+  color: var(--color-on-surface);
 }
 
 .mypage-tab--active {
   color: var(--color-primary);
   border-bottom-color: var(--color-primary);
-  font-weight: 700;
+  font-weight: 600;
 }
 
-/* 빈 상태 */
+/* ── 빈 상태 ── */
 .mypage-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  padding: 5rem 0;
+  gap: 1.25rem;
+  padding: 6rem 0;
   color: var(--color-outline);
 }
 
 .mypage-empty .material-symbols-outlined {
   font-size: 3rem;
+  font-variation-settings: "wght" 200;
 }
 .mypage-empty p {
-  font-size: 0.875rem;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  letter-spacing: 0.05em;
 }
 
-/* 주문 목록 */
+/* ── 주문 목록 ── */
 .mypage-orders {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 2rem;
 }
 
 .mypage-order {
-  border: 0.5px solid rgba(0, 0, 0, 0.1);
-  background-color: var(--color-surface);
+  border-top: 0.5px solid rgba(0, 0, 0, 0.12);
+  background-color: transparent;
+  padding-top: 1.5rem;
 }
 
 .mypage-order__header {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.5rem;
-  border-bottom: 0.5px solid rgba(0, 0, 0, 0.06);
-  background-color: var(--color-surface-container-low);
+  gap: 1.25rem;
+  padding: 0 0 1.25rem;
 }
 
 .mypage-order__date {
-  font-size: 0.75rem;
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
   color: var(--color-outline);
 }
 
 .mypage-order__id {
-  font-size: 0.75rem;
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
   font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-on-surface);
 }
 
 .mypage-order__status {
   margin-left: auto;
-  font-size: 0.625rem;
-  font-weight: 700;
+  font-family: var(--font-body);
+  font-size: 0.5625rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  padding: 0.25rem 0.75rem;
+  letter-spacing: 0.2em;
+  padding: 0.375rem 0.875rem;
 }
 
 .status--shipping {
-  background-color: #000;
+  background-color: var(--color-primary);
   color: #fff;
 }
 .status--complete {
-  border: 1px solid #ccc;
-  color: #777;
+  border: 0.5px solid var(--color-outline-variant);
+  color: var(--color-on-surface-variant);
 }
 .status--paid {
-  border: 1px solid #000;
-  color: #000;
+  border: 0.5px solid var(--color-primary);
+  color: var(--color-primary);
 }
 .status--canceled {
-  border: 1px solid #ccc;
-  color: #ccc;
+  border: 0.5px solid var(--color-outline-variant);
+  color: var(--color-outline);
 }
 
 .mypage-order__item {
   display: flex;
-  gap: 1rem;
-  padding: 1.25rem 1.5rem;
-  border-bottom: 0.5px solid rgba(0, 0, 0, 0.06);
+  gap: 1.25rem;
+  padding: 1.25rem 0;
+  border-top: 0.5px solid rgba(0, 0, 0, 0.06);
 }
 
 .mypage-order__img-wrap {
-  width: 64px;
-  height: 72px;
+  width: 80px;
+  height: 100px;
   background-color: var(--color-surface-container-low);
   flex-shrink: 0;
   overflow: hidden;
@@ -435,106 +541,161 @@ function logout() {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: grayscale(0.05);
 }
 
 .mypage-order__name {
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-family: var(--font-headline);
+  font-size: 0.9375rem;
+  font-weight: 400;
+  letter-spacing: -0.005em;
+  color: var(--color-on-surface);
 }
 .mypage-order__meta {
-  font-size: 0.75rem;
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
   color: var(--color-on-surface-variant);
-  margin-top: 0.25rem;
+  margin-top: 0.5rem;
 }
 .mypage-order__price {
+  font-family: var(--font-body);
   font-size: 0.875rem;
   font-weight: 600;
-  margin-top: 0.5rem;
+  margin-top: 0.625rem;
+  color: var(--color-on-surface);
 }
 
 .mypage-order__footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.5rem;
+  padding: 1.25rem 0 0;
+  border-top: 0.5px solid rgba(0, 0, 0, 0.06);
 }
 
 .mypage-order__total {
-  font-size: 0.875rem;
-  font-weight: 700;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--color-on-surface);
 }
 
 .mypage-order__btn {
-  font-size: 0.6875rem;
+  font-family: var(--font-body);
+  font-size: 0.625rem;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.2em;
   color: var(--color-on-surface-variant);
   background: none;
   border: none;
+  border-bottom: 0.5px solid var(--color-outline-variant);
+  padding-bottom: 4px;
   cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  transition: color 0.2s;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
 }
 
 .mypage-order__btn:hover {
   color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
 }
 
-/* 회원 정보 */
+/* ── 회원 정보 ── */
 .mypage-profile {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  max-width: 480px;
+  gap: 2rem;
+  max-width: 520px;
 }
 
 .mypage-profile__group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.625rem;
 }
 
 .mypage-profile__label {
+  font-family: var(--font-body);
   font-size: 0.625rem;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.25em;
   color: var(--color-outline);
 }
 
 .mypage-profile__input {
-  border: 0.5px solid rgba(0, 0, 0, 0.15);
-  padding: 0.875rem 1rem;
-  font-size: 0.875rem;
+  border: none;
+  border-bottom: 0.5px solid var(--color-outline-variant);
+  padding: 0.875rem 0;
+  font-size: 0.9375rem;
   font-family: var(--font-body);
+  color: var(--color-on-surface);
+  background-color: transparent;
   outline: none;
   transition: border-color 0.2s;
-  background-color: #fff;
 }
 
 .mypage-profile__input:focus {
-  border-color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
 }
 .mypage-profile__input:disabled {
-  background-color: var(--color-surface-container-low);
-  color: var(--color-outline);
+  color: var(--color-on-surface-variant);
+  cursor: not-allowed;
 }
+
+/* ── 등급 표시 행 ── */
+.mypage-profile__grade-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 0;
+}
+
+.mypage-profile__grade-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 1rem;
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  border: 1px solid;
+}
+
+.mypage-profile__grade-desc {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--color-on-surface-variant);
+  letter-spacing: 0.02em;
+}
+
+.mypage-profile__grade-badge--bronze { color: #B5651D; border-color: #B5651D; background-color: rgba(181, 101, 29, 0.06); }
+.mypage-profile__grade-badge--silver { color: #5C5C5C; border-color: #8A8A8A; background-color: rgba(138, 138, 138, 0.08); }
+.mypage-profile__grade-badge--gold   { color: #8B7437; border-color: #C9A86B; background-color: rgba(201, 168, 107, 0.1); }
+.mypage-profile__grade-badge--vip    { color: #ffffff; border-color: #1A1A1A; background-color: #1A1A1A; }
 
 .mypage-profile__actions {
   display: flex;
   gap: 0.75rem;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
 }
 
 .mypage-btn {
-  padding: 0.875rem 2rem;
-  font-size: 0.75rem;
-  font-weight: 700;
+  padding: 1rem 2.5rem;
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.2em;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition:
+    opacity 0.2s,
+    background-color 0.2s,
+    color 0.2s;
   border: none;
 }
 
@@ -543,19 +704,23 @@ function logout() {
   color: var(--color-on-primary);
 }
 .mypage-btn--outline {
-  border: 1px solid var(--color-outline-variant);
-  color: var(--color-on-surface);
-  background: #fff;
+  border: 0.5px solid var(--color-primary);
+  color: var(--color-primary);
+  background: transparent;
 }
-.mypage-btn:hover {
-  opacity: 0.8;
+.mypage-btn--primary:hover {
+  opacity: 0.85;
+}
+.mypage-btn--outline:hover {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
 }
 
-/* 찜 목록 */
+/* ── 찜 목록 ── */
 .mypage-wish-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 2.5rem 2rem;
 }
 
 .mypage-wish-card {
@@ -568,62 +733,76 @@ function logout() {
   aspect-ratio: 3/4;
   overflow: hidden;
   background-color: var(--color-surface-container-low);
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .mypage-wish-card__img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s;
+  filter: grayscale(1);
+  transition:
+    transform 0.6s,
+    filter 0.4s;
 }
 
 .mypage-wish-card:hover .mypage-wish-card__img {
   transform: scale(1.03);
+  filter: grayscale(0);
 }
 
 .mypage-wish-card__remove {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: rgba(255,255,255,0.9);
+  top: 0.75rem;
+  right: 0.75rem;
+  background: rgba(255, 255, 255, 0.95);
   border: none;
   border-radius: 50%;
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 2rem;
+  height: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.2s;
-  color: #555;
+  transition: opacity 0.2s, color 0.2s;
+  color: var(--color-on-surface-variant);
 }
 
 .mypage-wish-card:hover .mypage-wish-card__remove {
   opacity: 1;
 }
+.mypage-wish-card__remove:hover {
+  color: var(--color-primary);
+}
 
 .mypage-wish-card__remove .material-symbols-outlined {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
 }
 
 .mypage-wish-card__category {
+  font-family: var(--font-body);
   font-size: 0.5625rem;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.25em;
   color: var(--color-outline);
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
 .mypage-wish-card__name {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  margin-bottom: 0.25rem;
+  font-family: var(--font-headline);
+  font-size: 0.875rem;
+  font-weight: 400;
+  letter-spacing: -0.005em;
+  color: var(--color-on-surface);
+  margin-bottom: 0.375rem;
 }
 
 .mypage-wish-card__price {
+  font-family: var(--font-body);
   font-size: 0.8125rem;
+  font-weight: 500;
   color: var(--color-on-surface-variant);
 }
 </style>

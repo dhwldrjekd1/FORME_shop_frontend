@@ -118,20 +118,17 @@ async function handleSignup() {
   isLoading.value = true;
 
   try {
-    // TODO: Spring Boot 연결 시 아래 주석 해제, 임시 코드 제거
-    // const response = await api.post('/auth/signup', form.value)
-    // authStore.login(response.data)
-
-    // 임시: 회원가입 후 바로 로그인 처리
-    authStore.login({
-      id: Date.now(), // 임시 ID
-      name: form.value.name,
+    // Spring Boot POST /api/register → 가입 후 store 내부에서 자동 로그인
+    await authStore.register({
       email: form.value.email,
+      password: form.value.password,
+      name: form.value.name,
     });
 
     router.push("/"); // 가입 완료 후 홈으로 이동
   } catch (err) {
-    errorMsg.value = "회원가입에 실패했습니다. 다시 시도해주세요.";
+    errorMsg.value =
+      err?.data?.message || err?.message || "회원가입에 실패했습니다. 다시 시도해주세요.";
   } finally {
     isLoading.value = false;
   }

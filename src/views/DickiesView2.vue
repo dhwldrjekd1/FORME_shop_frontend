@@ -10,7 +10,12 @@
           견고함으로 정의된 디키즈 아카이브가 현대적인 워크웨어로 다시
           태어납니다.
         </p>
-        <button class="dk-hero__btn">Discover the Collection</button>
+        <a
+          href="https://dickieskr.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="dk-hero__btn"
+        >Discover the Collection</a>
       </div>
       <div class="dk-hero__img-wrap">
         <img
@@ -92,118 +97,176 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* ── 히어로 ── */
+/* ════════════════════════════════
+   DICKIES — Industrial Black + Yellow
+   Brand color: #1A1A1A (pure black)
+   Accent:      #FFC72C (work yellow)
+   ════════════════════════════════ */
 .dk-hero {
   display: grid;
   grid-template-columns: 1fr;
   height: 800px;
-  background-color: #b87e0d; /* 디키즈 옐로우 */
+  background-color: #1A1A1A;
   overflow: hidden;
+  position: relative;
 }
 
 @media (min-width: 768px) {
   .dk-hero {
-    grid-template-columns: 5fr 7fr;
+    grid-template-columns: 4fr 6fr;
   }
 }
 
 .dk-hero__text {
-  padding: 5rem 3rem;
+  padding: 6rem 3.5rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 2rem;
-  color: #000000; /* 노란 배경에 검정 텍스트 */
+  gap: 2.25rem;
+  color: #ffffff;
 }
 
 .dk-hero__since {
-  font-size: 0.6875rem;
-  letter-spacing: 0.3em;
+  display: inline-flex;
+  align-items: center;
+  background-color: #FFC72C;
+  color: #1A1A1A;
+  padding: 0.5rem 0.875rem;
+  font-family: var(--font-body);
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(0, 0, 0, 0.6);
+  margin-bottom: -0.5rem;
+  width: fit-content;
 }
 
 .dk-hero__title {
   font-family: var(--font-headline);
-  font-size: clamp(3.5rem, 8vw, 6rem);
-  font-weight: 900;
-  letter-spacing: -0.03em;
+  font-size: clamp(4rem, 9vw, 7rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
   text-transform: uppercase;
-  line-height: 1;
-  color: #000000;
+  line-height: 0.92;
+  color: #FFC72C;
+  -webkit-text-stroke: 1px #FFC72C;
 }
 
 .dk-hero__desc {
-  font-size: 1.0625rem;
-  color: rgba(0, 0, 0, 0.7);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.75);
   max-width: 28rem;
-  line-height: 1.7;
+  line-height: 1.8;
+  letter-spacing: 0.005em;
 }
 
 .dk-hero__btn {
   display: inline-flex;
   align-items: center;
-  background-color: #000000;
-  color: #8f6208;
-  padding: 1.25rem 3rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.15em;
+  gap: 0.875rem;
+  background-color: #FFC72C;
+  color: #1A1A1A;
+  border: 2px solid #FFC72C;
+  padding: 1.125rem 2.75rem;
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.25em;
   text-transform: uppercase;
   width: fit-content;
-  transition: filter 0.2s;
+  margin-top: 0.5rem;
+  cursor: pointer;
+  transition:
+    background-color 0.3s,
+    color 0.3s,
+    transform 0.2s;
 }
 
 .dk-hero__btn:hover {
-  filter: brightness(1.1);
+  background-color: #1A1A1A;
+  color: #FFC72C;
+  transform: translateY(-2px);
 }
 
 .dk-hero__img-wrap {
   height: 100%;
+  min-height: 420px;
   overflow: hidden;
+  position: relative;
+}
+
+.dk-hero__img-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    rgba(26, 26, 26, 0.4) 0%,
+    transparent 30%
+  );
+  pointer-events: none;
 }
 
 .dk-hero__img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: grayscale(1) contrast(1.25) brightness(0.75);
-  transition: transform 0.7s;
+  object-position: center top;
+  filter: grayscale(1) contrast(1.15) brightness(0.85);
+  transition: transform 0.8s, filter 0.6s;
 }
 
 .dk-hero__img-wrap:hover .dk-hero__img {
-  transform: scale(1.05);
+  transform: scale(1.04);
+  filter: grayscale(0.7) contrast(1.1) brightness(0.95);
 }
 
 /* ── 상품 그리드 ── */
 .dk-products {
-  padding: 6rem 3rem;
-  background-color: var(--color-surface-container-low);
+  padding: 7rem 3rem 8rem;
+  background-color: var(--color-surface);
 }
 
 .dk-products__header {
-  margin-bottom: 4rem;
+  margin-bottom: 4.5rem;
+  max-width: 1600px;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
 }
 
 .dk-products__title {
   font-family: var(--font-headline);
-  font-size: 2.5rem;
-  font-weight: 700;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 400;
   text-transform: uppercase;
-  letter-spacing: -0.02em;
-  margin-bottom: 0.75rem;
+  letter-spacing: -0.015em;
+  margin-bottom: 1rem;
+  color: var(--color-on-surface);
 }
 
 .dk-products__underline {
-  width: 3rem;
-  height: 4px;
-  background-color: #b87e0d;
+  width: 4rem;
+  height: 6px;
+  background: repeating-linear-gradient(
+    135deg,
+    #FFC72C 0px,
+    #FFC72C 6px,
+    #1A1A1A 6px,
+    #1A1A1A 12px
+  );
 }
 
 .dk-products__grid {
   display: grid;
   grid-template-columns: repeat(1, 1fr);
-  gap: 3rem;
+  gap: 3.5rem 2.5rem;
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
 @media (min-width: 640px) {
@@ -227,39 +290,45 @@ onMounted(() => {
   aspect-ratio: 3/4;
   overflow: hidden;
   background-color: var(--color-surface-container);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   position: relative;
 }
 
 .dk-card__wish {
   position: absolute;
-  bottom: 0.75rem;
-  right: 0.75rem;
-  background: rgba(255,255,255,0.85);
+  bottom: 1rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.92);
   border: none;
   border-radius: 50%;
-  width: 2rem;
-  height: 2rem;
+  width: 2.25rem;
+  height: 2.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.2s, color 0.2s;
-  color: #aaa;
+  transition: opacity 0.3s, color 0.2s, transform 0.2s;
+  color: var(--color-on-surface-variant);
 }
 
 .dk-card:hover .dk-card__wish {
   opacity: 1;
 }
 
+.dk-card__wish:hover {
+  color: #1A1A1A;
+  transform: scale(1.08);
+}
+
 .dk-card__wish--active {
   opacity: 1 !important;
-  color: var(--color-primary);
+  color: #1A1A1A;
 }
 
 .dk-card__wish .material-symbols-outlined {
-  font-size: 1rem;
+  font-size: 1.0625rem;
+  font-variation-settings: "wght" 400;
 }
 
 .dk-card__img {
@@ -268,12 +337,12 @@ onMounted(() => {
   object-fit: cover;
   filter: grayscale(1);
   transition:
-    transform 0.7s,
+    transform 0.8s,
     filter 0.5s;
 }
 
 .dk-card:hover .dk-card__img {
-  transform: scale(1.05);
+  transform: scale(1.04);
   filter: grayscale(0);
 }
 
@@ -281,25 +350,33 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 1rem;
 }
 
 .dk-card__category {
-  font-size: 0.625rem;
-  letter-spacing: 0.2em;
+  font-family: var(--font-body);
+  font-size: 0.5625rem;
+  font-weight: 500;
+  letter-spacing: 0.25em;
   text-transform: uppercase;
   color: var(--color-outline);
-  margin-bottom: 0.375rem;
+  margin-bottom: 0.5rem;
 }
 
 .dk-card__name {
   font-family: var(--font-headline);
-  font-size: 1.0625rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: -0.005em;
+  color: var(--color-on-surface);
+  line-height: 1.35;
 }
 
 .dk-card__price {
-  font-size: 1.0625rem;
-  font-weight: 700;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-on-surface);
+  white-space: nowrap;
 }
 </style>

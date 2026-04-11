@@ -39,7 +39,7 @@
                 </div>
                 <!-- 가격 × 수량 -->
                 <p class="cart-item__price">
-                  ${{ (item.price * item.quantity).toLocaleString() }}
+                  ₩{{ (item.price * item.quantity).toLocaleString() }}
                 </p>
               </div>
 
@@ -61,7 +61,7 @@
           <div class="cart-summary__rows">
             <div class="cart-summary__row">
               <span class="cart-summary__label">Subtotal</span>
-              <span>${{ totalPrice.toLocaleString() }}</span>
+              <span>₩{{ totalPrice.toLocaleString() }}</span>
             </div>
             <div class="cart-summary__row">
               <span class="cart-summary__label">Shipping</span>
@@ -70,12 +70,12 @@
             <div class="cart-summary__row">
               <span class="cart-summary__label">Estimated Tax</span>
               <!-- 세금 8% -->
-              <span>${{ estimatedTax.toLocaleString() }}</span>
+              <span>₩{{ estimatedTax.toLocaleString() }}</span>
             </div>
             <div class="cart-summary__row cart-summary__row--total">
               <span class="cart-summary__total-label">Total</span>
               <span class="cart-summary__total-amount">
-                ${{ grandTotal.toLocaleString() }}
+                ₩{{ grandTotal.toLocaleString() }}
               </span>
             </div>
           </div>

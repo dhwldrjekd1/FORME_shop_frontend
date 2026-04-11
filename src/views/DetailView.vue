@@ -31,30 +31,37 @@
               </button>
             </div>
 
-            <div
-              class="detail-zoom-container"
-              @mousemove="onMouseMove"
-              @mouseenter="isHovering = true"
-              @mouseleave="isHovering = false"
-              ref="zoomBox"
-            >
-              <img :src="currentImage" :alt="product.name" class="detail-main__img" />
+            <div class="detail-zoom-wrap" :style="{ aspectRatio: imageAspect }">
+              <div
+                class="detail-zoom-container"
+                @mousemove="onMouseMove"
+                @mouseenter="isHovering = true"
+                @mouseleave="isHovering = false"
+                ref="zoomBox"
+              >
+                <img
+                  :src="currentImage"
+                  :alt="product.name"
+                  class="detail-main__img"
+                  @load="onImageLoad"
+                />
+                <div
+                  v-show="isHovering"
+                  class="detail-zoom-lens"
+                  :style="{ left: lensStyle.left + 'px', top: lensStyle.top + 'px' }"
+                />
+              </div>
+
               <div
                 v-show="isHovering"
-                class="detail-zoom-lens"
-                :style="{ left: lensStyle.left, top: lensStyle.top }"
+                class="detail-zoom-result"
+                :style="{
+                  backgroundImage: `url(${currentImage})`,
+                  backgroundPosition: zoomBgPos,
+                  backgroundSize: zoomBgSize,
+                }"
               />
             </div>
-
-            <div
-              v-show="isHovering"
-              class="detail-zoom-result"
-              :style="{
-                backgroundImage: `url(${currentImage})`,
-                backgroundPosition: zoomBgPos,
-                backgroundSize: zoomBgSize,
-              }"
-            />
 
           </div>
 
@@ -123,18 +130,42 @@
               </div>
             </div>
 
+            <!-- 수량 선택 -->
+            <div class="detail-option">
+              <p class="detail-option__label">Quantity</p>
+              <div class="detail-qty">
+                <button
+                  class="detail-qty__btn"
+                  @click="decreaseQty"
+                  :disabled="quantity <= 1"
+                  aria-label="decrease quantity"
+                >−</button>
+                <span class="detail-qty__value">{{ quantity }}</span>
+                <button
+                  class="detail-qty__btn"
+                  @click="increaseQty"
+                  aria-label="increase quantity"
+                >+</button>
+              </div>
+            </div>
+
             <!-- 찜하기 버튼 -->
             <button class="detail-wish-btn" @click="toggleWish">
               <span
                 class="material-symbols-outlined"
-                :style="isWished ? 'font-variation-settings: \"FILL\" 1' : ''"
+                :style="isWished ? 'font-variation-settings: &quot;FILL&quot; 1' : ''"
               >favorite</span>
               {{ isWished ? '찜 해제' : '찜하기' }}
             </button>
 
             <!-- 장바구니 버튼 -->
             <button class="detail-add-btn" @click="addToCart">
-              Add to Collection — ₩{{ product?.price?.toLocaleString() }}
+              Add to Collection — ₩{{ ((product?.price ?? 0) * quantity).toLocaleString() }}
+            </button>
+
+            <!-- 바로 구매하기 버튼 -->
+            <button class="detail-buy-btn" @click="buyNow">
+              구매하기
             </button>
 
           </div>
@@ -163,7 +194,7 @@
               <p class="detail-rec-card__category">{{ rec.category }}</p>
               <h3 class="detail-rec-card__name">{{ rec.name }}</h3>
               <p class="detail-rec-card__price">
-                ${{ rec.price.toLocaleString() }}
+                ₩{{ rec.price.toLocaleString() }}
               </p>
             </div>
           </RouterLink>
@@ -258,7 +289,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive } from "vue";
+import { ref, computed, onMounted, reactive, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useProductStore } from "@/stores/productStore";
 import { useCartStore } from "@/stores/cartStore";
@@ -291,12 +322,23 @@ const {
 const zoomBox = ref(null);
 const isHovering = ref(false);
 
-const LENS_SIZE = 120;
-const ZOOM = 3;
+// 이미지 자연 비율 (W/H) — 이미지 로드 시점에 갱신
+// 컨테이너 aspect-ratio 를 이 값으로 동적으로 맞춰서 letter-box 제거
+const imageAspect = ref("3 / 4"); // 초기 기본값 (404 기준)
 
-const lensStyle = reactive({ left: "0px", top: "0px" });
-const zoomBgPos = ref("0px 0px");
-const zoomBgSize = ref("300% 300%");
+function onImageLoad(e) {
+  const img = e.target;
+  if (img && img.naturalWidth && img.naturalHeight) {
+    imageAspect.value = `${img.naturalWidth} / ${img.naturalHeight}`;
+  }
+}
+
+const LENS_SIZE = 140;
+const ZOOM = 2.5;
+
+const lensStyle = reactive({ left: 0, top: 0 });
+const zoomBgPos = ref("0% 0%");
+const zoomBgSize = ref("250% 250%");
 
 function onMouseMove(e) {
   const box = zoomBox.value;
@@ -304,29 +346,25 @@ function onMouseMove(e) {
 
   const rect = box.getBoundingClientRect();
 
-  let x = e.clientX - rect.left;
-  let y = e.clientY - rect.top;
+  // 마우스 위치 (컨테이너 기준)
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
 
+  // 렌즈 위치: 마우스 중앙
   let lensX = x - LENS_SIZE / 2;
   let lensY = y - LENS_SIZE / 2;
-
   lensX = Math.max(0, Math.min(lensX, rect.width - LENS_SIZE));
   lensY = Math.max(0, Math.min(lensY, rect.height - LENS_SIZE));
+  lensStyle.left = lensX;
+  lensStyle.top = lensY;
 
-  lensStyle.left = lensX + "px";
-  lensStyle.top = lensY + "px";
+  // background-position: 비율(%) 방식 — 단순하고 정확
+  // 렌즈 중심 비율을 그대로 background-position 비율로 사용
+  const cx = (lensX + LENS_SIZE / 2) / rect.width;
+  const cy = (lensY + LENS_SIZE / 2) / rect.height;
 
-  const ratioX = (lensX + LENS_SIZE / 2) / rect.width;
-  const ratioY = (lensY + LENS_SIZE / 2) / rect.height;
-
-  const bgW = rect.width * ZOOM;
-  const bgH = rect.height * ZOOM;
-
-  const bgX = ratioX * bgW - rect.width / 2;
-  const bgY = ratioY * bgH - rect.height / 2;
-
-  zoomBgPos.value = `-${bgX}px -${bgY}px`;
-  zoomBgSize.value = `${bgW}px ${bgH}px`;
+  zoomBgPos.value = `${cx * 100}% ${cy * 100}%`;
+  zoomBgSize.value = `${ZOOM * 100}% ${ZOOM * 100}%`;
 }
 
 // ── 현재 이미지 ──
@@ -399,8 +437,16 @@ const avgRating = computed(() => {
   ).toFixed(1);
 });
 
-// ── 사이즈 선택 ──
+// ── 사이즈 / 수량 선택 ──
 const selectedSize = ref("");
+const quantity = ref(1);
+
+function increaseQty() {
+  quantity.value += 1;
+}
+function decreaseQty() {
+  if (quantity.value > 1) quantity.value -= 1;
+}
 
 // ── 추천 상품 ──
 const recommendedProducts = computed(() => {
@@ -408,16 +454,34 @@ const recommendedProducts = computed(() => {
   return products.value.filter((p) => p.id !== product.value.id).slice(0, 4);
 });
 
-// ── 초기 로드 ──
-onMounted(async () => {
-  await productStore.fetchProducts();
-  const id = props.id ?? route.params.id;
+// ── 초기 로드 + 라우트 변경 감시 ──
+// 같은 DetailView 안에서 다른 상품으로 이동(예: You May Also Like 클릭)할 때
+// onMounted 는 다시 호출되지 않으므로 route.params.id 를 watch 해서 갱신한다.
+async function loadProduct(id) {
+  if (!id) return;
   await productStore.fetchProductById(id);
 
   if (product.value) {
     selectedSize.value = product.value.sizes?.[0] ?? "";
+    quantity.value = 1;
+    activeThumb.value = 0;
+    // 새 상품으로 진입 시 페이지 최상단으로 스크롤
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
+}
+
+onMounted(async () => {
+  await productStore.fetchProducts();
+  await loadProduct(props.id ?? route.params.id);
 });
+
+// route.params.id 가 바뀌면 상품 다시 불러오기
+watch(
+  () => route.params.id,
+  (newId) => {
+    if (newId) loadProduct(newId);
+  },
+);
 
 // ── 장바구니 추가 ──
 function addToCart() {
@@ -432,8 +496,27 @@ function addToCart() {
     price: product.value.price,
     image: currentImage.value,
     size: selectedSize.value,
+    quantity: quantity.value,
   });
   router.push("/cart");
+}
+
+// ── 바로 구매 ──
+function buyNow() {
+  if (!product.value) return;
+  if (!selectedSize.value) {
+    alert("사이즈를 선택해주세요.");
+    return;
+  }
+  cartStore.addItem({
+    productId: product.value.id,
+    name: product.value.name,
+    price: product.value.price,
+    image: currentImage.value,
+    size: selectedSize.value,
+    quantity: quantity.value,
+  });
+  router.push("/payment");
 }
 </script>
 
@@ -481,9 +564,16 @@ function addToCart() {
   flex-direction: row;
   position: relative;
   width: 100%;
-  height: 800px;
   overflow: visible;
   background-color: var(--color-surface-container);
+}
+
+/* 줌 컨테이너 + 결과창을 묶는 wrap (오른쪽 결과창 위치 기준) */
+.detail-zoom-wrap {
+  position: relative;
+  flex: 1;
+  aspect-ratio: 3 / 4;
+  min-height: 0;
 }
 
 /* 설명 영역 */
@@ -718,13 +808,14 @@ function addToCart() {
   height: 100%;
   cursor: crosshair;
   overflow: hidden;
+  background-color: var(--color-surface-container);
 }
 
 .detail-main__img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  filter: grayscale(0.05) brightness(0.95);
+  object-fit: contain; /* 이미지 짤림 방지 */
+  display: block;
 }
 
 /* ── 렌즈 ── */
@@ -743,13 +834,21 @@ function addToCart() {
 .detail-zoom-result {
   position: absolute;
   top: 0;
-  left: 100%; /* img-col 바로 오른쪽 */
-  width: 71.43%; /* img-col(58.33%) 기준으로 info-col(41.67%) 너비 맞춤 */
-  height: 800px;
+  left: calc(100% + 1rem);
+  width: 100%;
+  height: 100%;
   background-repeat: no-repeat;
   background-color: var(--color-surface-container-low);
+  border: 0.5px solid rgba(0, 0, 0, 0.08);
   z-index: 100;
   pointer-events: none;
+}
+
+@media (max-width: 1023px) {
+  /* 좁은 화면에서는 확대 결과창 숨김 */
+  .detail-zoom-result {
+    display: none;
+  }
 }
 
 
@@ -888,6 +987,71 @@ function addToCart() {
 }
 
 .detail-size-btn--active {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+/* ── 수량 선택기 ── */
+.detail-qty {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--color-outline-variant);
+}
+
+.detail-qty__btn {
+  width: 2.75rem;
+  height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  font-size: 1.125rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.detail-qty__btn:hover:not(:disabled) {
+  background: var(--color-surface-container-low);
+}
+
+.detail-qty__btn:disabled {
+  color: var(--color-outline-variant);
+  cursor: not-allowed;
+}
+
+.detail-qty__value {
+  min-width: 3rem;
+  text-align: center;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  border-left: 1px solid var(--color-outline-variant);
+  border-right: 1px solid var(--color-outline-variant);
+  padding: 0 0.5rem;
+  height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── 바로 구매 버튼 ── */
+.detail-buy-btn {
+  width: 100%;
+  background-color: #fff;
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  padding: 1.25rem 2.5rem;
+  font-size: 0.8125rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: -1.5rem;
+  margin-bottom: 2.5rem;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.detail-buy-btn:hover {
   background-color: var(--color-primary);
   color: var(--color-on-primary);
 }

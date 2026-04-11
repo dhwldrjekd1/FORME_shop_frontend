@@ -156,6 +156,7 @@ import carharttLogo from "@/assets/carhartt.svg";
 import beanpoleLogo from "@/assets/beanpole.svg";
 import { ref, computed, onMounted, onUnmounted, nextTick } from "vue";
 import { useRoute } from "vue-router";
+import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/stores/authStore";
 import { useCartStore } from "@/stores/cartStore";
 import { useProductStore } from "@/stores/productStore";
@@ -165,6 +166,8 @@ const route = useRoute();
 const authStore = useAuthStore();
 const cartStore = useCartStore();
 const productStore = useProductStore();
+// reactive 안정화: store.products 를 직접 참조하지 않고 ref 로 꺼내서 사용
+const { products: allProducts } = storeToRefs(productStore);
 
 const wishlistStore = useWishlistStore();
 const isLoggedIn = computed(() => authStore.isLoggedIn);
@@ -185,15 +188,37 @@ const isSearchOpen = ref(false);
 const searchQuery  = ref("");
 const searchInput  = ref(null);
 
+// 상품 ID 범위로 브랜드 자동 매핑 — 한글/영문/별칭 모두 매칭되도록
+// (시드 ID: 100~199 칼하트, 200~299 리바이스, 300~399 디키즈, 400~499 빈폴)
+function getBrandKeywords(id) {
+  if (id >= 100 && id < 200) return ["carhartt", "칼하트"];
+  if (id >= 200 && id < 300) return ["levis", "levi", "levi's", "리바이스", "리바이"];
+  if (id >= 300 && id < 400) return ["dickies", "디키즈", "디키스"];
+  if (id >= 400 && id < 500) return ["beanpole", "빈폴", "빈폴맨"];
+  return [];
+}
+
 const searchResults = computed(() => {
-  if (!searchQuery.value.trim()) return [];
-  const q = searchQuery.value.toLowerCase();
-  return productStore.products.filter(p => {
-    const matchName     = p.name.toLowerCase().includes(q);
-    const matchCategory = p.category.toLowerCase().includes(q);
-    const matchKeywords = p.keywords?.some(k => k.toLowerCase().includes(q)) ?? false;
-    return matchName || matchCategory || matchKeywords;
-  }).slice(0, 8);
+  const q = searchQuery.value.trim().toLowerCase();
+  if (!q) return [];
+
+  return allProducts.value
+    .filter(p => {
+      const name        = (p.name || "").toLowerCase();
+      const category    = (p.category || "").toLowerCase();
+      const keywords    = (p.keywords || []).map(k => k.toLowerCase());
+      const brandKeys   = getBrandKeywords(p.id);
+      const description = (p.description || "").toLowerCase();
+
+      return (
+        name.includes(q) ||
+        category.includes(q) ||
+        description.includes(q) ||
+        keywords.some(k => k.includes(q)) ||
+        brandKeys.some(k => k.includes(q) || q.includes(k))
+      );
+    })
+    .slice(0, 12);
 });
 
 async function openSearch() {
@@ -217,7 +242,7 @@ function handleKeydown(e) {
 onMounted(() => window.addEventListener("keydown", handleKeydown));
 onUnmounted(() => window.removeEventListener("keydown", handleKeydown));
 
-// 브랜드 메뉴 목록
+// 브랜드 메뉴 목록 (Beanpole → Carhartt → Levi's → Dickies 순)
 const brands = [
   { name: "Beanpole", slug: "beanpole", logo: beanpoleLogo, path: "/beanpole" },
   { name: "Carhartt", slug: "carhartt", logo: carharttLogo, path: "/carhartt" },
@@ -335,12 +360,15 @@ const brands = [
   border-radius: 9999px; /* 완전한 원형 */
   padding: 0 3px;
 }
-/* 브랜드 로고 이미지 공통 */
+/* 브랜드 로고 이미지 공통
+   - SVG 원본 색상을 그대로 유지 (각 브랜드의 아이덴티티 컬러)
+   - 서브픽셀 blur 방지를 위해 GPU 레이어로 올리는 트릭만 적용 */
 .header__brand-logo {
   width: auto;
   object-fit: contain;
-  /* opacity: 0.6;
-  transition: opacity 0.2s;*/
+  image-rendering: -webkit-optimize-contrast;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 /* .header__nav-link:hover .header__brand-logo,

@@ -157,7 +157,7 @@
                   </p>
                 </div>
                 <p class="payment-order-item__price">
-                  ${{ (item.price * item.quantity).toLocaleString() }}
+                  ₩{{ (item.price * item.quantity).toLocaleString() }}
                 </p>
               </div>
 
@@ -165,7 +165,7 @@
               <div class="payment-order-totals">
                 <div class="payment-order-row">
                   <span>Subtotal</span>
-                  <span>${{ totalPrice.toLocaleString() }}</span>
+                  <span>₩{{ totalPrice.toLocaleString() }}</span>
                 </div>
                 <div class="payment-order-row">
                   <span>Shipping</span>
@@ -173,7 +173,7 @@
                 </div>
                 <div class="payment-order-row payment-order-row--total">
                   <span>Total</span>
-                  <span>${{ grandTotal.toLocaleString() }}</span>
+                  <span>₩{{ grandTotal.toLocaleString() }}</span>
                 </div>
               </div>
             </div>
@@ -182,7 +182,7 @@
 
         <!-- 결제 버튼 -->
         <button class="payment-submit" @click="handleSubmit">
-          Place Order — ${{ grandTotal.toLocaleString() }}
+          Place Order — ₩{{ grandTotal.toLocaleString() }}
         </button>
 
         <p class="payment-secure">

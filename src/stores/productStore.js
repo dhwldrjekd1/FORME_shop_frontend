@@ -1,5 +1,50 @@
 ﻿import { defineStore } from "pinia";
 import { ref, computed } from "vue";
+import api from "@/api";
+
+// ── 백엔드 ProductResponseDto → 프론트가 기대하는 모양으로 변환 ──
+// 백엔드 DTO 에 없는 풍부한 메타 (features, composition, sizes, colors, images[], keywords) 는
+// mock 데이터에서 같은 ID 로 찾아 보강한다. (mock 과 백엔드 시드의 ID 가 일치하도록 맞춰둠)
+// → 백엔드에서 받아온 가격/재고/카테고리 같은 동적 필드는 dto 우선,
+//    상품 카탈로그 메타는 mock 에서 가져옴.
+function adaptProduct(dto) {
+  if (!dto) return null;
+
+  // 같은 ID 의 mock 상품에서 부가 메타 가져오기 (없으면 빈 값)
+  const meta = MOCK_INDEX.get(dto.id) ?? {};
+
+  return {
+    id: dto.id,
+    name: dto.name ?? meta.name ?? "",
+    category: dto.categoryName ?? meta.category ?? "",
+    description: dto.description ?? meta.description ?? "",
+    price: dto.price ?? meta.price ?? 0,
+    stock: dto.stock ?? 0,
+    image: dto.imageUrl ?? meta.image ?? "",
+    images: meta.images ?? (dto.imageUrl ? [dto.imageUrl] : []),
+    sizes: meta.sizes ?? ["S", "M", "L", "XL"],
+    colors: meta.colors ?? [],
+    colorHex: meta.colorHex ?? "#1a1a1a",
+    keywords: meta.keywords ?? [],
+    features: meta.features ?? [],
+    composition: meta.composition ?? [],
+    isNew: dto.isNew ?? false,
+    isBest: dto.isBest ?? false,
+    isRecommend: dto.isRecommend ?? false,
+  };
+}
+
+// ID → mock product 인덱스 (lazy init, 한 번만 만들어 캐시)
+let _mockIndex = null;
+const MOCK_INDEX = {
+  get(id) {
+    if (!_mockIndex) {
+      _mockIndex = new Map();
+      for (const p of getMockProducts()) _mockIndex.set(p.id, p);
+    }
+    return _mockIndex.get(id);
+  },
+};
 
 export const useProductStore = defineStore("product", () => {
   // ── state ──────────────────────────────────
@@ -38,43 +83,38 @@ export const useProductStore = defineStore("product", () => {
   });
 
   // ── actions ────────────────────────────────
-  // 상품 목록 불러오기
+  // 상품 목록 불러오기 — Spring Boot /api/products
+  // 백엔드 호출 실패 시 목업 데이터로 폴백 (개발 편의)
   async function fetchProducts() {
     isLoading.value = true;
     error.value = null;
 
     try {
-      // TODO: Spring Boot 연결 시 아래 주석 해제, 목업 데이터 제거
-      // const response = await api.get('/products')
-      // products.value = response.data
-
-      products.value = getMockProducts(); // 임시 목업 데이터
+      const data = await api.get("/products");
+      products.value = Array.isArray(data) ? data.map(adaptProduct) : [];
     } catch (err) {
+      console.error("[productStore] fetchProducts 실패, 목업으로 폴백:", err);
       error.value = "상품을 불러오지 못했습니다.";
-      console.error(err);
+      products.value = getMockProducts(); // 백엔드 실패 시 폴백
     } finally {
-      // 성공/실패 상관없이 로딩 종료
       isLoading.value = false;
     }
   }
 
-  // 상품 상세 불러오기
+  // 상품 상세 불러오기 — Spring Boot /api/products/{id}
   async function fetchProductById(id) {
     isLoading.value = true;
     error.value = null;
 
     try {
-      // TODO: Spring Boot 연결 시 아래 주석 해제
-      // const response = await api.get(`/products/${id}`)
-      // currentProduct.value = response.data
-
-      // 목업 데이터에서 id 로 찾기
-      // Number(id): params 는 문자열이라 숫자로 변환
-      const found = getMockProducts().find((p) => p.id === Number(id));
-      currentProduct.value = found ?? null; // 없으면 null
+      const data = await api.get(`/products/${id}`);
+      currentProduct.value = adaptProduct(data);
     } catch (err) {
+      console.error("[productStore] fetchProductById 실패, 목업으로 폴백:", err);
       error.value = "상품 정보를 불러오지 못했습니다.";
-      console.error(err);
+      // 폴백: 목업에서 찾기
+      const found = getMockProducts().find((p) => p.id === Number(id));
+      currentProduct.value = found ?? null;
     } finally {
       isLoading.value = false;
     }

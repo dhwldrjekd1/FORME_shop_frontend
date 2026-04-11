@@ -3,14 +3,19 @@
     <!-- ── 히어로 섹션 ── -->
     <section class="bp-hero">
       <div class="bp-hero__text">
-        <p class="ch-hero__since">Est. 1989 / Seoul</p>
+        <p class="bp-hero__since">Est. 1989 / Seoul</p>
         <h1 class="bp-hero__title">BEANPOLE</h1>
         <p class="bp-hero__desc">
           1989년 서울에서 시작된 빈폴. <br />
           클래식의 가치를 현대적 감각으로 재해석하며 한국 패션의 헤리티지를
           이어가고 있습니다.
         </p>
-        <button class="bp-hero__btn">Discover the Collection</button>
+        <a
+          href="https://www.beanpole.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="bp-hero__btn"
+        >Discover the Collection</a>
       </div>
       <div class="bp-hero__img-wrap">
         <img
@@ -92,120 +97,197 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* ── 히어로 ── */
+/* ════════════════════════════════
+   BEANPOLE — Heritage Navy
+   Brand color: #103728 (preppy navy)
+   Accent:      #C9A86B (vintage gold)
+   ════════════════════════════════ */
 .bp-hero {
   display: grid;
   grid-template-columns: 1fr;
   height: 800px;
-  background-color: #103728; /* 빈폴 딥 그린 */
+  background-color: #103728;
   overflow: hidden;
+  position: relative;
 }
 
 @media (min-width: 768px) {
   .bp-hero {
-    grid-template-columns: 5fr 7fr;
+    grid-template-columns: 4fr 6fr;
   }
 }
 
 .bp-hero__text {
-  padding: 5rem 3rem;
+  padding: 6rem 3.5rem;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 2rem;
+  gap: 2.25rem;
   color: #ffffff;
 }
 
 .bp-hero__since {
-  font-size: 0.6875rem;
-  letter-spacing: 0.4em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.875rem;
+  font-family: var(--font-accent);
+  font-size: 0.75rem;
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: 0.25em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.6);
+  color: #C9A86B;
+  margin-bottom: -0.5rem;
+}
+
+.bp-hero__since::before,
+.bp-hero__since::after {
+  content: "";
+  width: 1.5rem;
+  height: 1px;
+  background-color: #C9A86B;
+  display: inline-block;
 }
 
 .bp-hero__title {
   font-family: var(--font-headline);
-  font-size: clamp(3.5rem, 8vw, 6rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-size: clamp(3.75rem, 8vw, 6.5rem);
+  font-weight: 400;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
-  line-height: 1;
+  line-height: 0.95;
   color: #ffffff;
 }
 
+.bp-hero__title::after {
+  content: "";
+  display: block;
+  width: 4rem;
+  height: 1px;
+  background-color: #C9A86B;
+  margin-top: 1.5rem;
+}
+
 .bp-hero__desc {
-  font-size: 1.0625rem;
-  color: rgba(255, 255, 255, 0.8);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.75);
   max-width: 28rem;
-  line-height: 1.7;
+  line-height: 1.8;
+  letter-spacing: 0.005em;
 }
 
 .bp-hero__btn {
   display: inline-flex;
   align-items: center;
-  background-color: #ffffff;
-  color: #144835;
-  padding: 1.25rem 3rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.15em;
+  gap: 0.875rem;
+  background-color: transparent;
+  color: #C9A86B;
+  border: 1px solid #C9A86B;
+  padding: 1.125rem 2.75rem;
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.25em;
   text-transform: uppercase;
   width: fit-content;
-  transition: filter 0.2s;
+  margin-top: 0.5rem;
+  cursor: pointer;
+  transition:
+    background-color 0.3s,
+    color 0.3s;
 }
 
 .bp-hero__btn:hover {
-  filter: brightness(0.95);
+  background-color: #C9A86B;
+  color: #103728;
 }
 
 .bp-hero__img-wrap {
   height: 100%;
+  min-height: 420px;
   overflow: hidden;
+  position: relative;
+}
+
+.bp-hero__img-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    rgba(26, 43, 74, 0.3) 0%,
+    transparent 30%
+  );
+  pointer-events: none;
 }
 
 .bp-hero__img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: grayscale(0.2) contrast(1.05);
-  transition: transform 0.7s;
+  object-position: center bottom;
+  filter: grayscale(0.2) contrast(1.05) brightness(0.95);
+  transition: transform 0.8s, filter 0.6s;
 }
 
 .bp-hero__img-wrap:hover .bp-hero__img {
-  transform: scale(1.05);
+  transform: scale(1.04);
+  filter: grayscale(0) contrast(1.05) brightness(1);
 }
 
 /* ── 상품 그리드 ── */
 .bp-products {
-  padding: 6rem 3rem;
+  padding: 7rem 3rem 8rem;
   background-color: var(--color-surface);
-  max-width: 1600px;
-  margin: 0 auto;
 }
 
 .bp-products__header {
-  margin-bottom: 4rem;
+  margin-bottom: 4.5rem;
+  max-width: 1600px;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
 }
 
 .bp-products__title {
   font-family: var(--font-headline);
-  font-size: 2.5rem;
-  font-weight: 700;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 400;
   text-transform: uppercase;
-  letter-spacing: -0.02em;
-  margin-bottom: 0.75rem;
+  letter-spacing: -0.015em;
+  margin-bottom: 1rem;
+  color: var(--color-on-surface);
 }
 
 .bp-products__underline {
-  width: 3rem;
-  height: 4px;
-  background-color: #144835;
+  width: 4rem;
+  height: 1px;
+  background-color: #103728;
+  position: relative;
+}
+
+.bp-products__underline::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -3px;
+  transform: translateX(-50%);
+  width: 7px;
+  height: 7px;
+  background-color: #C9A86B;
+  border-radius: 50%;
 }
 
 .bp-products__grid {
   display: grid;
   grid-template-columns: repeat(1, 1fr);
-  gap: 3rem;
+  gap: 3.5rem 2.5rem;
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
 @media (min-width: 640px) {
@@ -229,39 +311,45 @@ onMounted(() => {
   aspect-ratio: 3/4;
   overflow: hidden;
   background-color: var(--color-surface-container-low);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   position: relative;
 }
 
 .bp-card__wish {
   position: absolute;
-  bottom: 0.75rem;
-  right: 0.75rem;
-  background: rgba(255,255,255,0.85);
+  bottom: 1rem;
+  right: 1rem;
+  background: rgba(255, 255, 255, 0.92);
   border: none;
   border-radius: 50%;
-  width: 2rem;
-  height: 2rem;
+  width: 2.25rem;
+  height: 2.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.2s, color 0.2s;
-  color: #aaa;
+  transition: opacity 0.3s, color 0.2s, transform 0.2s;
+  color: var(--color-on-surface-variant);
 }
 
 .bp-card:hover .bp-card__wish {
   opacity: 1;
 }
 
+.bp-card__wish:hover {
+  color: #103728;
+  transform: scale(1.08);
+}
+
 .bp-card__wish--active {
   opacity: 1 !important;
-  color: var(--color-primary);
+  color: #103728;
 }
 
 .bp-card__wish .material-symbols-outlined {
-  font-size: 1rem;
+  font-size: 1.0625rem;
+  font-variation-settings: "wght" 400;
 }
 
 .bp-card__img {
@@ -270,12 +358,12 @@ onMounted(() => {
   object-fit: cover;
   filter: grayscale(1);
   transition:
-    transform 0.7s,
+    transform 0.8s,
     filter 0.5s;
 }
 
 .bp-card:hover .bp-card__img {
-  transform: scale(1.05);
+  transform: scale(1.04);
   filter: grayscale(0);
 }
 
@@ -283,25 +371,33 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 1rem;
 }
 
 .bp-card__category {
-  font-size: 0.625rem;
-  letter-spacing: 0.2em;
+  font-family: var(--font-body);
+  font-size: 0.5625rem;
+  font-weight: 500;
+  letter-spacing: 0.25em;
   text-transform: uppercase;
   color: var(--color-outline);
-  margin-bottom: 0.375rem;
+  margin-bottom: 0.5rem;
 }
 
 .bp-card__name {
   font-family: var(--font-headline);
-  font-size: 1.0625rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: -0.005em;
+  color: var(--color-on-surface);
+  line-height: 1.35;
 }
 
 .bp-card__price {
-  font-size: 1.0625rem;
-  font-weight: 700;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-on-surface);
+  white-space: nowrap;
 }
 </style>

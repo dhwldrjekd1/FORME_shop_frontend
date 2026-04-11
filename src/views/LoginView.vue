@@ -90,29 +90,27 @@ const isLoading = ref(false);
 
 async function handleLogin() {
   errorMsg.value = "";
+
+  if (!form.value.email || !form.value.password) {
+    errorMsg.value = "이메일과 비밀번호를 입력해주세요.";
+    return;
+  }
+
   isLoading.value = true;
-
   try {
-    // TODO: Spring Boot 연결 시 아래 주석 해제, 임시 코드 제거
-    // const response = await api.post('/auth/login', form.value)
-    // authStore.login(response.data)
+    // Spring Boot POST /api/login → JWT 받아서 authStore 가 저장
+    await authStore.login({
+      email: form.value.email,
+      password: form.value.password,
+    });
 
-    // 임시: 이메일 + 비밀번호 입력하면 로그인 처리
-    if (form.value.email && form.value.password) {
-      authStore.login({
-        id: 1,
-        name: form.value.email.split("@")[0], // @ 앞부분을 이름으로 사용
-        email: form.value.email,
-      });
-
-      // 로그인 전에 가려던 페이지가 있으면 그쪽으로, 없으면 홈으로
-      const redirectTo = route.query.redirect || "/";
-      router.push(redirectTo);
-    } else {
-      errorMsg.value = "이메일과 비밀번호를 입력해주세요.";
-    }
+    // 로그인 전에 가려던 페이지가 있으면 그쪽으로, 없으면 홈으로
+    const redirectTo = route.query.redirect || "/";
+    router.push(redirectTo);
   } catch (err) {
-    errorMsg.value = "로그인에 실패했습니다. 다시 시도해주세요.";
+    // 백엔드 메시지 우선, 없으면 기본 문구
+    errorMsg.value =
+      err?.data?.message || err?.message || "로그인에 실패했습니다. 다시 시도해주세요.";
   } finally {
     isLoading.value = false;
   }
