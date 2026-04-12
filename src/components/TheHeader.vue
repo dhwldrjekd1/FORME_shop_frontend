@@ -361,14 +361,23 @@ const brands = [
   padding: 0 3px;
 }
 /* 브랜드 로고 이미지 공통
-   - SVG 원본 색상을 그대로 유지 (각 브랜드의 아이덴티티 컬러)
-   - 서브픽셀 blur 방지를 위해 GPU 레이어로 올리는 트릭만 적용 */
+   - SVG 를 <img> 로 로드 → 벡터로 렌더링되지만 브라우저 서브픽셀 스냅 때문에
+     흐릿하게 보일 수 있어 아래 속성들로 선명도를 확보 */
 .header__brand-logo {
   width: auto;
   object-fit: contain;
   image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  /* GPU 레이어로 올려 서브픽셀 blur 방지 */
   transform: translateZ(0);
   backface-visibility: hidden;
+  /* 색상 통일 (원본 black, hover 시 primary) */
+  filter: brightness(0);
+  transition: filter 0.2s;
+}
+.header__nav-link:hover .header__brand-logo,
+.header__nav-link--active .header__brand-logo {
+  filter: brightness(0) saturate(100%);
 }
 
 /* .header__nav-link:hover .header__brand-logo,
