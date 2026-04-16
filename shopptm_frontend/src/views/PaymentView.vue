@@ -1,516 +1,295 @@
 <template>
-  <main class="page-wrapper">
-    <div class="payment-page">
-      <!-- 헤더 -->
-      <section class="payment-header">
-        <h1 class="payment-header__title">Secure Checkout</h1>
-        <p class="payment-header__step">Step 1 of 2: Shipping & Payment</p>
-      </section>
+  <Forme32Layout>
+    <div class="py">
+      <!-- 스텝 인디케이터 -->
+      <div class="py-steps">
+        <div class="py-steps__item py-steps__item--done">
+          <span class="py-steps__num">✓</span><span class="py-steps__label">장바구니</span>
+        </div>
+        <div class="py-steps__line py-steps__line--on"></div>
+        <div class="py-steps__item py-steps__item--on">
+          <span class="py-steps__num">2</span><span class="py-steps__label">결제</span>
+        </div>
+        <div class="py-steps__line"></div>
+        <div class="py-steps__item">
+          <span class="py-steps__num">3</span><span class="py-steps__label">완료</span>
+        </div>
+      </div>
 
-      <div class="payment-form">
-        <!-- 01. 연락처 -->
-        <section class="payment-section">
-          <div class="payment-section__head">
-            <span class="payment-section__num">01</span>
-            <h2 class="payment-section__title">Contact Information</h2>
-          </div>
-          <div class="payment-section__body">
-            <div class="payment-field">
-              <input
-                v-model="form.email"
-                type="email"
-                placeholder="Email Address"
-                class="payment-input"
-              />
+      <div class="py-body">
+        <!-- 좌: 폼 -->
+        <div class="py-form">
+          <!-- 배송 정보 -->
+          <section class="py-sec">
+            <h2 class="py-sec__title"><span class="material-symbols-outlined">local_shipping</span>배송 정보</h2>
+            <div class="py-sec__grid">
+              <div class="py-field"><label>받는 사람</label><input v-model="form.name" type="text" placeholder="홍길동" /></div>
+              <div class="py-field"><label>연락처</label><input v-model="form.phone" type="tel" placeholder="010-0000-0000" /></div>
+              <div class="py-field py-field--full"><label>주소</label><input v-model="form.address" type="text" placeholder="서울시 강남구 테헤란로 000" /></div>
+              <div class="py-field py-field--full"><label>상세 주소</label><input v-model="form.address2" type="text" placeholder="아파트/건물명, 호수 (선택)" /></div>
+              <div class="py-field"><label>우편번호</label><input v-model="form.postcode" type="text" placeholder="00000" /></div>
             </div>
-            <label class="payment-checkbox">
-              <input type="checkbox" v-model="form.newsletter" />
-              <span>Keep me updated on new Atelier collections</span>
-            </label>
-          </div>
-        </section>
+          </section>
 
-        <!-- 02. 배송지 -->
-        <section class="payment-section">
-          <div class="payment-section__head">
-            <span class="payment-section__num">02</span>
-            <h2 class="payment-section__title">Shipping Destination</h2>
-          </div>
-          <!-- 2컬럼 그리드 -->
-          <div class="payment-section__body payment-section__body--grid">
-            <input
-              v-model="form.firstName"
-              type="text"
-              placeholder="First Name"
-              class="payment-input"
-            />
-            <input
-              v-model="form.lastName"
-              type="text"
-              placeholder="Last Name"
-              class="payment-input"
-            />
-            <!-- payment-input--full: 2컬럼 전체 차지 -->
-            <input
-              v-model="form.address"
-              type="text"
-              placeholder="Address"
-              class="payment-input payment-input--full"
-            />
-            <input
-              v-model="form.address2"
-              type="text"
-              placeholder="Apartment, suite, etc. (optional)"
-              class="payment-input payment-input--full"
-            />
-            <input
-              v-model="form.postcode"
-              type="text"
-              placeholder="Postal Code"
-              class="payment-input"
-            />
-            <input
-              v-model="form.city"
-              type="text"
-              placeholder="City"
-              class="payment-input"
-            />
-          </div>
-        </section>
+          <!-- 결제 수단 -->
+          <section class="py-sec">
+            <h2 class="py-sec__title"><span class="material-symbols-outlined">credit_card</span>결제 수단</h2>
+            <div class="py-methods">
+              <button v-for="m in methods" :key="m.key" class="py-method" :class="{ 'py-method--on': selMethod === m.key }" @click="selMethod = m.key">
+                <span class="material-symbols-outlined">{{ m.icon }}</span>{{ m.label }}
+              </button>
+            </div>
 
-        <!-- 03. 결제 수단 -->
-        <section class="payment-section">
-          <div class="payment-section__head">
-            <span class="payment-section__num">03</span>
-            <h2 class="payment-section__title">Payment Method</h2>
-          </div>
-          <div class="payment-section__body">
-            <div class="payment-card-box">
-              <div class="payment-card-box__header">
-                <label class="payment-radio">
-                  <input type="radio" name="payment" checked />
-                  <span>Credit Card</span>
-                </label>
-                <span
-                  class="material-symbols-outlined"
-                  style="color: var(--color-on-surface-variant)"
-                >
-                  credit_card
-                </span>
-              </div>
-              <div class="payment-card-fields">
-                <!-- 카드번호: 자물쇠 아이콘 포함 -->
-                <div class="payment-field payment-field--icon">
-                  <input
-                    v-model="form.cardNumber"
-                    type="text"
-                    placeholder="Card Number"
-                    class="payment-input"
-                  />
-                  <span class="material-symbols-outlined payment-field__icon"
-                    >lock</span
-                  >
-                </div>
-                <input
-                  v-model="form.expiry"
-                  type="text"
-                  placeholder="MM / YY"
-                  class="payment-input"
-                />
-                <input
-                  v-model="form.cvv"
-                  type="text"
-                  placeholder="CVV"
-                  class="payment-input"
-                />
-              </div>
+            <!-- 토스페이먼츠 위젯 -->
+            <div v-if="selMethod === 'toss'" class="py-toss">
+              <div id="toss-payment-widget" class="py-toss__widget"></div>
+              <p class="py-toss__info"><span class="material-symbols-outlined">info</span>토스페이먼츠를 통해 안전하게 결제됩니다</p>
+            </div>
+
+            <!-- 일반 카드 입력 -->
+            <div v-if="selMethod === 'card'" class="py-sec__grid" style="margin-top: 1.5rem;">
+              <div class="py-field py-field--full"><label>카드 번호</label><input v-model="form.cardNumber" type="text" placeholder="0000 0000 0000 0000" /></div>
+              <div class="py-field"><label>유효기간</label><input v-model="form.expiry" type="text" placeholder="MM / YY" /></div>
+              <div class="py-field"><label>CVV</label><input v-model="form.cvv" type="text" placeholder="000" /></div>
+            </div>
+          </section>
+
+          <!-- 요청사항 -->
+          <section class="py-sec">
+            <h2 class="py-sec__title"><span class="material-symbols-outlined">edit_note</span>배송 요청사항</h2>
+            <textarea v-model="form.memo" placeholder="부재 시 문 앞에 놓아주세요" rows="3"></textarea>
+          </section>
+        </div>
+
+        <!-- 우: 주문 확인 -->
+        <aside class="py-aside">
+          <h2 class="py-aside__title">주문 확인</h2>
+          <div class="py-items">
+            <div v-for="item in cartItems" :key="item.id" class="py-oitem">
+              <div class="py-oitem__img"><img :src="item.image" :alt="item.name" /><span class="py-oitem__qty">{{ item.quantity }}</span></div>
+              <div class="py-oitem__info"><p class="py-oitem__name">{{ item.name }}</p><p class="py-oitem__meta">{{ item.size }}</p></div>
+              <p class="py-oitem__price">₩{{ (item.price * item.quantity).toLocaleString() }}</p>
             </div>
           </div>
-        </section>
-
-        <!-- 04. 주문 확인 -->
-        <section class="payment-section">
-          <div class="payment-section__head">
-            <span class="payment-section__num">04</span>
-            <h2 class="payment-section__title">Review Order</h2>
-          </div>
-          <div class="payment-section__body">
-            <div class="payment-order-box">
-              <!-- 장바구니 아이템 목록 -->
-              <div
-                v-for="item in cartItems"
-                :key="item.id"
-                class="payment-order-item"
-              >
-                <div class="payment-order-item__img-wrap">
-                  <img
-                    :src="item.image"
-                    :alt="item.name"
-                    class="payment-order-item__img"
-                  />
-                </div>
-                <div class="payment-order-item__info">
-                  <p class="payment-order-item__label">Archive Collection</p>
-                  <h3 class="payment-order-item__name">{{ item.name }}</h3>
-                  <p class="payment-order-item__meta">
-                    Size: {{ item.size }} | Color: {{ item.color }}
-                  </p>
-                </div>
-                <p class="payment-order-item__price">
-                  ${{ (item.price * item.quantity).toLocaleString() }}
-                </p>
-              </div>
-
-              <!-- 금액 합계 -->
-              <div class="payment-order-totals">
-                <div class="payment-order-row">
-                  <span>Subtotal</span>
-                  <span>${{ totalPrice.toLocaleString() }}</span>
-                </div>
-                <div class="payment-order-row">
-                  <span>Shipping</span>
-                  <span>Complimentary</span>
-                </div>
-                <div class="payment-order-row payment-order-row--total">
-                  <span>Total</span>
-                  <span>${{ grandTotal.toLocaleString() }}</span>
-                </div>
-              </div>
+          <div class="py-totals">
+            <div class="py-totals__row"><span>상품 금액</span><span>₩{{ totalPrice.toLocaleString() }}</span></div>
+            <div v-if="gradeDiscount > 0" class="py-totals__row py-totals__row--dc">
+              <span>{{ gradeName }} 등급 할인 ({{ gradeDiscount }}%)</span>
+              <span>-₩{{ gradeDiscountAmount.toLocaleString() }}</span>
             </div>
+            <div class="py-totals__row"><span>배송비</span><span class="py-totals__free">무료</span></div>
+            <div class="py-totals__row py-totals__row--total"><span>총 결제금액</span><span>₩{{ finalTotal.toLocaleString() }}</span></div>
           </div>
-        </section>
-
-        <!-- 결제 버튼 -->
-        <button class="payment-submit" @click="handleSubmit">
-          Place Order — ${{ grandTotal.toLocaleString() }}
-        </button>
-
-        <p class="payment-secure">
-          <span
-            class="material-symbols-outlined"
-            style="font-size: 1rem; vertical-align: middle"
-          >
-            lock
-          </span>
-          Your payment is secured with SSL encryption
-        </p>
+          <button class="py-submit" :disabled="isPaying" @click="handleSubmit">
+            {{ isPaying ? '결제 처리 중...' : `₩${finalTotal.toLocaleString()} 결제하기` }}
+          </button>
+          <p class="py-secure"><span class="material-symbols-outlined">verified_user</span>SSL 암호화로 안전하게 결제됩니다</p>
+        </aside>
       </div>
     </div>
-  </main>
+  </Forme32Layout>
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useCartStore } from "@/stores/cartStore";
+import { useAuthStore } from "@/stores/authStore";
 import { useRouter } from "vue-router";
 import { storeToRefs } from "pinia";
+import Forme32Layout from "@/layouts/Forme32Layout.vue";
+import api from "@/api";
 
 const cartStore = useCartStore();
+const authStore = useAuthStore();
 const router = useRouter();
-
 const { items: cartItems, totalPrice } = storeToRefs(cartStore);
 
-// 세금 8% + 합계
-const grandTotal = computed(
-  () => totalPrice.value + Math.round(totalPrice.value * 0.08),
-);
+const isPaying = ref(false);
 
-// 폼 데이터: v-model 로 양방향 바인딩
+// 등급별 할인
+const GRADE_DISCOUNT = { BRONZE: 0, SILVER: 5, GOLD: 8, VIP: 12 };
+const userGrade = computed(() => (authStore.user?.grade || 'BRONZE').toUpperCase());
+const gradeName = computed(() => ({ BRONZE: 'Bronze', SILVER: 'Silver', GOLD: 'Gold', VIP: 'VIP' }[userGrade.value]));
+const gradeDiscount = computed(() => GRADE_DISCOUNT[userGrade.value] || 0);
+const gradeDiscountAmount = computed(() => Math.round(totalPrice.value * gradeDiscount.value / 100));
+const finalTotal = computed(() => totalPrice.value - gradeDiscountAmount.value);
+const tossClientKey = ref('');
+const selMethod = ref('toss');
+const methods = [
+  { key: 'toss', label: '토스페이', icon: 'account_balance_wallet' },
+  { key: 'card', label: '신용카드', icon: 'credit_card' },
+  { key: 'bank', label: '계좌이체', icon: 'account_balance' },
+];
+
+const user = authStore.user;
 const form = ref({
-  email: "",
-  newsletter: false,
-  firstName: "",
-  lastName: "",
-  address: "",
-  address2: "",
-  postcode: "",
-  city: "",
-  cardNumber: "",
-  expiry: "",
-  cvv: "",
+  name: user?.name || '',
+  phone: user?.phone || '',
+  address: user?.address || '',
+  address2: '',
+  postcode: '',
+  cardNumber: '', expiry: '', cvv: '', memo: '',
 });
 
-function handleSubmit() {
-  // TODO: Spring Boot 연결 시 API 호출로 교체
-  alert("주문이 완료되었습니다!");
-  cartStore.clearCart(); // 결제 완료 후 장바구니 비우기
-  router.push("/");
+// 토스 클라이언트 키 + 결제 승인 콜백 처리
+onMounted(async () => {
+  try {
+    const res = await api.get('/payment/client-key');
+    tossClientKey.value = res.clientKey;
+  } catch {}
+
+  // 토스 결제 성공 리다이렉트 처리
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('paymentKey')) {
+    try {
+      const confirmRes = await api.post('/payment/confirm', {
+        paymentKey: params.get('paymentKey'),
+        orderId: params.get('orderId'),
+        amount: Number(params.get('amount')),
+      });
+      if (confirmRes?.success) {
+        await createOrder();
+      } else {
+        alert('결제 승인 실패: ' + (confirmRes?.message || ''));
+      }
+    } catch (e) { alert('결제 승인 오류: ' + e.message); }
+  }
+  if (params.get('fail')) {
+    alert('결제가 취소되었습니다.');
+  }
+});
+
+async function handleSubmit() {
+  if (isPaying.value) return;
+  isPaying.value = true;
+
+  // 유효성 검사
+  if (!form.value.name.trim()) { isPaying.value = false; alert('받는 사람 이름을 입력해주세요.'); return; }
+  if (!form.value.phone.trim()) { isPaying.value = false; alert('연락처를 입력해주세요.'); return; }
+  if (!form.value.address.trim()) { isPaying.value = false; alert('주소를 입력해주세요.'); return; }
+  if (selMethod.value === 'card') {
+    if (!form.value.cardNumber.trim()) { isPaying.value = false; alert('카드 번호를 입력해주세요.'); return; }
+    if (!form.value.expiry.trim()) { isPaying.value = false; alert('유효기간을 입력해주세요.'); return; }
+    if (!form.value.cvv.trim()) { isPaying.value = false; alert('CVV를 입력해주세요.'); return; }
+  }
+  if (cartItems.value.length === 0) { isPaying.value = false; alert('장바구니가 비어있습니다.'); return; }
+
+  try {
+    if (selMethod.value === 'toss' && tossClientKey.value && tossClientKey.value !== 'test_ck_placeholder') {
+      // 토스페이먼츠 결제 플로우
+      await processTossPayment();
+    } else {
+      // 일반 결제 (데모) — 주문 생성 후 완료
+      await createOrder();
+    }
+  } catch (err) {
+    alert(err?.message || '결제에 실패했습니다.');
+  } finally {
+    isPaying.value = false;
+  }
 }
+
+async function processTossPayment() {
+  const orderId = 'FORME_' + Date.now();
+  if (window.TossPayments) {
+    const toss = window.TossPayments(tossClientKey.value);
+    await toss.requestPayment('카드', {
+      amount: finalTotal.value,
+      orderId,
+      orderName: `FORME 주문 (${cartItems.value.length}건)`,
+      customerName: form.value.name || authStore.user?.name || '고객',
+      successUrl: window.location.origin + `/payment?paymentKey=PAYMENT_KEY&orderId=${orderId}&amount=${finalTotal.value}`,
+      failUrl: window.location.origin + '/payment?fail=true',
+    });
+  } else {
+    // SDK 미로드 — 주문만 생성
+    await createOrder();
+  }
+}
+
+async function createOrder() {
+  const memberId = authStore.user?.id;
+  if (!memberId) return;
+  await api.post(`/members/${memberId}/orders`, {
+    receiverName: form.value.name || authStore.user?.name || '고객',
+    receiverPhone: form.value.phone || '',
+    address: (form.value.address + ' ' + form.value.address2).trim() || '서울시',
+    items: cartItems.value.map(i => ({
+      productId: i.productId,
+      quantity: i.quantity,
+      size: i.size || null,
+    })),
+  });
+  localStorage.setItem('forme_last_order', JSON.stringify({
+    items: cartItems.value.map(i => ({ name: i.name, image: i.image, size: i.size, quantity: i.quantity, price: i.price })),
+    totalAmount: finalTotal.value,
+    receiverName: form.value.name,
+  }));
+  cartStore.clearCart();
+  router.push('/order-complete');
+}
+
 </script>
 
 <style scoped>
-.payment-page {
-  max-width: 42rem;
-  margin: 0 auto;
-  padding: 2rem 1.5rem 6rem;
-}
+.py { max-width: 1400px; margin: 0 auto; padding: 2rem 3rem 6rem; }
 
-/* ── 헤더 ── */
-.payment-header {
-  text-align: center;
-  margin-bottom: 5rem;
-}
+.py-steps { display: flex; align-items: center; justify-content: center; gap: 0; padding: 1.5rem 0 3rem; max-width: 400px; margin: 0 auto; }
+.py-steps__item { display: flex; align-items: center; gap: 0.5rem; }
+.py-steps__num { width: 1.75rem; height: 1.75rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6875rem; font-weight: 700; border: 1.5px solid #ddd; color: #bbb; }
+.py-steps__label { font-size: 0.6875rem; font-weight: 600; color: #bbb; }
+.py-steps__item--on .py-steps__num { background: #111; border-color: #111; color: #fff; }
+.py-steps__item--on .py-steps__label { color: #111; }
+.py-steps__item--done .py-steps__num { background: #38a169; border-color: #38a169; color: #fff; font-size: 0.8125rem; }
+.py-steps__item--done .py-steps__label { color: #38a169; }
+.py-steps__line { flex: 1; height: 1.5px; background: #eee; margin: 0 0.75rem; }
+.py-steps__line--on { background: #38a169; }
 
-.payment-header__title {
-  font-family: var(--font-headline);
-  font-size: 1.875rem;
-  font-weight: 400;
-  letter-spacing: -0.01em;
-  margin-bottom: 0.75rem;
-}
+.py-body { display: grid; grid-template-columns: 1fr; gap: 3rem; }
+@media (min-width: 1024px) { .py-body { grid-template-columns: 1fr 420px; align-items: start; } }
 
-.payment-header__step {
-  font-size: 0.8125rem;
-  color: var(--color-on-surface-variant);
-  letter-spacing: 0.05em;
-}
+.py-form { display: flex; flex-direction: column; gap: 2.5rem; }
+.py-sec__title { display: flex; align-items: center; gap: 0.625rem; font-size: 1rem; font-weight: 800; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #eee; }
+.py-sec__title .material-symbols-outlined { font-size: 1.25rem; font-variation-settings: "wght" 300; color: #111; }
+.py-sec__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 1.25rem; }
+.py-field { display: flex; flex-direction: column; gap: 0.375rem; }
+.py-field--full { grid-column: span 2; }
+.py-field label { font-size: 0.6875rem; font-weight: 600; color: #555; }
+.py-field input, .py-sec textarea { width: 100%; padding: 0.875rem 1rem; border: 1.5px solid #e8e8e8; border-radius: 0.5rem; font-size: 0.8125rem; color: #111; outline: none; transition: border-color 0.2s; font-family: inherit; }
+.py-field input:focus, .py-sec textarea:focus { border-color: #111; }
+.py-field input::placeholder, .py-sec textarea::placeholder { color: #ccc; }
+.py-sec textarea { resize: vertical; }
 
-/* ── 섹션 공통 ── */
-.payment-form {
-  display: flex;
-  flex-direction: column;
-  gap: 5rem; /* 섹션 간격 넓게 */
-}
+.py-methods { display: flex; gap: 0.625rem; }
+.py-method { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.375rem; padding: 1rem; border: 1.5px solid #e8e8e8; border-radius: 0.5rem; font-size: 0.6875rem; font-weight: 600; color: #999; cursor: pointer; transition: all 0.2s; background: #fff; }
+.py-method .material-symbols-outlined { font-size: 1.375rem; font-variation-settings: "wght" 300; }
+.py-method:hover { border-color: #111; color: #111; }
+.py-method--on { border-color: #111; color: #111; background: #fafaf8; }
 
-.payment-section__head {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2.5rem;
-}
+.py-toss { margin-top: 1.5rem; }
+.py-toss__widget { min-height: 100px; border: 1.5px dashed #e8e8e8; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; color: #bbb; font-size: 0.8125rem; padding: 2rem; }
+.py-toss__info { display: flex; align-items: center; gap: 0.375rem; margin-top: 0.75rem; font-size: 0.6875rem; color: #999; }
+.py-toss__info .material-symbols-outlined { font-size: 0.875rem; font-variation-settings: "wght" 300; }
 
-.payment-section__num {
-  font-size: 0.6875rem;
-  letter-spacing: 0.2em;
-  color: var(--color-on-surface-variant);
-}
-
-.payment-section__title {
-  font-family: var(--font-headline);
-  font-size: 1.125rem;
-  font-weight: 400;
-  text-transform: uppercase;
-}
-
-.payment-section__body {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-/* 2컬럼 그리드 (배송지 섹션) */
-.payment-section__body--grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem 2rem;
-}
-
-/* ── 인풋 ── */
-.payment-field {
-  position: relative;
-}
-
-/* 아이콘 있는 인풋 */
-.payment-field--icon {
-  display: flex;
-  align-items: center;
-}
-
-.payment-field__icon {
-  position: absolute;
-  right: 0;
-  color: var(--color-outline-variant);
-  font-size: 1.25rem;
-}
-
-.payment-input {
-  width: 100%;
-  background-color: var(--color-surface-container-low);
-  border: none;
-  border-bottom: 1px solid var(--color-outline-variant);
-  padding: 1rem 0;
-  font-size: 0.9375rem;
-  color: var(--color-on-surface);
-  transition: border-color 0.2s;
-}
-
-.payment-input::placeholder {
-  color: var(--color-outline);
-  opacity: 0.6;
-}
-
-.payment-input:focus {
-  border-bottom-color: var(--color-primary);
-}
-
-/* 2컬럼 전체 차지 */
-.payment-input--full {
-  grid-column: span 2;
-}
-
-/* 체크박스 */
-.payment-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 0.6875rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-on-surface-variant);
-  cursor: pointer;
-}
-
-/* 라디오 */
-.payment-radio {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 0.6875rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-
-/* ── 카드 박스 ── */
-.payment-card-box {
-  border: 0.5px solid rgba(0, 0, 0, 0.08);
-  padding: 2rem;
-}
-
-.payment-card-box__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-  padding-bottom: 1rem;
-  margin-bottom: 2rem;
-}
-
-/* 카드 필드: 카드번호(전체) + 유효기간/CVV(반반) */
-.payment-card-fields {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-}
-
-.payment-card-fields .payment-field {
-  grid-column: span 2; /* 카드번호는 전체 너비 */
-}
-
-/* ── 주문 확인 박스 ── */
-.payment-order-box {
-  background-color: var(--color-surface-container-low);
-  padding: 2.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.payment-order-item {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-}
-
-.payment-order-item__img-wrap {
-  width: 5rem;
-  height: 6rem;
-  background-color: var(--color-surface-container-lowest);
-  flex-shrink: 0;
-  overflow: hidden;
-}
-
-.payment-order-item__img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: grayscale(0.1);
-  opacity: 0.9;
-}
-
-.payment-order-item__info {
-  flex: 1;
-}
-
-.payment-order-item__label {
-  font-size: 0.625rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-on-surface-variant);
-  margin-bottom: 0.25rem;
-}
-
-.payment-order-item__name {
-  font-family: var(--font-headline);
-  font-size: 0.9375rem;
-  font-weight: 400;
-  margin-bottom: 0.375rem;
-}
-
-.payment-order-item__meta {
-  font-size: 0.6875rem;
-  color: var(--color-on-surface-variant);
-}
-
-.payment-order-item__price {
-  font-family: var(--font-headline);
-  font-size: 0.875rem;
-}
-
-/* 합계 */
-.payment-order-totals {
-  border-top: 0.5px solid rgba(0, 0, 0, 0.1);
-  padding-top: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.875rem;
-}
-
-.payment-order-row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.6875rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-on-surface-variant);
-}
-
-/* 합계 행 강조 */
-.payment-order-row--total {
-  color: var(--color-on-surface);
-  font-size: 0.75rem;
-  font-weight: 500;
-  border-top: 0.5px solid rgba(0, 0, 0, 0.1);
-  padding-top: 1rem;
-  margin-top: 0.5rem;
-}
-
-/* ── 결제 버튼 ── */
-.payment-submit {
-  width: 100%;
-  background-color: var(--color-primary);
-  color: var(--color-on-primary);
-  padding: 1.5rem;
-  font-size: 0.8125rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  transition:
-    opacity 0.2s,
-    transform 0.2s;
-}
-
-.payment-submit:hover {
-  opacity: 0.88;
-}
-.payment-submit:active {
-  transform: scale(0.98);
-}
-
-.payment-secure {
-  text-align: center;
-  font-size: 0.6875rem;
-  color: var(--color-on-surface-variant);
-  letter-spacing: 0.05em;
-  margin-top: -2rem;
-}
+.py-aside { background: #fafaf8; border-radius: 0.75rem; padding: 2rem; position: sticky; top: 140px; }
+.py-aside__title { font-size: 1.125rem; font-weight: 800; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #eee; }
+.py-items { display: flex; flex-direction: column; gap: 0; margin-bottom: 1.5rem; }
+.py-oitem { display: flex; align-items: center; gap: 1rem; padding: 0.875rem 0; border-bottom: 1px solid #f0f0f0; }
+.py-oitem__img { width: 56px; height: 64px; flex-shrink: 0; overflow: hidden; background: #eee; position: relative; border-radius: 0.25rem; }
+.py-oitem__img img { width: 100%; height: 100%; object-fit: cover; }
+.py-oitem__qty { position: absolute; top: -4px; right: -4px; width: 1.125rem; height: 1.125rem; border-radius: 50%; background: #111; color: #fff; font-size: 0.5rem; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+.py-oitem__info { flex: 1; }
+.py-oitem__name { font-size: 0.8125rem; font-weight: 600; color: #111; margin-bottom: 0.125rem; }
+.py-oitem__meta { font-size: 0.6875rem; color: #999; }
+.py-oitem__price { font-size: 0.8125rem; font-weight: 700; white-space: nowrap; }
+.py-totals { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; }
+.py-totals__row { display: flex; justify-content: space-between; font-size: 0.8125rem; color: #555; }
+.py-totals__free { color: #38a169; font-weight: 600; }
+.py-totals__row--dc { color: #FF2D2D; font-weight: 600; }
+.py-totals__row--total { border-top: 1px solid #eee; padding-top: 1rem; margin-top: 0.25rem; font-size: 1rem; font-weight: 900; color: #111; }
+.py-submit { width: 100%; padding: 1.125rem; background: #111; color: #fff; font-size: 0.9375rem; font-weight: 800; border-radius: 0.5rem; cursor: pointer; transition: background 0.2s; margin-bottom: 1rem; }
+.py-submit:hover { background: #333; }
+.py-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+.py-secure { display: flex; align-items: center; justify-content: center; gap: 0.375rem; font-size: 0.625rem; color: #bbb; }
+.py-secure .material-symbols-outlined { font-size: 0.875rem; font-variation-settings: "wght" 300; }
 </style>

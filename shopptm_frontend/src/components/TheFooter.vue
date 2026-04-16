@@ -8,23 +8,22 @@
       <div class="footer__links">
         <div class="footer__link-group">
           <h4 class="footer__link-title">SHOP</h4>
-          <RouterLink to="/products" class="footer__link"
-            >Beanpole</RouterLink
-          >
-          <RouterLink to="/products" class="footer__link"
-            >Carhartt</RouterLink
-          >
-          <RouterLink to="/products" class="footer__link">Levis</RouterLink>
-          <RouterLink to="/products" class="footer__link">Dickies</RouterLink>
+          <RouterLink to="/beanpole" class="footer__link">Beanpole</RouterLink>
+          <RouterLink to="/carhartt" class="footer__link">Carhartt</RouterLink>
+          <RouterLink to="/levis" class="footer__link">Levi's</RouterLink>
+          <RouterLink to="/dickies" class="footer__link">Dickies</RouterLink>
         </div>
 
         <div class="footer__link-group">
           <h4 class="footer__link-title">SUPPORT</h4>
-          <a href="#" class="footer__link">FAQ</a>
+          <RouterLink to="/faq" class="footer__link">FAQ</RouterLink>
+          <RouterLink to="/qna" class="footer__link">Q&amp;A</RouterLink>
         </div>
 
         <div class="footer__link-group">
           <h4 class="footer__link-title">ABOUT</h4>
+          <RouterLink to="/" class="footer__link">FORME</RouterLink>
+          <RouterLink to="/products" class="footer__link">All Products</RouterLink>
         </div>
       </div>
     </div>

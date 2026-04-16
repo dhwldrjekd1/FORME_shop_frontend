@@ -1,0 +1,10 @@
+# GitHub 언어 감지 설정
+*.vue linguist-language=Vue
+*.js linguist-language=JavaScript
+*.java linguist-language=Java
+*.css linguist-language=CSS
+
+# 벤더/생성 파일 제외
+*.min.js linguist-vendored
+*.min.css linguist-vendored
+public/hero/* linguist-vendored

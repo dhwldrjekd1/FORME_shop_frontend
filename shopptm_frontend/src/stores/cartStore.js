@@ -1,64 +1,88 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
+import api from "@/api";
 
 export const useCartStore = defineStore("cart", () => {
-  // ── state ──────────────────────────────────
-  // 장바구니 아이템 배열
-  // 각 아이템 구조: { id, productId, name, price, image, size, color, quantity }
   const items = ref([]);
 
-  // ── getters ────────────────────────────────
-  // 전체 수량 합계 (헤더 배지 숫자에 사용)
-  // reduce: 배열을 순회하며 누적값 계산
   const totalCount = computed(() =>
     items.value.reduce((sum, item) => sum + item.quantity, 0),
   );
 
-  // 전체 금액 합계 (가격 × 수량 합산)
   const totalPrice = computed(() =>
     items.value.reduce((sum, item) => sum + item.price * item.quantity, 0),
   );
 
-  // ── actions ────────────────────────────────
-  // 장바구니에 상품 추가
-  function addItem(product) {
-    // 같은 상품 + 같은 사이즈 + 같은 색상이면 수량만 증가
-    const existing = items.value.find(
-      (item) =>
-        item.productId === product.productId &&
-        item.size === product.size &&
-        item.color === product.color,
-    );
+  // DB에서 장바구니 로드
+  async function fetchCart() {
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    if (!user?.id) return;
+    try {
+      const data = await api.get(`/members/${user.id}/cart`);
+      items.value = (data || []).map(c => ({
+        id: c.id,
+        productId: c.productId,
+        name: c.productName || c.name || '',
+        price: c.productPrice ?? c.price ?? c.unitPrice ?? 0,
+        image: c.productImageUrl || c.image || '',
+        size: c.size || '',
+        color: c.color || '',
+        quantity: c.quantity || 1,
+      }));
+    } catch {
+      // API 실패 시 로컬 유지
+    }
+  }
 
+  // 장바구니 추가 (DB 연동)
+  async function addItem(product) {
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    if (user?.id) {
+      try {
+        await api.post(`/members/${user.id}/cart`, {
+          productId: product.productId,
+          quantity: product.quantity ?? 1,
+          size: product.size || '',
+        });
+        await fetchCart();
+        return;
+      } catch {}
+    }
+    // 비로그인 시 로컬
+    const existing = items.value.find(
+      (item) => item.productId === product.productId && item.size === product.size,
+    );
     if (existing) {
       existing.quantity += product.quantity ?? 1;
     } else {
-      // 새 아이템 추가
-      // Date.now(): 임시 고유 ID (API 연결 시 서버 ID로 교체)
-      items.value.push({
-        id: Date.now(),
-        ...product,
-        quantity: product.quantity ?? 1,
-      });
+      items.value.push({ id: Date.now(), ...product, quantity: product.quantity ?? 1 });
     }
   }
 
-  // 장바구니에서 특정 아이템 제거
-  // filter: id 가 다른 것만 남김 = 해당 아이템 삭제
-  function removeItem(itemId) {
+  // 장바구니 삭제 (DB 연동)
+  async function removeItem(itemId) {
+    try {
+      await api.delete(`/cart/${itemId}`);
+    } catch {}
     items.value = items.value.filter((item) => item.id !== itemId);
   }
 
-  // 특정 아이템 수량 변경
-  function updateQuantity(itemId, quantity) {
+  // 수량 변경 (DB 연동)
+  async function updateQuantity(itemId, quantity) {
+    if (quantity < 1) return;
+    try {
+      await api.patch(`/cart/${itemId}`, { quantity });
+    } catch {}
     const item = items.value.find((item) => item.id === itemId);
-    if (item) {
-      item.quantity = quantity;
-    }
+    if (item) item.quantity = quantity;
   }
 
-  // 장바구니 전체 비우기 (결제 완료 후 호출)
-  function clearCart() {
+  // 장바구니 비우기 (DB 연동)
+  async function clearCart() {
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    if (user?.id) {
+      try { await api.delete(`/members/${user.id}/cart`); } catch {}
+    }
     items.value = [];
   }
 
@@ -66,6 +90,7 @@ export const useCartStore = defineStore("cart", () => {
     items,
     totalCount,
     totalPrice,
+    fetchCart,
     addItem,
     removeItem,
     updateQuantity,

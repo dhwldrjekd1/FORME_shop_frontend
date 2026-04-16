@@ -1,372 +1,248 @@
 <template>
-  <main class="page-wrapper">
-    <div class="cart-page container--full">
-      <!-- 페이지 헤더 -->
-      <header class="cart-header">
-        <h1 class="cart-header__title">Your Bag</h1>
-        <p class="cart-header__sub">Shipment 01 of 01 — Standard Delivery</p>
-      </header>
+  <Forme32Layout>
+    <div class="ct">
+      <!-- 헤더 -->
+      <div class="ct-head">
+        <h1 class="ct-head__title">장바구니</h1>
+        <p class="ct-head__count">{{ items.length }}개 상품</p>
+      </div>
 
-      <!-- 장바구니 비어있을 때 -->
-      <div v-if="items.length === 0" class="cart-empty">
-        <p>Your bag is empty.</p>
-        <RouterLink to="/products" class="cart-empty__link"
-          >Continue Shopping</RouterLink
-        >
+      <!-- 비어있을 때 -->
+      <div v-if="items.length === 0" class="ct-empty">
+        <span class="material-symbols-outlined ct-empty__icon">shopping_bag</span>
+        <p class="ct-empty__msg">장바구니가 비어있습니다</p>
+        <RouterLink to="/products" class="ct-empty__btn">쇼핑 계속하기</RouterLink>
       </div>
 
       <!-- 장바구니 콘텐츠 -->
-      <div v-else class="cart-content">
-        <!-- 왼쪽: 아이템 목록 -->
-        <div class="cart-items">
-          <div v-for="item in items" :key="item.id" class="cart-item">
-            <div class="cart-item__img-wrap">
-              <img :src="item.image" :alt="item.name" class="cart-item__img" />
-            </div>
-
-            <div class="cart-item__info">
-              <div class="cart-item__top">
+      <div v-else class="ct-body">
+        <!-- 좌: 아이템 리스트 -->
+        <div class="ct-list">
+          <div v-for="item in items" :key="item.id" class="ct-item">
+            <RouterLink :to="`/products/${item.productId}`" class="ct-item__img-wrap">
+              <img :src="item.image" :alt="item.name" />
+            </RouterLink>
+            <div class="ct-item__detail">
+              <div class="ct-item__top">
                 <div>
-                  <h3 class="cart-item__name">{{ item.name }}</h3>
-                  <div class="cart-item__attrs">
-                    <span class="cart-item__attr-key">Color:</span>
-                    <span class="cart-item__attr-val">{{ item.color }}</span>
-                    <span class="cart-item__attr-key">Size:</span>
-                    <span class="cart-item__attr-val">{{ item.size }}</span>
-                    <span class="cart-item__attr-key">Quantity:</span>
-                    <span class="cart-item__attr-val">{{ item.quantity }}</span>
-                  </div>
+                  <p class="ct-item__brand" :style="{ color: getBrandColor(item.productId) }">
+                    {{ getBrandName(item.productId) }}
+                  </p>
+                  <h3 class="ct-item__name">{{ item.name }}</h3>
+                  <p class="ct-item__meta">Size: {{ item.size }}</p>
                 </div>
-                <!-- 가격 × 수량 -->
-                <p class="cart-item__price">
-                  ${{ (item.price * item.quantity).toLocaleString() }}
-                </p>
+                <p class="ct-item__price">₩{{ (item.price * item.quantity).toLocaleString() }}</p>
               </div>
-
-              <!-- 제거 버튼: cartStore.removeItem 호출 -->
-              <button
-                class="cart-item__remove"
-                @click="cartStore.removeItem(item.id)"
-              >
-                REMOVE
-              </button>
+              <div class="ct-item__bottom">
+                <div class="ct-item__qty">
+                  <button @click="cartStore.updateQuantity(item.id, item.quantity - 1)" :disabled="item.quantity <= 1">−</button>
+                  <span>{{ item.quantity }}</span>
+                  <button @click="cartStore.updateQuantity(item.id, item.quantity + 1)">+</button>
+                </div>
+                <button class="ct-item__remove" @click="cartStore.removeItem(item.id)">
+                  <span class="material-symbols-outlined">delete_outline</span>
+                  삭제
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- 오른쪽: 주문 요약 -->
-        <aside class="cart-summary">
-          <h2 class="cart-summary__title">Order Summary</h2>
+        <!-- 우: 주문 요약 -->
+        <aside class="ct-summary">
+          <h2 class="ct-summary__title">주문 요약</h2>
 
-          <div class="cart-summary__rows">
-            <div class="cart-summary__row">
-              <span class="cart-summary__label">Subtotal</span>
-              <span>${{ totalPrice.toLocaleString() }}</span>
+          <div class="ct-summary__rows">
+            <div class="ct-summary__row">
+              <span>상품 금액</span>
+              <span>₩{{ totalPrice.toLocaleString() }}</span>
             </div>
-            <div class="cart-summary__row">
-              <span class="cart-summary__label">Shipping</span>
-              <span class="cart-summary__free">Complimentary</span>
+            <div v-if="gradeDiscount > 0" class="ct-summary__row ct-summary__row--dc">
+              <span>{{ gradeName }} 등급 할인 ({{ gradeDiscount }}%)</span>
+              <span>-₩{{ gradeDiscountAmount.toLocaleString() }}</span>
             </div>
-            <div class="cart-summary__row">
-              <span class="cart-summary__label">Estimated Tax</span>
-              <!-- 세금 8% -->
-              <span>${{ estimatedTax.toLocaleString() }}</span>
+            <div class="ct-summary__row">
+              <span>배송비</span>
+              <span class="ct-summary__free">무료</span>
             </div>
-            <div class="cart-summary__row cart-summary__row--total">
-              <span class="cart-summary__total-label">Total</span>
-              <span class="cart-summary__total-amount">
-                ${{ grandTotal.toLocaleString() }}
-              </span>
+            <div class="ct-summary__row ct-summary__row--total">
+              <span>총 결제금액</span>
+              <span class="ct-summary__total">₩{{ finalTotal.toLocaleString() }}</span>
             </div>
           </div>
 
-          <!-- 결제 페이지로 이동 -->
-          <RouterLink to="/payment" class="cart-summary__checkout">
-            PROCEED TO CHECKOUT
+          <RouterLink to="/payment" class="ct-summary__checkout">
+            ₩{{ finalTotal.toLocaleString() }} 결제하기
           </RouterLink>
 
-          <p class="cart-summary__note">
-            TAXES AND SHIPPING CALCULATED AT CHECKOUT.<br />
-            SECURE PAYMENTS POWERED BY STRIPE.
-          </p>
+          <RouterLink to="/products" class="ct-summary__continue">
+            ← 쇼핑 계속하기
+          </RouterLink>
+
+          <div class="ct-summary__perks">
+            <div><span class="material-symbols-outlined">local_shipping</span>전 상품 무료 배송</div>
+            <div><span class="material-symbols-outlined">sync</span>30일 이내 교환·반품</div>
+            <div><span class="material-symbols-outlined">lock</span>안전한 결제</div>
+          </div>
         </aside>
       </div>
     </div>
-  </main>
+  </Forme32Layout>
 </template>
 
 <script setup>
 import { computed } from "vue";
 import { useCartStore } from "@/stores/cartStore";
+import { useAuthStore } from "@/stores/authStore";
+import { useProductStore } from "@/stores/productStore";
 import { storeToRefs } from "pinia";
+import Forme32Layout from "@/layouts/Forme32Layout.vue";
 
 const cartStore = useCartStore();
-
-// storeToRefs: 반응성 유지하면서 store 값 꺼내기
+const authStore = useAuthStore();
+const productStore = useProductStore();
+const { products } = storeToRefs(productStore);
 const { items, totalPrice } = storeToRefs(cartStore);
 
-// 세금 8% (소수점 반올림)
-const estimatedTax = computed(() => Math.round(totalPrice.value * 0.08));
+// 등급별 할인
+const GRADE_DISCOUNT = { BRONZE: 0, SILVER: 5, GOLD: 8, VIP: 12 };
+const userGrade = computed(() => (authStore.user?.grade || 'BRONZE').toUpperCase());
+const gradeName = computed(() => ({ BRONZE: 'Bronze', SILVER: 'Silver', GOLD: 'Gold', VIP: 'VIP' }[userGrade.value]));
+const gradeDiscount = computed(() => GRADE_DISCOUNT[userGrade.value] || 0);
+const gradeDiscountAmount = computed(() => Math.round(totalPrice.value * gradeDiscount.value / 100));
+const finalTotal = computed(() => totalPrice.value - gradeDiscountAmount.value);
 
-// 최종 결제 금액
-const grandTotal = computed(() => totalPrice.value + estimatedTax.value);
+const BRAND_COLORS = { BEANPOLE: '#103728', CARHARTT: '#9C4F18', "LEVI'S": '#8E1C28', DICKIES: '#1A1A1A' };
+
+function getBrandColor(productId) {
+  const p = products.value.find(x => x.id === productId);
+  return BRAND_COLORS[p?.brand] || '#111';
+}
+function getBrandName(productId) {
+  const p = products.value.find(x => x.id === productId);
+  return p?.brand || '';
+}
 </script>
 
 <style scoped>
-.cart-page {
-  padding-top: 2rem;
-  padding-bottom: 6rem;
-}
+.ct { max-width: 1400px; margin: 0 auto; padding: 3rem 3rem 6rem; }
 
-/* ── 헤더 ── */
-.cart-header {
-  margin-bottom: 4rem;
+/* 헤더 */
+.ct-head {
+  display: flex; align-items: baseline; gap: 1rem;
+  padding-bottom: 2rem; border-bottom: 1px solid #eee; margin-bottom: 2.5rem;
 }
+.ct-head__title { font-size: 2rem; font-weight: 900; letter-spacing: -0.02em; }
+.ct-head__count { font-size: 0.75rem; color: #999; letter-spacing: 0.1em; }
 
-.cart-header__title {
-  font-family: var(--font-headline);
-  font-size: clamp(3rem, 7vw, 4.5rem);
-  font-weight: 300;
-  letter-spacing: -0.03em;
-  text-transform: uppercase;
-  line-height: 1;
-  margin-bottom: 0.75rem;
+/* 빈 장바구니 */
+.ct-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 8rem 0; gap: 1.25rem; text-align: center;
 }
-
-.cart-header__sub {
-  font-size: 0.6875rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-on-surface-variant);
+.ct-empty__icon { font-size: 3.5rem; color: #ddd; font-variation-settings: "wght" 200; }
+.ct-empty__msg { font-size: 1rem; color: #999; }
+.ct-empty__btn {
+  padding: 0.875rem 2.5rem; background: #111; color: #fff;
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
+  text-decoration: none; transition: opacity 0.2s;
 }
+.ct-empty__btn:hover { opacity: 0.8; }
 
-/* ── 빈 장바구니 ── */
-.cart-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 6rem 0;
-  text-align: center;
-}
-
-.cart-empty__link {
-  font-size: 0.6875rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  border-bottom: 1px solid var(--color-primary);
-  padding-bottom: 2px;
-  transition: opacity 0.2s;
-}
-
-.cart-empty__link:hover {
-  opacity: 0.6;
-}
-
-/* ── 2단 레이아웃 ── */
-.cart-content {
-  display: grid;
-  grid-template-columns: 1fr; /* 모바일: 1단 */
-  gap: 4rem;
-}
-
+/* 2단 레이아웃 */
+.ct-body { display: grid; grid-template-columns: 1fr; gap: 3rem; }
 @media (min-width: 1024px) {
-  .cart-content {
-    grid-template-columns: 2fr 1fr; /* 데스크탑: 아이템(2) + 요약(1) */
-    align-items: start;
-  }
+  .ct-body { grid-template-columns: 1fr 380px; align-items: start; }
 }
 
-/* ── 아이템 목록 ── */
-.cart-items {
-  display: flex;
-  flex-direction: column;
-  gap: 3rem;
+/* 아이템 리스트 */
+.ct-list { display: flex; flex-direction: column; gap: 0; }
+.ct-item {
+  display: flex; gap: 1.5rem; padding: 1.5rem 0;
+  border-bottom: 1px solid #f0f0f0;
 }
+.ct-item__img-wrap {
+  width: 120px; height: 150px; flex-shrink: 0; overflow: hidden;
+  background: #f3f1ec;
+}
+.ct-item__img-wrap img { width: 100%; height: 100%; object-fit: cover; }
+.ct-item__detail {
+  flex: 1; display: flex; flex-direction: column; justify-content: space-between;
+  padding: 0.25rem 0;
+}
+.ct-item__top { display: flex; justify-content: space-between; gap: 1rem; }
+.ct-item__brand {
+  font-size: 0.5625rem; font-weight: 700; letter-spacing: 0.15em;
+  text-transform: uppercase; margin-bottom: 0.25rem;
+}
+.ct-item__name { font-size: 1rem; font-weight: 700; margin-bottom: 0.375rem; color: #111; }
+.ct-item__meta { font-size: 0.75rem; color: #999; }
+.ct-item__price { font-size: 1rem; font-weight: 800; white-space: nowrap; color: #111; }
+.ct-item__bottom { display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; }
+.ct-item__qty {
+  display: inline-flex; border: 1.5px solid #e8e8e8; border-radius: 0.375rem;
+}
+.ct-item__qty button {
+  width: 2.25rem; height: 2.25rem; display: flex; align-items: center; justify-content: center;
+  background: #fff; font-size: 0.875rem; cursor: pointer; transition: background 0.15s;
+  border-radius: 0.375rem;
+}
+.ct-item__qty button:hover:not(:disabled) { background: #f5f3ee; }
+.ct-item__qty button:disabled { color: #ddd; cursor: not-allowed; }
+.ct-item__qty span {
+  min-width: 2.25rem; display: flex; align-items: center; justify-content: center;
+  font-size: 0.8125rem; font-weight: 600;
+  border-left: 1.5px solid #e8e8e8; border-right: 1.5px solid #e8e8e8;
+}
+.ct-item__remove {
+  display: flex; align-items: center; gap: 0.25rem;
+  background: none; border: none; font-size: 0.6875rem; color: #bbb;
+  cursor: pointer; transition: color 0.2s;
+}
+.ct-item__remove:hover { color: #e53e3e; }
+.ct-item__remove .material-symbols-outlined { font-size: 1rem; font-variation-settings: "wght" 300; }
 
-.cart-item {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+/* 주문 요약 */
+.ct-summary {
+  background: #fafaf8; border-radius: 0.75rem; padding: 2rem;
+  position: sticky; top: 140px;
 }
-
-@media (min-width: 640px) {
-  .cart-item {
-    flex-direction: row; /* 태블릿 이상: 이미지 + 정보 가로 배치 */
-    gap: 2rem;
-  }
+.ct-summary__title {
+  font-size: 1.125rem; font-weight: 800; margin-bottom: 1.5rem;
+  padding-bottom: 1rem; border-bottom: 1px solid #eee;
 }
-
-.cart-item__img-wrap {
-  width: 100%;
-  max-width: 16rem;
-  aspect-ratio: 3/4;
-  overflow: hidden;
-  background-color: var(--color-surface-container);
-  flex-shrink: 0; /* 이미지 영역 줄어들지 않게 */
+.ct-summary__rows { display: flex; flex-direction: column; gap: 0.875rem; margin-bottom: 1.5rem; }
+.ct-summary__row {
+  display: flex; justify-content: space-between; font-size: 0.8125rem; color: #555;
 }
-
-.cart-item__img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.ct-summary__free { color: #38a169; font-weight: 600; }
+.ct-summary__row--dc { color: #FF2D2D; font-weight: 600; }
+.ct-summary__row--total {
+  border-top: 1px solid #eee; padding-top: 1rem; margin-top: 0.5rem;
+  font-weight: 800; color: #111;
 }
-
-.cart-item__info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 0.5rem 0;
+.ct-summary__total { font-size: 1.25rem; }
+.ct-summary__checkout {
+  display: block; width: 100%; padding: 1.125rem; text-align: center;
+  background: #111; color: #fff; font-size: 0.875rem; font-weight: 700;
+  letter-spacing: 0.05em; border-radius: 0.5rem; text-decoration: none;
+  transition: background 0.2s; margin-bottom: 0.75rem;
 }
-
-.cart-item__top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
+.ct-summary__checkout:hover { background: #333; }
+.ct-summary__continue {
+  display: block; text-align: center; font-size: 0.75rem; color: #999;
+  text-decoration: none; margin-bottom: 1.5rem; transition: color 0.2s;
 }
-
-.cart-item__name {
-  font-family: var(--font-headline);
-  font-size: 1.375rem;
-  font-weight: 300;
-  letter-spacing: -0.01em;
-  margin-bottom: 1rem;
+.ct-summary__continue:hover { color: #111; }
+.ct-summary__perks {
+  display: flex; flex-direction: column; gap: 0.5rem;
+  padding-top: 1.25rem; border-top: 1px solid #eee;
 }
-
-/* 2컬럼 그리드: 키(왼쪽) + 값(오른쪽) */
-.cart-item__attrs {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  column-gap: 0.75rem;
-  row-gap: 0.375rem;
+.ct-summary__perks div {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.6875rem; color: #888;
 }
-
-.cart-item__attr-key {
-  font-size: 0.625rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-on-surface-variant);
-}
-
-.cart-item__attr-val {
-  font-size: 0.625rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-}
-
-.cart-item__price {
-  font-size: 0.875rem;
-  letter-spacing: 0.05em;
-  white-space: nowrap; /* 가격 줄바꿈 방지 */
-}
-
-.cart-item__remove {
-  align-self: flex-start;
-  font-size: 0.625rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-on-surface-variant);
-  border-bottom: 1px solid transparent;
-  padding-bottom: 1px;
-  transition:
-    color 0.2s,
-    border-color 0.2s;
-}
-
-.cart-item__remove:hover {
-  color: var(--color-primary);
-  border-bottom-color: rgba(0, 0, 0, 0.2);
-}
-
-/* ── 주문 요약 ── */
-.cart-summary {
-  background-color: var(--color-surface-container-lowest);
-  padding: 2rem;
-  position: sticky; /* 스크롤해도 화면에 고정 */
-  top: calc(var(--header-height) + 2rem);
-}
-
-.cart-summary__title {
-  font-family: var(--font-headline);
-  font-size: 1.375rem;
-  font-weight: 300;
-  text-transform: uppercase;
-  border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
-  padding-bottom: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.cart-summary__rows {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.cart-summary__row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.625rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-}
-
-/* 합계 행: 위에 구분선 추가 */
-.cart-summary__row--total {
-  border-top: 0.5px solid rgba(0, 0, 0, 0.1);
-  padding-top: 1.5rem;
-  margin-top: 0.5rem;
-}
-
-.cart-summary__label {
-  color: var(--color-on-surface-variant);
-}
-.cart-summary__free {
-  font-style: italic;
-  color: var(--color-secondary);
-}
-
-.cart-summary__total-label {
-  font-size: 0.6875rem;
-}
-.cart-summary__total-amount {
-  font-size: 1rem;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-/* 결제 버튼 */
-.cart-summary__checkout {
-  display: block;
-  width: 100%;
-  background-color: var(--color-primary);
-  color: var(--color-on-primary);
-  padding: 1.5rem;
-  text-align: center;
-  font-size: 0.6875rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  margin-bottom: 1rem;
-  transition:
-    opacity 0.2s,
-    transform 0.2s;
-}
-
-.cart-summary__checkout:hover {
-  opacity: 0.88;
-}
-.cart-summary__checkout:active {
-  transform: scale(0.98);
-}
-
-.cart-summary__note {
-  font-size: 0.5625rem;
-  text-align: center;
-  color: var(--color-on-surface-variant);
-  line-height: 1.8;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+.ct-summary__perks .material-symbols-outlined {
+  font-size: 1rem; color: #111; font-variation-settings: "wght" 300;
 }
 </style>

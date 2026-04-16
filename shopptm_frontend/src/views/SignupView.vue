@@ -1,137 +1,287 @@
 <template>
-  <div class="auth-layout">
-    <!-- 헤더 -->
-    <header class="auth-header">
-      <RouterLink to="/" class="auth-header__close" aria-label="닫기">
-        <span class="material-symbols-outlined">close</span>
-      </RouterLink>
-      <RouterLink to="/" class="auth-header__logo">FORME</RouterLink>
-      <div class="auth-header__spacer"></div>
-    </header>
+  <div class="su">
+    <!-- 좌: 비주얼 -->
+    <div class="su-visual">
+      <div class="su-visual__overlay"></div>
+      <img src="/images/carhartt/carhero.png" alt="" class="su-visual__img" />
+      <div class="su-visual__content">
+        <h2 class="su-visual__title">FORME</h2>
+        <p class="su-visual__sub">Join the Community.</p>
+        <ul class="su-visual__perks">
+          <li><span class="material-symbols-outlined">loyalty</span>등급별 할인 혜택 (최대 12%)</li>
+          <li><span class="material-symbols-outlined">local_shipping</span>전 상품 무료 배송</li>
+          <li><span class="material-symbols-outlined">new_releases</span>신상품 알림 & 선공개</li>
+        </ul>
+      </div>
+    </div>
 
-    <!-- 메인 폼 -->
-    <main class="auth-main">
-      <form class="auth-form" @submit.prevent="handleSignup">
-        <!-- 이름 -->
-        <div class="auth-field">
-          <label class="auth-field__label" for="full_name">Full Name</label>
-          <input
-            id="full_name"
-            v-model="form.name"
-            type="text"
-            placeholder="E.G. JULIEN D'ESTRÉE"
-            class="auth-field__input"
-            autocomplete="name"
-            required
-          />
-        </div>
-
-        <!-- 이메일 -->
-        <div class="auth-field">
-          <label class="auth-field__label" for="email">Email Address</label>
-          <input
-            id="email"
-            v-model="form.email"
-            type="email"
-            placeholder="NAME@DOMAIN.COM"
-            class="auth-field__input"
-            autocomplete="email"
-            required
-          />
-        </div>
-
-        <!-- 비밀번호 -->
-        <div class="auth-field">
-          <label class="auth-field__label" for="password">Password</label>
-          <input
-            id="password"
-            v-model="form.password"
-            type="password"
-            placeholder="••••••••••••"
-            class="auth-field__input"
-            autocomplete="new-password"
-            required
-          />
-        </div>
-
-        <!-- 에러 메시지 -->
-        <p v-if="errorMsg" class="auth-error">{{ errorMsg }}</p>
-
-        <div class="auth-cta">
-          <button type="submit" class="auth-submit" :disabled="isLoading">
-            <span>{{
-              isLoading ? "Creating Account..." : "CREATE ACCOUNT"
-            }}</span>
-            <!-- 호버 시 오른쪽으로 살짝 이동하는 화살표 -->
-            <span class="material-symbols-outlined auth-submit__icon"
-              >arrow_forward</span
-            >
-          </button>
-        </div>
-      </form>
-
-      <!-- 약관 + 로그인 링크 -->
-      <footer class="auth-footer">
-        <p class="auth-footer__terms">
-          By creating an account, you agree to our Terms of Service and Privacy
-          Policy.
-        </p>
-        <span class="auth-footer__divider"></span>
-        <RouterLink to="/login" class="auth-footer__login">
-          ALREADY A MEMBER? LOG IN
+    <!-- 우: 폼 -->
+    <div class="su-form-side">
+      <header class="su-head">
+        <RouterLink to="/" class="su-head__back">
+          <span class="material-symbols-outlined">arrow_back</span>
         </RouterLink>
-      </footer>
-    </main>
+      </header>
 
-    <!-- 하단 탭 네비 (시안 재현) -->
-    <nav class="auth-bottom-nav">
-      <RouterLink to="/login" class="auth-bottom-nav__item">
-        <span class="material-symbols-outlined">login</span>
-        <span class="auth-bottom-nav__label">LOGIN</span>
-      </RouterLink>
-      <!-- 현재 페이지: 상단 테두리 강조 -->
-      <RouterLink
-        to="/signup"
-        class="auth-bottom-nav__item auth-bottom-nav__item--active"
-      >
-        <span class="material-symbols-outlined">person_add</span>
-        <span class="auth-bottom-nav__label">SIGN UP</span>
-      </RouterLink>
-    </nav>
+      <main class="su-body">
+        <div class="su-body__top">
+          <h1 class="su-body__title">Create Account</h1>
+          <p class="su-body__sub">FORME 멤버가 되어 특별한 혜택을 누리세요</p>
+        </div>
+
+        <!-- 단계 표시 -->
+        <div class="su-steps">
+          <div class="su-steps__item" :class="{ 'su-steps__item--on': step >= 1 }">
+            <span class="su-steps__num">1</span>
+            <span class="su-steps__label">기본 정보</span>
+          </div>
+          <div class="su-steps__line" :class="{ 'su-steps__line--on': step >= 2 }"></div>
+          <div class="su-steps__item" :class="{ 'su-steps__item--on': step >= 2 }">
+            <span class="su-steps__num">2</span>
+            <span class="su-steps__label">비밀번호</span>
+          </div>
+        </div>
+
+        <form class="su-form" @submit.prevent="handleSubmit">
+          <!-- Step 1: 기본 정보 -->
+          <template v-if="step === 1">
+            <div class="su-field">
+              <label for="su-name">이름</label>
+              <div class="su-field__wrap">
+                <span class="material-symbols-outlined su-field__icon">person</span>
+                <input
+                  id="su-name"
+                  v-model="form.name"
+                  type="text"
+                  placeholder="홍길동"
+                  autocomplete="name"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="su-field">
+              <label for="su-email">이메일</label>
+              <div class="su-field__wrap">
+                <span class="material-symbols-outlined su-field__icon">mail</span>
+                <input
+                  id="su-email"
+                  v-model="form.email"
+                  type="email"
+                  placeholder="name@example.com"
+                  autocomplete="email"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="su-field">
+              <label for="su-phone">전화번호</label>
+              <div class="su-field__wrap">
+                <span class="material-symbols-outlined su-field__icon">phone</span>
+                <input id="su-phone" v-model="form.phone" type="tel" placeholder="010-0000-0000" autocomplete="tel" />
+              </div>
+            </div>
+
+            <div class="su-field">
+              <label for="su-address">주소</label>
+              <div class="su-field__wrap">
+                <span class="material-symbols-outlined su-field__icon">home</span>
+                <input id="su-address" v-model="form.address" type="text" placeholder="서울시 강남구 테헤란로 000" autocomplete="street-address" />
+              </div>
+            </div>
+
+            <div class="su-field">
+              <label>키 (cm) *</label>
+              <div class="su-field__wrap">
+                <span class="material-symbols-outlined su-field__icon">height</span>
+                <input v-model.number="form.height" type="number" placeholder="170" min="100" max="250" required />
+              </div>
+            </div>
+
+            <div class="su-field">
+              <label>몸무게 (kg) *</label>
+              <div class="su-field__wrap">
+                <span class="material-symbols-outlined su-field__icon">monitor_weight</span>
+                <input v-model.number="form.weight" type="number" placeholder="70" min="30" max="200" required />
+              </div>
+            </div>
+
+            <div class="su-field">
+              <label>선호 핏 *</label>
+              <div class="su-fit-group">
+                <button type="button" v-for="f in fitOptions" :key="f.value"
+                  class="su-fit-btn" :class="{ 'su-fit-btn--on': form.fit === f.value }"
+                  @click="form.fit = f.value"
+                >
+                  <span class="su-fit-btn__icon">{{ f.icon }}</span>
+                  <span>{{ f.label }}</span>
+                </button>
+              </div>
+            </div>
+
+            <button type="button" class="su-next" @click="goStep2">
+              다음 단계
+              <span class="material-symbols-outlined">arrow_forward</span>
+            </button>
+          </template>
+
+          <!-- Step 2: 비밀번호 -->
+          <template v-if="step === 2">
+            <div class="su-field">
+              <label for="su-pw">비밀번호</label>
+              <div class="su-field__wrap">
+                <span class="material-symbols-outlined su-field__icon">lock</span>
+                <input
+                  id="su-pw"
+                  v-model="form.password"
+                  :type="showPw ? 'text' : 'password'"
+                  placeholder="8자 이상 입력하세요"
+                  autocomplete="new-password"
+                  required
+                />
+                <button type="button" class="su-field__toggle" @click="showPw = !showPw">
+                  <span class="material-symbols-outlined">{{ showPw ? 'visibility_off' : 'visibility' }}</span>
+                </button>
+              </div>
+              <!-- 비밀번호 강도 -->
+              <div class="su-pw-strength">
+                <div class="su-pw-bar">
+                  <div class="su-pw-bar__fill" :style="{ width: pwStrength + '%', backgroundColor: pwColor }"></div>
+                </div>
+                <span class="su-pw-label" :style="{ color: pwColor }">{{ pwText }}</span>
+              </div>
+            </div>
+
+            <div class="su-field">
+              <label for="su-pw2">비밀번호 확인</label>
+              <div class="su-field__wrap">
+                <span class="material-symbols-outlined su-field__icon">lock_reset</span>
+                <input
+                  id="su-pw2"
+                  v-model="form.password2"
+                  :type="showPw ? 'text' : 'password'"
+                  placeholder="비밀번호를 다시 입력하세요"
+                  autocomplete="new-password"
+                  required
+                />
+              </div>
+            </div>
+
+            <p v-if="errorMsg" class="su-error">{{ errorMsg }}</p>
+
+            <div class="su-actions">
+              <button type="button" class="su-back-btn" @click="step = 1">
+                <span class="material-symbols-outlined">arrow_back</span>
+                이전
+              </button>
+              <button type="submit" class="su-submit" :disabled="isLoading">
+                {{ isLoading ? '가입 중...' : '가입 완료' }}
+              </button>
+            </div>
+          </template>
+        </form>
+
+        <div class="su-bottom">
+          <p class="su-terms">
+            가입 시 <a href="#">이용약관</a> 및 <a href="#">개인정보처리방침</a>에 동의합니다.
+          </p>
+          <RouterLink to="/login" class="su-login-link">
+            이미 계정이 있으신가요? <strong>로그인</strong>
+          </RouterLink>
+        </div>
+      </main>
+
+      <footer class="su-foot">
+        <p>© 2026 FORME. All rights reserved.</p>
+      </footer>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/authStore";
 
 const router = useRouter();
 const authStore = useAuthStore();
 
-const form = ref({ name: "", email: "", password: "" });
+const form = ref({ name: "", email: "", password: "", password2: "", phone: "", address: "", height: null, weight: null, fit: "standard" });
+
+const fitOptions = [
+  { value: 'slim', label: '슬림', icon: '◁' },
+  { value: 'standard', label: '스탠다드', icon: '▢' },
+  { value: 'wide', label: '와이드', icon: '▷' },
+];
 const errorMsg = ref("");
 const isLoading = ref(false);
+const showPw = ref(false);
+const step = ref(1);
 
-async function handleSignup() {
+// 비밀번호 강도
+const pwStrength = computed(() => {
+  const pw = form.value.password;
+  if (!pw) return 0;
+  let s = 0;
+  if (pw.length >= 4) s += 20;
+  if (pw.length >= 8) s += 20;
+  if (pw.length >= 12) s += 10;
+  if (/[A-Z]/.test(pw)) s += 15;
+  if (/[a-z]/.test(pw)) s += 10;
+  if (/[0-9]/.test(pw)) s += 15;
+  if (/[^A-Za-z0-9]/.test(pw)) s += 10;
+  return Math.min(s, 100);
+});
+const pwColor = computed(() => {
+  if (pwStrength.value < 30) return '#e53e3e';
+  if (pwStrength.value < 60) return '#dd6b20';
+  if (pwStrength.value < 80) return '#d69e2e';
+  return '#38a169';
+});
+const pwText = computed(() => {
+  if (!form.value.password) return '';
+  if (pwStrength.value < 30) return '약함';
+  if (pwStrength.value < 60) return '보통';
+  if (pwStrength.value < 80) return '강함';
+  return '매우 강함';
+});
+
+function goStep2() {
   errorMsg.value = "";
+  if (!form.value.name.trim()) { errorMsg.value = "이름을 입력해주세요."; return; }
+  if (!form.value.email.trim()) { errorMsg.value = "이메일을 입력해주세요."; return; }
+  if (!form.value.height || form.value.height < 100 || form.value.height > 250) { errorMsg.value = "키를 올바르게 입력해주세요. (100~250cm)"; return; }
+  if (!form.value.weight || form.value.weight < 30 || form.value.weight > 200) { errorMsg.value = "몸무게를 올바르게 입력해주세요. (30~200kg)"; return; }
+  if (!form.value.fit) { errorMsg.value = "선호 핏을 선택해주세요."; return; }
+  step.value = 2;
+}
+
+async function handleSubmit() {
+  errorMsg.value = "";
+  if (form.value.password.length < 4) {
+    errorMsg.value = "비밀번호는 4자 이상이어야 합니다.";
+    return;
+  }
+  if (form.value.password !== form.value.password2) {
+    errorMsg.value = "비밀번호가 일치하지 않습니다.";
+    return;
+  }
   isLoading.value = true;
-
   try {
-    // TODO: Spring Boot 연결 시 아래 주석 해제, 임시 코드 제거
-    // const response = await api.post('/auth/signup', form.value)
-    // authStore.login(response.data)
-
-    // 임시: 회원가입 후 바로 로그인 처리
-    authStore.login({
-      id: Date.now(), // 임시 ID
-      name: form.value.name,
+    await authStore.register({
       email: form.value.email,
+      password: form.value.password,
+      name: form.value.name,
+      phone: form.value.phone,
+      address: form.value.address,
+      height: form.value.height,
+      weight: form.value.weight,
+      fit: form.value.fit,
     });
-
-    router.push("/"); // 가입 완료 후 홈으로 이동
+    router.push("/");
   } catch (err) {
-    errorMsg.value = "회원가입에 실패했습니다. 다시 시도해주세요.";
+    errorMsg.value = err?.data?.message || err?.message || "회원가입에 실패했습니다.";
   } finally {
     isLoading.value = false;
   }
@@ -139,239 +289,360 @@ async function handleSignup() {
 </script>
 
 <style scoped>
-.auth-layout {
+.su {
+  display: flex;
   min-height: 100dvh;
-  background-color: var(--color-surface);
-  color: var(--color-on-surface);
+  background: #fff;
+}
+
+/* ── 좌: 비주얼 ── */
+.su-visual {
+  display: none;
+  position: relative;
+  width: 50%;
+  overflow: hidden;
+}
+@media (min-width: 1024px) {
+  .su-visual { display: block; }
+}
+.su-visual__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.6) saturate(0.85);
+}
+.su-visual__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, rgba(156,79,24,0.8) 0%, rgba(26,26,26,0.75) 100%);
+  z-index: 1;
+}
+.su-visual__content {
+  position: absolute;
+  bottom: 5rem;
+  left: 4rem;
+  z-index: 2;
+  color: #fff;
+}
+.su-visual__title {
+  font-size: 3.5rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+.su-visual__sub {
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.6);
+  letter-spacing: 0.1em;
+  margin-bottom: 2.5rem;
+}
+.su-visual__perks {
+  list-style: none;
   display: flex;
   flex-direction: column;
+  gap: 0.875rem;
 }
-
-/* ── 헤더 ── */
-.auth-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 2rem;
-  max-width: 80rem;
-  width: 100%;
-  margin: 0 auto;
-}
-
-.auth-header__close {
+.su-visual__perks li {
   display: flex;
   align-items: center;
-  color: var(--color-primary);
-  transition: opacity 0.3s;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 0.03em;
+}
+.su-visual__perks .material-symbols-outlined {
+  font-size: 1.125rem;
+  color: rgba(255,255,255,0.5);
+  font-variation-settings: "wght" 300;
 }
 
-.auth-header__close:hover {
-  opacity: 0.6;
-}
-
-.auth-header__logo {
-  font-family: var(--font-headline);
-  font-size: 1.875rem;
-  font-weight: 300;
-  letter-spacing: 0.2em;
-  color: #000;
-}
-
-.auth-header__spacer {
-  width: 1.5rem;
-}
-
-/* ── 메인 ── */
-.auth-main {
+/* ── 우: 폼 ── */
+.su-form-side {
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 100dvh;
+}
+
+/* 헤더 */
+.su-head { padding: 2rem 2.5rem; }
+.su-head__back {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 3rem 2rem 8rem;
-  max-width: 28rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1.5px solid #eee;
+  border-radius: 50%;
+  color: #111;
+  transition: all 0.2s;
+}
+.su-head__back:hover { background: #111; border-color: #111; color: #fff; }
+.su-head__back .material-symbols-outlined {
+  font-size: 1.125rem;
+  font-variation-settings: "wght" 300;
+}
+
+/* 본문 */
+.su-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem 2.5rem;
+  max-width: 26rem;
   width: 100%;
   margin: 0 auto;
 }
-
-/* ── 폼 ── */
-.auth-form {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 3rem;
+.su-body__top { margin-bottom: 2rem; }
+.su-body__title {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
 }
+.su-body__sub { font-size: 0.875rem; color: #999; }
 
-/* ── 인풋 필드 ── */
-.auth-field {
+/* 스텝 */
+.su-steps {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 2rem;
+}
+.su-steps__item {
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
 }
-
-.auth-field__label {
-  font-size: 0.625rem;
-  font-weight: 500;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--color-on-surface-variant);
-}
-
-.auth-field__input {
-  width: 100%;
-  background-color: var(--color-surface-container-low);
-  border: none;
-  border-bottom: 1px solid var(--color-outline-variant);
-  padding: 1rem 0;
-  font-size: 0.875rem;
-  color: var(--color-on-surface);
-  transition: border-color 0.3s;
-}
-
-.auth-field__input::placeholder {
-  color: rgba(119, 119, 119, 0.4);
-}
-
-.auth-field__input:focus {
-  border-bottom-color: var(--color-primary);
-}
-
-/* ── 에러 ── */
-.auth-error {
-  font-size: 0.75rem;
-  color: var(--color-error);
-  margin-top: -1.5rem;
-}
-
-/* ── CTA ── */
-.auth-cta {
-  padding-top: 2rem;
-}
-
-.auth-submit {
-  width: 100%;
-  background-color: var(--color-primary);
-  color: var(--color-on-primary);
-  padding: 1.25rem 2.75rem;
+.su-steps__num {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  border: 1.5px solid #ddd;
   display: flex;
-  justify-content: space-between; /* 텍스트 왼쪽, 화살표 오른쪽 */
   align-items: center;
-  font-family: var(--font-accent);
-  font-size: 1.0625rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  transition:
-    opacity 0.3s,
-    transform 0.3s;
-}
-
-.auth-submit:hover {
-  opacity: 0.9;
-}
-
-/* 호버 시 화살표 오른쪽으로 이동 */
-.auth-submit:hover .auth-submit__icon {
-  transform: translateX(4px);
-}
-
-.auth-submit:active {
-  transform: scale(0.98);
-}
-.auth-submit:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.auth-submit__icon {
-  font-size: 0.875rem;
-  transition: transform 0.3s;
-}
-
-/* ── 푸터 ── */
-.auth-footer {
-  margin-top: 5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2rem;
-  text-align: center;
-}
-
-.auth-footer__terms {
+  justify-content: center;
   font-size: 0.6875rem;
-  color: var(--color-on-surface-variant);
-  line-height: 1.7;
-  max-width: 18rem;
-  opacity: 0.6;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  font-weight: 700;
+  color: #bbb;
+  transition: all 0.3s;
 }
-
-.auth-footer__divider {
-  display: block;
-  width: 2rem;
-  height: 1px;
-  background-color: var(--color-outline-variant);
-}
-
-.auth-footer__login {
-  font-size: 0.625rem;
+.su-steps__label {
+  font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-primary);
-  transition: opacity 0.3s;
+  color: #bbb;
+  transition: color 0.3s;
 }
-
-.auth-footer__login:hover {
-  opacity: 0.5;
+.su-steps__item--on .su-steps__num {
+  background: #111;
+  border-color: #111;
+  color: #fff;
 }
-
-/* ── 하단 탭 네비 ── */
-.auth-bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  z-index: 50;
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  padding: 0.75rem 3rem 2rem;
-  background-color: rgba(249, 249, 249, 0.8);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 0.5px solid rgba(0, 0, 0, 0.05);
+.su-steps__item--on .su-steps__label { color: #111; }
+.su-steps__line {
+  flex: 1;
+  height: 1.5px;
+  background: #eee;
+  margin: 0 0.75rem;
+  transition: background 0.3s;
 }
+.su-steps__line--on { background: #111; }
 
-.auth-bottom-nav__item {
+/* 폼 */
+.su-form {
   display: flex;
   flex-direction: column;
+  gap: 1.5rem;
+}
+.su-field label {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+.su-field__wrap {
+  display: flex;
   align-items: center;
-  gap: 0.25rem;
-  color: var(--color-on-surface-variant);
-  padding-top: 0.5rem;
+  gap: 0.75rem;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 0.5rem;
+  padding: 0 1rem;
+  transition: border-color 0.2s;
+}
+.su-field__wrap:focus-within { border-color: #111; }
+.su-field__icon {
+  font-size: 1.125rem;
+  color: #bbb;
+  font-variation-settings: "wght" 300;
+}
+.su-field__wrap input {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 0.9375rem 0;
+  font-size: 0.875rem;
+  color: #111;
+  outline: none;
+}
+.su-field__wrap input::placeholder { color: #ccc; }
+.su-field__toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: #bbb;
   transition: color 0.2s;
 }
-
-.auth-bottom-nav__item:hover {
-  color: var(--color-primary);
+.su-field__toggle:hover { color: #111; }
+.su-field__toggle .material-symbols-outlined {
+  font-size: 1.125rem;
+  font-variation-settings: "wght" 300;
 }
 
-/* 현재 페이지 탭 강조 */
-.auth-bottom-nav__item--active {
-  color: var(--color-primary);
-  border-top: 2px solid var(--color-primary);
-  opacity: 0.8;
+/* 비밀번호 강도 */
+.su-pw-strength {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.625rem;
 }
-
-.auth-bottom-nav__label {
+.su-pw-bar {
+  flex: 1;
+  height: 3px;
+  background: #eee;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.su-pw-bar__fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s, background-color 0.3s;
+}
+.su-pw-label {
   font-size: 0.625rem;
-  letter-spacing: 0.15em;
-  font-weight: 500;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  min-width: 3.5rem;
 }
 
-.material-symbols-outlined {
-  font-size: 1.25rem;
+/* 에러 */
+.su-error {
+  font-size: 0.75rem;
+  color: #e53e3e;
+  margin-top: -0.5rem;
 }
+
+/* 다음 버튼 */
+.su-next {
+  width: 100%;
+  padding: 1rem;
+  background: #111;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: background 0.2s;
+  margin-top: 0.5rem;
+}
+.su-next:hover { background: #333; }
+.su-next .material-symbols-outlined {
+  font-size: 1rem;
+  font-variation-settings: "wght" 300;
+  transition: transform 0.2s;
+}
+.su-next:hover .material-symbols-outlined { transform: translateX(4px); }
+
+/* 가입/이전 버튼 */
+.su-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+.su-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 1rem 1.5rem;
+  border: 1.5px solid #ddd;
+  border-radius: 0.5rem;
+  background: #fff;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.su-back-btn:hover { border-color: #111; color: #111; }
+.su-back-btn .material-symbols-outlined {
+  font-size: 1rem;
+  font-variation-settings: "wght" 300;
+}
+.su-submit {
+  flex: 1;
+  padding: 1rem;
+  background: #111;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+.su-submit:hover { background: #333; }
+.su-submit:active { transform: scale(0.98); }
+.su-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* 하단 */
+.su-bottom {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.su-terms {
+  font-size: 0.6875rem;
+  color: #bbb;
+  text-align: center;
+  line-height: 1.6;
+}
+.su-terms a {
+  color: #999;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.su-terms a:hover { color: #111; }
+.su-login-link {
+  font-size: 0.8125rem;
+  color: #999;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.su-login-link strong { color: #111; font-weight: 700; }
+.su-login-link:hover { color: #111; }
+
+/* 푸터 */
+.su-fit-group { display: flex; gap: 0.5rem; }
+.su-fit-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+  padding: 0.875rem 0.5rem; border: 1.5px solid #e8e8e8; border-radius: 0.5rem;
+  font-size: 0.6875rem; font-weight: 600; color: #999; cursor: pointer;
+  background: #fff; transition: all 0.2s;
+}
+.su-fit-btn:hover { border-color: #111; color: #111; }
+.su-fit-btn--on { background: #111; border-color: #111; color: #fff; }
+.su-fit-btn__icon { font-size: 1.25rem; }
+.su-foot { padding: 2rem 2.5rem; text-align: center; }
+.su-foot p { font-size: 0.5625rem; color: #ccc; letter-spacing: 0.1em; }
 </style>

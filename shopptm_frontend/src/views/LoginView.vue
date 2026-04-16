@@ -1,77 +1,92 @@
 <template>
-  <div class="auth-layout">
-    <!-- 헤더 -->
-    <header class="auth-header">
-      <RouterLink to="/" class="auth-header__close" aria-label="닫기">
-        <span class="material-symbols-outlined">close</span>
-      </RouterLink>
-      <RouterLink to="/" class="auth-header__logo">FORME</RouterLink>
-      <div class="auth-header__spacer"></div>
-    </header>
+  <div class="lg">
+    <!-- 좌: 비주얼 -->
+    <div class="lg-visual">
+      <div class="lg-visual__overlay"></div>
+      <img src="/images/beanpole/beanpole_hero.png" alt="" class="lg-visual__img" />
+      <div class="lg-visual__content">
+        <h2 class="lg-visual__title">FORME</h2>
+        <p class="lg-visual__sub">The Best of Everything.</p>
+        <div class="lg-visual__brands">
+          <span>BEANPOLE</span>
+          <span>CARHARTT</span>
+          <span>LEVI'S</span>
+          <span>DICKIES</span>
+        </div>
+      </div>
+    </div>
 
-    <!-- 메인 폼 -->
-    <main class="auth-main">
-      <form class="auth-form" @submit.prevent="handleLogin">
-        <!-- 이메일 -->
-        <div class="auth-field">
-          <label class="auth-field__label" for="email">Email Address</label>
-          <input
-            id="email"
-            v-model="form.email"
-            type="email"
-            placeholder="Enter your email"
-            class="auth-field__input"
-            autocomplete="email"
-            required
-          />
+    <!-- 우: 폼 -->
+    <div class="lg-form-side">
+      <header class="lg-head">
+        <RouterLink to="/" class="lg-head__back">
+          <span class="material-symbols-outlined">arrow_back</span>
+        </RouterLink>
+      </header>
+
+      <main class="lg-body">
+        <div class="lg-body__top">
+          <h1 class="lg-body__title">Welcome Back</h1>
+          <p class="lg-body__sub">로그인하고 컬렉션을 탐색하세요</p>
         </div>
 
-        <!-- 비밀번호 -->
-        <div class="auth-field">
-          <label class="auth-field__label" for="password">Password</label>
-          <input
-            id="password"
-            v-model="form.password"
-            type="password"
-            placeholder="Enter your password"
-            class="auth-field__input"
-            autocomplete="current-password"
-            required
-          />
-        </div>
-
-        <!-- 에러 메시지: 로그인 실패 시 표시 -->
-        <p v-if="errorMsg" class="auth-error">{{ errorMsg }}</p>
-
-        <div class="auth-cta">
-          <button type="submit" class="auth-submit" :disabled="isLoading">
-            {{ isLoading ? "Logging in..." : "LOGIN" }}
-          </button>
-
-          <div class="auth-links">
-            <a href="#" class="auth-link">FORGOT PASSWORD?</a>
-            <div class="auth-divider-row">
-              <span class="auth-divider-line"></span>
-              <!-- 회원가입 페이지로 이동 -->
-              <RouterLink to="/signup" class="auth-link auth-link--bold">
-                CREATE ACCOUNT
-              </RouterLink>
-              <span class="auth-divider-line"></span>
+        <form class="lg-form" @submit.prevent="handleLogin">
+          <div class="lg-field">
+            <label for="lg-email">이메일</label>
+            <div class="lg-field__wrap">
+              <span class="material-symbols-outlined lg-field__icon">mail</span>
+              <input
+                id="lg-email"
+                v-model="form.email"
+                type="email"
+                placeholder="name@example.com"
+                autocomplete="email"
+                required
+              />
             </div>
           </div>
+
+          <div class="lg-field">
+            <label for="lg-pw">비밀번호</label>
+            <div class="lg-field__wrap">
+              <span class="material-symbols-outlined lg-field__icon">lock</span>
+              <input
+                id="lg-pw"
+                v-model="form.password"
+                :type="showPw ? 'text' : 'password'"
+                placeholder="비밀번호를 입력하세요"
+                autocomplete="current-password"
+                required
+              />
+              <button type="button" class="lg-field__toggle" @click="showPw = !showPw">
+                <span class="material-symbols-outlined">{{ showPw ? 'visibility_off' : 'visibility' }}</span>
+              </button>
+            </div>
+          </div>
+
+          <p v-if="errorMsg" class="lg-error">{{ errorMsg }}</p>
+
+          <button type="submit" class="lg-submit" :disabled="isLoading">
+            {{ isLoading ? '로그인 중...' : '로그인' }}
+          </button>
+        </form>
+
+        <div class="lg-bottom">
+          <div class="lg-bottom__divider">
+            <span></span>
+            <p>또는</p>
+            <span></span>
+          </div>
+          <RouterLink to="/signup" class="lg-signup-link">
+            계정이 없으신가요? <strong>회원가입</strong>
+          </RouterLink>
         </div>
-      </form>
+      </main>
 
-      <footer class="auth-footer">
-        <p class="auth-footer__quote">
-          Refined digital experiences for the modern curator.
-        </p>
+      <footer class="lg-foot">
+        <p>© 2026 FORME. All rights reserved.</p>
       </footer>
-    </main>
-
-    <!-- 배경 장식 -->
-    <div class="auth-deco auth-deco--right"></div>
-    <div class="auth-deco auth-deco--left"></div>
+    </div>
   </div>
 </template>
 
@@ -87,32 +102,21 @@ const authStore = useAuthStore();
 const form = ref({ email: "", password: "" });
 const errorMsg = ref("");
 const isLoading = ref(false);
+const showPw = ref(false);
 
 async function handleLogin() {
   errorMsg.value = "";
+  if (!form.value.email || !form.value.password) {
+    errorMsg.value = "이메일과 비밀번호를 입력해주세요.";
+    return;
+  }
   isLoading.value = true;
-
   try {
-    // TODO: Spring Boot 연결 시 아래 주석 해제, 임시 코드 제거
-    // const response = await api.post('/auth/login', form.value)
-    // authStore.login(response.data)
-
-    // 임시: 이메일 + 비밀번호 입력하면 로그인 처리
-    if (form.value.email && form.value.password) {
-      authStore.login({
-        id: 1,
-        name: form.value.email.split("@")[0], // @ 앞부분을 이름으로 사용
-        email: form.value.email,
-      });
-
-      // 로그인 전에 가려던 페이지가 있으면 그쪽으로, 없으면 홈으로
-      const redirectTo = route.query.redirect || "/";
-      router.push(redirectTo);
-    } else {
-      errorMsg.value = "이메일과 비밀번호를 입력해주세요.";
-    }
+    await authStore.login({ email: form.value.email, password: form.value.password });
+    const redirectTo = route.query.redirect || "/";
+    router.push(redirectTo);
   } catch (err) {
-    errorMsg.value = "로그인에 실패했습니다. 다시 시도해주세요.";
+    errorMsg.value = err?.data?.message || err?.message || "로그인에 실패했습니다.";
   } finally {
     isLoading.value = false;
   }
@@ -120,224 +124,245 @@ async function handleLogin() {
 </script>
 
 <style scoped>
-.auth-layout {
+.lg {
+  display: flex;
   min-height: 100dvh;
-  background-color: var(--color-surface);
+  background: #fff;
+}
+
+/* ── 좌: 비주얼 ── */
+.lg-visual {
+  display: none;
   position: relative;
+  width: 50%;
   overflow: hidden;
 }
+@media (min-width: 1024px) {
+  .lg-visual { display: block; }
+}
 
-/* ── 헤더 ── */
-.auth-header {
+.lg-visual__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.65) saturate(0.9);
+}
+.lg-visual__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(16,55,40,0.85) 0%, rgba(26,26,26,0.7) 100%);
+  z-index: 1;
+}
+.lg-visual__content {
+  position: absolute;
+  bottom: 5rem;
+  left: 4rem;
+  z-index: 2;
+  color: #fff;
+}
+.lg-visual__title {
+  font-size: 3.5rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+}
+.lg-visual__sub {
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.6);
+  letter-spacing: 0.1em;
+  margin-bottom: 2.5rem;
+}
+.lg-visual__brands {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 2.5rem 2rem;
-  max-width: 80rem;
-  margin: 0 auto;
+  gap: 1.5rem;
 }
-
-.auth-header__close {
-  display: flex;
-  align-items: center;
-  color: var(--color-primary);
-  transition: opacity 0.3s;
-}
-
-.auth-header__close:hover {
-  opacity: 0.6;
-}
-
-.auth-header__logo {
-  font-family: var(--font-headline);
-  font-size: 1.875rem;
-  font-weight: 300;
+.lg-visual__brands span {
+  font-size: 0.5625rem;
+  font-weight: 700;
   letter-spacing: 0.2em;
-  color: #000;
+  color: rgba(255,255,255,0.4);
 }
 
-/* 로고 가운데 정렬을 위한 빈 공간 */
-.auth-header__spacer {
-  width: 1.5rem;
-}
-
-/* ── 메인 ── */
-.auth-main {
+/* ── 우: 폼 사이드 ── */
+.lg-form-side {
+  flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 100dvh;
+}
+
+/* 헤더 */
+.lg-head {
+  padding: 2rem 2.5rem;
+}
+.lg-head__back {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 3rem 2rem 8rem;
-  max-width: 28rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1.5px solid #eee;
+  border-radius: 50%;
+  color: #111;
+  transition: all 0.2s;
+}
+.lg-head__back:hover {
+  background: #111;
+  border-color: #111;
+  color: #fff;
+}
+.lg-head__back .material-symbols-outlined {
+  font-size: 1.125rem;
+  font-variation-settings: "wght" 300;
+}
+
+/* 본문 */
+.lg-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem 2.5rem;
+  max-width: 26rem;
+  width: 100%;
   margin: 0 auto;
 }
-
-/* ── 폼 ── */
-.auth-form {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 3.5rem;
+.lg-body__top { margin-bottom: 2.5rem; }
+.lg-body__title {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
 }
-
-/* ── 인풋 필드 ── */
-.auth-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.auth-field__label {
-  font-size: 0.5625rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-on-surface-variant);
-}
-
-.auth-field__input {
-  width: 100%;
-  background: transparent;
-  border: none;
-  /* 하단 선만 표시 (시안 스타일) */
-  border-bottom: 1px solid rgba(198, 198, 198, 0.3);
-  padding: 1rem 0;
+.lg-body__sub {
   font-size: 0.875rem;
-  letter-spacing: 0.04em;
-  color: var(--color-on-surface);
+  color: #999;
+}
+
+/* 폼 */
+.lg-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.lg-field label {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+.lg-field__wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1.5px solid #e8e8e8;
+  border-radius: 0.5rem;
+  padding: 0 1rem;
   transition: border-color 0.2s;
 }
-
-.auth-field__input::placeholder {
-  color: var(--color-surface-container-highest);
+.lg-field__wrap:focus-within {
+  border-color: #111;
 }
-
-.auth-field__input:focus {
-  border-bottom-color: var(--color-primary);
+.lg-field__icon {
+  font-size: 1.125rem;
+  color: #bbb;
+  font-variation-settings: "wght" 300;
 }
-
-/* ── 에러 메시지 ── */
-.auth-error {
-  font-size: 0.75rem;
-  color: var(--color-error);
-  margin-top: -1.5rem;
+.lg-field__wrap input {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 0.9375rem 0;
+  font-size: 0.875rem;
+  color: #111;
+  outline: none;
 }
-
-/* ── CTA ── */
-.auth-cta {
+.lg-field__wrap input::placeholder { color: #ccc; }
+.lg-field__toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
   display: flex;
-  flex-direction: column;
-  gap: 2.5rem;
-  padding-top: 1rem;
+  align-items: center;
+  color: #bbb;
+  transition: color 0.2s;
+}
+.lg-field__toggle:hover { color: #111; }
+.lg-field__toggle .material-symbols-outlined {
+  font-size: 1.125rem;
+  font-variation-settings: "wght" 300;
 }
 
-.auth-submit {
+/* 에러 */
+.lg-error {
+  font-size: 0.75rem;
+  color: #e53e3e;
+  margin-top: -0.5rem;
+}
+
+/* 제출 버튼 */
+.lg-submit {
   width: 100%;
-  background-color: var(--color-primary);
-  color: var(--color-on-primary);
-  padding: 1.5rem;
-  font-family: var(--font-accent);
-  font-size: 1.0625rem;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  transition:
-    opacity 0.2s,
-    transform 0.3s;
+  padding: 1rem;
+  background: #111;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  margin-top: 0.5rem;
 }
+.lg-submit:hover { background: #333; }
+.lg-submit:active { transform: scale(0.98); }
+.lg-submit:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.auth-submit:hover {
-  opacity: 0.88;
-}
-.auth-submit:active {
-  transform: scale(0.97);
-}
-
-/* 로딩 중 버튼 비활성화 */
-.auth-submit:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ── 링크들 ── */
-.auth-links {
+/* 하단 */
+.lg-bottom {
+  margin-top: 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1.25rem;
 }
-
-.auth-link {
-  font-size: 0.625rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--color-on-surface-variant);
-  border-bottom: 1px solid transparent;
-  padding-bottom: 1px;
-  transition:
-    color 0.2s,
-    border-color 0.2s;
-}
-
-.auth-link:hover {
-  color: var(--color-primary);
-  border-bottom-color: rgba(0, 0, 0, 0.15);
-}
-
-/* 회원가입 링크 강조 */
-.auth-link--bold {
-  font-weight: 700;
-  color: var(--color-primary);
-}
-
-/* 좌우 구분선 + 링크 */
-.auth-divider-row {
+.lg-bottom__divider {
   display: flex;
   align-items: center;
   gap: 1rem;
+  width: 100%;
 }
-
-.auth-divider-line {
-  display: block;
-  width: 2rem;
+.lg-bottom__divider span {
+  flex: 1;
   height: 1px;
-  background-color: rgba(198, 198, 198, 0.3);
+  background: #eee;
 }
+.lg-bottom__divider p {
+  font-size: 0.6875rem;
+  color: #bbb;
+}
+.lg-signup-link {
+  font-size: 0.8125rem;
+  color: #999;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.lg-signup-link strong {
+  color: #111;
+  font-weight: 700;
+}
+.lg-signup-link:hover { color: #111; }
 
-/* ── 하단 문구 ── */
-.auth-footer {
-  margin-top: 7rem;
+/* 푸터 */
+.lg-foot {
+  padding: 2rem 2.5rem;
   text-align: center;
 }
-
-.auth-footer__quote {
-  font-family: var(--font-headline);
-  font-style: italic;
-  font-size: 0.875rem;
-  color: rgba(71, 71, 71, 0.4);
-  max-width: 18rem;
-  margin: 0 auto;
-  line-height: 1.7;
-}
-
-/* ── 배경 장식 ── */
-.auth-deco {
-  position: fixed;
-  z-index: -1; /* 콘텐츠 뒤에 배치 */
-  pointer-events: none; /* 클릭 이벤트 무시 */
-}
-
-.auth-deco--right {
-  top: 0;
-  right: 0;
-  width: 25%;
-  height: 100vh;
-  background-color: rgba(243, 243, 244, 0.2);
-}
-
-.auth-deco--left {
-  bottom: 0;
-  left: 0;
-  width: 33%;
-  height: 50vh;
-  background-color: rgba(243, 243, 244, 0.1);
+.lg-foot p {
+  font-size: 0.5625rem;
+  color: #ccc;
+  letter-spacing: 0.1em;
 }
 </style>
