@@ -1,5 +1,9 @@
 <template>
   <main class="f32-layout" :style="{ '--nav-accent': navAccent }">
+    <!-- ═══ 데모 배너 ═══ -->
+    <div class="demo-banner">
+      <span>관리자 계정 &nbsp;|&nbsp; <b>admin@forme.com</b> &nbsp;/&nbsp; <b>1234</b></span>
+    </div>
     <!-- ═══ 헤더 ═══ -->
     <header class="f32-topbar">
       <div class="f32-topbar__main">
@@ -196,6 +200,15 @@ onMounted(async () => {
    Forme32 Layout — 공통 헤더/푸터
    (scoped 아님 — 하위 페이지에서도 적용)
    ════════════════════════════════ */
+.demo-banner {
+  background: #111;
+  color: #f5f5f5;
+  text-align: center;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  padding: 7px 16px;
+}
+.demo-banner b { color: #fff; }
 .f32-layout {
   background: #fff;
   color: #111;

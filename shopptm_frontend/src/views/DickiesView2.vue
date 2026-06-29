@@ -34,7 +34,7 @@
     </div>
 
     <!-- ═══ Products — 상의 ═══ -->
-    <section v-if="topProducts.length" class="dk-products">
+    <section v-if="!isLoading && topProducts.length" class="dk-products">
       <header class="dk-sec-head">
         <div>
           <p class="dk-sec-head__code">TOPS</p>
@@ -67,7 +67,7 @@
     </section>
 
     <!-- ═══ Products — 하의 ═══ -->
-    <section v-if="bottomProducts.length" class="dk-products">
+    <section v-if="!isLoading && bottomProducts.length" class="dk-products">
       <header class="dk-sec-head">
         <div>
           <p class="dk-sec-head__code">BOTTOMS</p>
@@ -143,7 +143,7 @@ const bottomScroll = ref(null);
 function scrollEl(el, dir) { if (el) el.scrollBy({ left: dir * 300, behavior: 'smooth' }); }
 
 const productStore = useProductStore();
-const { products } = storeToRefs(productStore);
+const { products, isLoading } = storeToRefs(productStore);
 const wishlistStore = useWishlistStore();
 
 const activeGender = ref('all');

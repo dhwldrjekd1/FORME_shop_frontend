@@ -14,7 +14,7 @@
       </div>
       <div class="dk-hero__img-wrap">
         <img
-          src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUDbo3A1n6B25b5IzZh9l_rbdH3V5OuTvMnXbOTfMrud522x_tBOPi-fhKPHvzcm-tCFANc0A8kN5rmrQ1d75rE-m4LAnCa6It268MFBWoxLqxoe-naL_sflBscYviDb7UVzk5fc2pJhHCkBe6W08qFaE-9tZT_2_tArH-RNc2mMvG9IY560pCDmUislARziUo1NGQDDOtgZvEvXdvcOFKRT0VefMTxMBM1pZ4tmViNSGYe8-r12iMpyvfB3jtAtuNT6dz4hugFLOy"
+          src="/images/dickies/dickies_hero.png"
           alt="Dickies Hero"
           class="dk-hero__img"
         />
@@ -61,54 +61,12 @@
 import { ref } from "vue";
 
 const products = ref([
-  {
-    id: 301,
-    name: "874 Work Pants",
-    category: "Original Fit / Recycled Poly-Cotton",
-    price: 75.0,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuBJh0a-fRNfosnIubi5bRJb6In9WjKRDq82haU-yg9qNykuXujdgHtOxqP3Q3o6jopXfCzY7cX3nEDuz6pAkF9yuJHlMIy0KW5wItrJqwYmY210QlJwQ3UmXAyxRFbKgGG1SRaJeaaPMbIM1C_ecPFTEoEAwIH4hxHEXs9LnQziIVKx7lWV-uXgZ1yqkLXKq1DcAynxTkguC9KSScB-0ppGSN1VX2U7d-1PHgCMbuE2DddkH5eOb2YtT3yjNQZ_fwZ7gz6JEIuDPWXP",
-  },
-  {
-    id: 302,
-    name: "Eisenhower Jacket",
-    category: "Unlined / Industrial Canvas",
-    price: 110.0,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDIvJ_ISIaMu3UMdNduLkR8TJCytfNDbz0SishE5jERltRz6KAi1QM4-MEn3W053MoofZLOigviph87KFRYH9JpdiaZz9U_HODC9wbBH_aIcuwgBkQSsWqLkG8AuA_DhRAH2eNtn5po346jEx8eSyXa15QT5BqINVOd6bmc44jLFNJboKhoE3T8ktpnOOYvZOkBI2Is11SS9dKehLgsh8Afp1P3h7lM08uwMzpI3y-Q-6F0ZYn2w-qsyl4QCsyRrNui-Cj9Dt9rEQ7H",
-  },
-  {
-    id: 303,
-    name: "Logo T-Shirt",
-    category: "Heavyweight Cotton / Heritage Fit",
-    price: 35.0,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuC26J-EDLnuF_EmrRzkLm4Pot0fA3fZ3L5dKR4N-aZ2qI5Q7DFCn9A6cwxF8JJuv3zeSXHvlgzabS03LZHkU3WmCrf0CKibvZlKRyHkuzom6UHU-HDZXPB76hUw0YdVeyJE0IbHA-QrPB8upkO8Nferi0qE5oZ3AGRc5voT1fCLwo8gHF2UX9H-6XoYepZaMj5L9GYmIp4KYzdhN3HA4zfY4IaDWC2PPyyTc7113zTGMlN2O2BR8gXWVhw9epNTzt7o1sH7vcQmIGAC",
-  },
-  {
-    id: 304,
-    name: "Logo Beanie",
-    category: "Ribbed Knit / One Size",
-    price: 25.0,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDbM26gN61h0xIBm5qr_t13Y2u3i8CDsp_x6xDdaEHnhwNj-q_kXQS4mXOUeniJFUk2IOMn2EF4TMC5VWbwtyMTfPEy9kQvt9hNdHiEy8zFQJoM2bW-GyIwsKDiImTZz8QFSNU6Vmr92ds9jcKAPwYXuDtjvtZ4fbv5zSERE0pbKILMZYBAUXuJKO3f_lGgMbqJHorRTYpinjGFA4t9NabkPjbLiBLlXlBwpQYcE6Xxn9O-Bicp9v8ZwwojmNuwZ_KJg3Y6cYziI9V8",
-  },
-  {
-    id: 305,
-    name: "Bib Overalls",
-    category: "Duck Canvas / Triple Stitched",
-    price: 95.0,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCpSxblon0k73oUuB2o3hK_wXEgpvQjGoHeX_73rBO2o6PnoiPPa3VJryY2dMnJO_X2gEmX9fZLqWoZbVFI2uU8ncGqevpeieL8NlgeMGGFsb6Jg8c0s0NFP_XSGY00FZ8127XBnZZrvXw4bcaObrYTVnrEBZmlLCeas4mOKy2MGM_MNbVYp1RU4MF3lX0yyYhJa4GzJMj_iYw8JHiK6k7XfjcVMfRed02E6bweBjN5hdngR_xKttKQkuJnvrkW1gGEJ8warY-hTSSd",
-  },
-  {
-    id: 306,
-    name: "Work Shirt",
-    category: "Moisture Wicking / Flex Fabric",
-    price: 55.0,
-    image:
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAZPcJ8w1KCJnBzU8bC5-0U42kwCph-vjTn4Iyd5xsNBmHrludFgBZmK3Jq6nasO3kTSjGlzutOI5DUdLLfp0tvn1YJw_FGJlZusW4bE6I3gTbRwIzKEXosM2wS15kKV5nuAoBaZjRrL8fD-mRlL9ckfSw8TNH2pSdeFygNuJqH_wLOrUox_jAtNakZpmAUitc194VvHWAHJO6TMeRTcDXMHxvC-O6KZl5PPm1TpIH-7xqoNVBBgtj_T1L7h4HB_rsp2ZQ8JGc_4M6B",
-  },
+  { id: 301, name: "874 Work Pants", category: "Original Fit / Recycled Poly-Cotton", price: 75.0, image: "/images/dickies/301.jpg" },
+  { id: 302, name: "Eisenhower Jacket", category: "Unlined / Industrial Canvas", price: 110.0, image: "/images/dickies/302.jpg" },
+  { id: 303, name: "Logo T-Shirt", category: "Heavyweight Cotton / Heritage Fit", price: 35.0, image: "/images/dickies/303.jpg" },
+  { id: 304, name: "Logo Beanie", category: "Ribbed Knit / One Size", price: 25.0, image: "/images/dickies/304.jpg" },
+  { id: 305, name: "Bib Overalls", category: "Duck Canvas / Triple Stitched", price: 95.0, image: "/images/dickies/305.jpg" },
+  { id: 306, name: "Work Shirt", category: "Moisture Wicking / Flex Fabric", price: 55.0, image: "/images/dickies/306.jpg" },
 ]);
 </script>
 
