@@ -92,7 +92,10 @@ const totalAmount = ref(lastOrder.totalAmount || orderItems.value.reduce((s, i) 
 .oc {
   min-height: calc(100dvh - 200px);
   display: flex; align-items: center; justify-content: center;
-  padding: 4rem 2rem;
+  padding: 2.5rem 1.25rem;
+}
+@media (min-width: 768px) {
+  .oc { padding: 4rem 2rem; }
 }
 .oc-inner {
   width: 100%; max-width: 520px;
@@ -123,8 +126,11 @@ const totalAmount = ref(lastOrder.totalAmount || orderItems.value.reduce((s, i) 
 /* 주문 정보 카드 */
 .oc-card {
   width: 100%; background: #fafaf8; border-radius: 0.75rem;
-  padding: 1.5rem 1.75rem; margin-bottom: 2rem;
+  padding: 1.25rem; margin-bottom: 2rem;
   display: flex; flex-direction: column; gap: 0.75rem;
+}
+@media (min-width: 768px) {
+  .oc-card { padding: 1.5rem 1.75rem; }
 }
 .oc-card__row { display: flex; justify-content: space-between; align-items: center; }
 .oc-card__label { font-size: 0.75rem; color: #999; }
@@ -159,11 +165,14 @@ const totalAmount = ref(lastOrder.totalAmount || orderItems.value.reduce((s, i) 
 }
 
 /* 액션 버튼 */
-.oc-actions { display: flex; gap: 0.75rem; width: 100%; }
+.oc-actions { display: flex; flex-wrap: wrap; gap: 0.625rem; width: 100%; }
 .oc-btn {
-  flex: 1; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
-  padding: 1rem; font-size: 0.8125rem; font-weight: 700;
+  flex: 1 1 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  padding: 0.875rem; font-size: 0.8125rem; font-weight: 700;
   border-radius: 0.5rem; text-decoration: none; transition: all 0.2s;
+}
+@media (min-width: 480px) {
+  .oc-btn { flex: 1; padding: 1rem; }
 }
 .oc-btn .material-symbols-outlined { font-size: 1.125rem; font-variation-settings: "wght" 300; }
 .oc-btn--outline {

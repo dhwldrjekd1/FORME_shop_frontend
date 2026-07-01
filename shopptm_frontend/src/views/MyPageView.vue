@@ -423,7 +423,10 @@ function logout() { authStore.logout(); router.push("/"); }
 </script>
 
 <style scoped>
-.mp { max-width: 960px; margin: 0 auto; padding: 3rem 2rem 6rem; }
+.mp { max-width: 960px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+@media (min-width: 768px) {
+  .mp { padding: 3rem 2rem 6rem; }
+}
 
 /* 프로필 헤더 */
 .mp-profile {
@@ -456,17 +459,23 @@ function logout() { authStore.logout(); router.push("/"); }
 
 /* 탭 */
 .mp-tabs {
-  display: flex; gap: 0; border-bottom: 1px solid #eee; margin-bottom: 2.5rem;
+  display: flex; gap: 0; border-bottom: 1px solid #eee; margin-bottom: 1.5rem;
+  overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
 }
+.mp-tabs::-webkit-scrollbar { display: none; }
 .mp-tabs__btn {
-  display: flex; align-items: center; gap: 0.5rem;
-  padding: 1rem 1.5rem; font-size: 0.75rem; font-weight: 600;
+  display: flex; align-items: center; gap: 0.375rem; flex-shrink: 0;
+  padding: 0.875rem 1rem; font-size: 0.6875rem; font-weight: 600;
   color: #999; cursor: pointer; border-bottom: 2px solid transparent;
   transition: all 0.2s; background: none; border-top: none; border-left: none; border-right: none;
 }
 .mp-tabs__btn .material-symbols-outlined { font-size: 1.125rem; font-variation-settings: "wght" 300; }
 .mp-tabs__btn:hover { color: #111; }
 .mp-tabs__btn--on { color: #111; border-bottom-color: #111; }
+@media (min-width: 768px) {
+  .mp-tabs { margin-bottom: 2.5rem; }
+  .mp-tabs__btn { padding: 1rem 1.5rem; font-size: 0.75rem; gap: 0.5rem; }
+}
 
 /* 빈 상태 */
 .mp-empty {

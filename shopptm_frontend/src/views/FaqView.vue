@@ -113,7 +113,8 @@ const filteredSections = computed(() => {
 .fq-head__sub { font-size: 0.9375rem; color: #999; }
 
 /* 탭 */
-.fq-tabs { position: sticky; top: 100px; z-index: 20; background: rgba(255,255,255,0.97); backdrop-filter: blur(10px); border-bottom: 1px solid #eee; }
+.fq-tabs { position: sticky; top: 80px; z-index: 20; background: rgba(255,255,255,0.97); backdrop-filter: blur(10px); border-bottom: 1px solid #eee; }
+@media (min-width: 768px) { .fq-tabs { top: 100px; } }
 .fq-tabs__inner { display: flex; justify-content: center; gap: 0; padding: 0; overflow-x: auto; scrollbar-width: none; }
 .fq-tabs__inner::-webkit-scrollbar { display: none; }
 .fq-tabs__btn {

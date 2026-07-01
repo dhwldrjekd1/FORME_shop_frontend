@@ -85,14 +85,19 @@ function getBrandColor(b) { return { BEANPOLE:'#103728', CARHARTT:'#9C4F18', "LE
 .bv-hero { background: #111; color: #fff; padding: 5rem 3rem; text-align: center; }
 .bv-hero__eyebrow { font-size: 0.625rem; font-weight: 800; letter-spacing: 0.35em; color: #c9a86b; margin-bottom: 1.5rem; }
 .bv-hero__title { font-size: clamp(3rem, 7vw, 5rem); font-weight: 900; letter-spacing: -0.04em; line-height: 0.95; }
-.bv-filter { position: sticky; top: 100px; z-index: 20; background: rgba(255,255,255,0.97); backdrop-filter: blur(10px); border-bottom: 1px solid #eee; }
-.bv-filter__inner { max-width: 1600px; margin: 0 auto; padding: 1rem 3rem; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
-.bv-filter__row { display: flex; gap: 0.5rem; }
-.bv-chip { padding: 0.5rem 1.25rem; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.1em; border: 1.5px solid #ddd; background: #fff; color: #555; cursor: pointer; transition: all 0.2s; }
+.bv-filter { position: sticky; top: 80px; z-index: 20; background: rgba(255,255,255,0.97); backdrop-filter: blur(10px); border-bottom: 1px solid #eee; }
+@media (min-width: 768px) { .bv-filter { top: 100px; } }
+.bv-filter__inner { max-width: 1600px; margin: 0 auto; padding: 0.75rem 1.25rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.bv-filter__row { display: flex; gap: 0.5rem; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.bv-filter__row::-webkit-scrollbar { display: none; }
+.bv-chip { flex-shrink: 0; padding: 0.5rem 1.25rem; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.1em; border: 1.5px solid #ddd; background: #fff; color: #555; cursor: pointer; transition: all 0.2s; }
 .bv-chip:hover { border-color: #111; color: #111; }
 .bv-chip--on { background: #111; border-color: #111; color: #fff; }
 .bv-chip--sm { padding: 0.375rem 0.875rem; font-size: 0.5625rem; }
 .bv-filter__count { margin-left: auto; font-size: 0.6875rem; color: #999; letter-spacing: 0.1em; }
+@media (min-width: 768px) {
+  .bv-filter__inner { padding: 1rem 3rem; gap: 1.5rem; }
+}
 .bv-loading { display: flex; justify-content: center; padding: 6rem; color: #ddd; }
 .bv-products { padding: 3rem 3rem 6rem; }
 .bv-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem 1.5rem; max-width: 1600px; margin: 0 auto; }

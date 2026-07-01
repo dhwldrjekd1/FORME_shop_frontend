@@ -1,3 +1,5 @@
+document.addEventListener("contextmenu", e => e.preventDefault());
+
 import { createApp } from "vue";
 import { createPinia } from "pinia";
 

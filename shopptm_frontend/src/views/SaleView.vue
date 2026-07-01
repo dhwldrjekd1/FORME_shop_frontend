@@ -115,13 +115,18 @@ function getBrandColor(brand) {
 .sv-hero__desc { font-size: 1rem; color: rgba(255,255,255,0.7); margin-bottom: 1.5rem; }
 .sv-hero__timer { display: inline-block; padding: 0.5rem 1.5rem; border: 1px solid rgba(255,255,255,0.3); border-radius: 999px; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.1em; color: rgba(255,255,255,0.8); }
 
-.sv-filter { position: sticky; top: 100px; z-index: 20; background: rgba(255,255,255,0.97); backdrop-filter: blur(10px); border-bottom: 1px solid #eee; }
-.sv-filter__inner { max-width: 1600px; margin: 0 auto; padding: 1rem 3rem; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
-.sv-filter__row { display: flex; gap: 0.5rem; }
-.sv-chip { padding: 0.5rem 1.25rem; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.1em; border: 1.5px solid #ddd; background: #fff; color: #555; cursor: pointer; transition: all 0.2s; }
+.sv-filter { position: sticky; top: 80px; z-index: 20; background: rgba(255,255,255,0.97); backdrop-filter: blur(10px); border-bottom: 1px solid #eee; }
+@media (min-width: 768px) { .sv-filter { top: 100px; } }
+.sv-filter__inner { max-width: 1600px; margin: 0 auto; padding: 0.75rem 1.25rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.sv-filter__row { display: flex; gap: 0.5rem; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.sv-filter__row::-webkit-scrollbar { display: none; }
+.sv-chip { flex-shrink: 0; padding: 0.5rem 1.25rem; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.1em; border: 1.5px solid #ddd; background: #fff; color: #555; cursor: pointer; transition: all 0.2s; }
 .sv-chip:hover { border-color: #111; color: #111; }
 .sv-chip--on { background: #111; border-color: #111; color: #fff; }
 .sv-chip--sm { padding: 0.375rem 0.875rem; font-size: 0.5625rem; }
+@media (min-width: 768px) {
+  .sv-filter__inner { padding: 1rem 3rem; gap: 1.5rem; }
+}
 .sv-filter__count { margin-left: auto; font-size: 0.6875rem; color: #999; letter-spacing: 0.1em; }
 .sv-loading { display: flex; justify-content: center; padding: 6rem; }
 .sv-loading__icon { font-size: 2rem; color: #ddd; animation: spin 1.5s linear infinite; }

@@ -218,9 +218,14 @@ onMounted(async () => {
 
 /* 헤더 */
 .f32-topbar { position: sticky; top: 0; z-index: 50; background: rgba(255,255,255,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid #eee; }
-.f32-topbar__main { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0.875rem 2.5rem; }
-.f32-topbar__logo { font-size: 1.625rem; font-weight: 900; letter-spacing: -0.03em; text-align: center; color: #111; text-decoration: none; }
-.f32-topbar__right { display: flex; align-items: center; justify-content: flex-end; gap: 1.25rem; }
+.f32-topbar__main { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0.625rem 1rem; }
+.f32-topbar__logo { font-size: 1.25rem; font-weight: 900; letter-spacing: -0.03em; text-align: center; color: #111; text-decoration: none; }
+.f32-topbar__right { display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem; }
+@media (min-width: 768px) {
+  .f32-topbar__main { padding: 0.875rem 2.5rem; }
+  .f32-topbar__logo { font-size: 1.625rem; }
+  .f32-topbar__right { gap: 1.25rem; }
+}
 .f32-topbar__mi {
   font-size: 1.25rem;
   color: #333;
@@ -252,13 +257,16 @@ onMounted(async () => {
   transition: width 0.3s, padding 0.3s; background: transparent;
 }
 .f32-search-inline--open .f32-search-inline__input {
-  width: 200px; padding: 0.375rem 0.75rem;
+  width: 120px; padding: 0.375rem 0.75rem;
   border-bottom: 1.5px solid #111;
+}
+@media (min-width: 768px) {
+  .f32-search-inline--open .f32-search-inline__input { width: 200px; }
 }
 .f32-search-inline__input::placeholder { color: #ccc; }
 .f32-search-inline__drop {
   position: absolute; top: 100%; right: 0; margin-top: 0.5rem;
-  width: 320px; max-height: 400px; overflow-y: auto;
+  width: min(320px, calc(100vw - 2rem)); max-height: 400px; overflow-y: auto;
   background: #fff; border: 1px solid #eee; border-radius: 0.5rem;
   box-shadow: 0 8px 24px rgba(0,0,0,0.1); z-index: 100;
 }
@@ -273,31 +281,46 @@ onMounted(async () => {
 .f32-search-inline__price { font-size: 0.6875rem; font-weight: 700; color: #555; }
 .f32-search-inline__empty {
   position: absolute; top: 100%; right: 0; margin-top: 0.5rem;
-  width: 320px; padding: 2rem; text-align: center;
+  width: min(320px, calc(100vw - 2rem)); padding: 2rem; text-align: center;
   background: #fff; border: 1px solid #eee; border-radius: 0.5rem;
   box-shadow: 0 8px 24px rgba(0,0,0,0.1); z-index: 100;
   font-size: 0.75rem; color: #bbb;
 }
 
 /* 카테고리 네비 */
-.f32-catnav { display: flex; justify-content: center; gap: 0; border-top: 1px solid #eee; }
+.f32-catnav {
+  display: flex; justify-content: flex-start; gap: 0; border-top: 1px solid #eee;
+  overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.f32-catnav::-webkit-scrollbar { display: none; }
 .f32-catnav__link {
-  padding: 0.875rem 1.5rem; font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.05em;
+  flex-shrink: 0;
+  padding: 0.75rem 1rem; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em;
   color: #333; border-bottom: 2px solid transparent; cursor: pointer; transition: all 0.2s;
   text-decoration: none;
 }
 .f32-catnav__link:hover { border-bottom-color: var(--nav-accent, #111); }
 .f32-catnav__link--active { color: var(--nav-accent, #111); border-bottom-color: var(--nav-accent, #111); }
 .f32-catnav__link--sale { color: #FF2D2D; }
+@media (min-width: 768px) {
+  .f32-catnav { justify-content: center; overflow-x: visible; }
+  .f32-catnav__link { padding: 0.875rem 1.5rem; font-size: 0.8125rem; }
+}
 
 /* 푸터 */
-.f32-foot { background: #111; color: #f5f5f5; padding: 5rem 3rem 2rem; }
-.f32-foot__top { display: grid; grid-template-columns: 1.5fr 3fr; gap: 4rem; max-width: 1600px; margin: 0 auto 3rem; padding-bottom: 3rem; border-bottom: 1px solid #333; }
-.f32-foot__logo { font-size: 2.25rem; font-weight: 900; letter-spacing: -0.03em; margin-bottom: 0.75rem; }
+.f32-foot { background: #111; color: #f5f5f5; padding: 3rem 1.25rem 1.5rem; }
+.f32-foot__top { display: grid; grid-template-columns: 1fr; gap: 2rem; max-width: 1600px; margin: 0 auto 2rem; padding-bottom: 2rem; border-bottom: 1px solid #333; }
+.f32-foot__logo { font-size: 1.75rem; font-weight: 900; letter-spacing: -0.03em; margin-bottom: 0.75rem; }
 .f32-foot__slogan { font-size: 0.75rem; color: #888; }
-.f32-foot__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+.f32-foot__grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
 .f32-foot__col h4 { font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.2em; margin-bottom: 1rem; color: #FF2D2D; }
 .f32-foot__col a { display: block; font-size: 0.6875rem; color: #ccc; margin-bottom: 0.5rem; cursor: pointer; transition: color 0.2s; text-decoration: none; }
 .f32-foot__col a:hover { color: #fff; }
 .f32-foot__bottom { max-width: 1600px; margin: 0 auto; font-size: 0.5625rem; color: #666; line-height: 1.8; text-align: center; }
+@media (min-width: 768px) {
+  .f32-foot { padding: 5rem 3rem 2rem; }
+  .f32-foot__top { grid-template-columns: 1.5fr 3fr; gap: 4rem; margin: 0 auto 3rem; padding-bottom: 3rem; }
+  .f32-foot__logo { font-size: 2.25rem; }
+  .f32-foot__grid { grid-template-columns: repeat(3, 1fr); gap: 2rem; }
+}
 </style>

@@ -1018,21 +1018,29 @@ function buyNow() {
 
 /* ── 탭 ── */
 .dp-tabs {
-  padding: 0 3rem; margin-top: 3rem;
+  padding: 0 1.25rem; margin-top: 2rem;
 }
 .dp-tabs__bar {
   display: flex; gap: 0; border-bottom: 1px solid #eee;
+  overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
 }
+.dp-tabs__bar::-webkit-scrollbar { display: none; }
 .dp-tabs__btn {
-  padding: 1rem 2rem; font-size: 0.6875rem; font-weight: 700;
-  letter-spacing: 0.12em; text-transform: uppercase;
+  flex-shrink: 0; white-space: nowrap;
+  padding: 0.875rem 1.125rem; font-size: 0.625rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
   color: #999; background: none; cursor: pointer;
   border-bottom: 2px solid transparent; transition: all 0.2s;
 }
 .dp-tabs__btn:hover { color: #111; }
 .dp-tabs__btn--on { color: #111; border-bottom-color: var(--b, #111); }
 
-.dp-tabs__panel { padding: 3rem 0 4rem; }
+.dp-tabs__panel { padding: 2rem 0 3rem; }
+@media (min-width: 768px) {
+  .dp-tabs { padding: 0 3rem; margin-top: 3rem; }
+  .dp-tabs__btn { padding: 1rem 2rem; font-size: 0.6875rem; letter-spacing: 0.12em; }
+  .dp-tabs__panel { padding: 3rem 0 4rem; }
+}
 
 /* 상세 설명 */
 .dp-desc {

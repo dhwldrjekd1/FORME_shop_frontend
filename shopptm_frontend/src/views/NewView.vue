@@ -96,13 +96,18 @@ function getBrandColor(b) { return { BEANPOLE:'#103728', CARHARTT:'#9C4F18', "LE
 .nv-hero__title { font-size: clamp(3rem, 7vw, 5rem); font-weight: 900; letter-spacing: -0.04em; line-height: 0.95; margin-bottom: 1.25rem; }
 .nv-hero__line { width: 3rem; height: 2px; background: #FF2D2D; margin: 0 auto 1.25rem; }
 .nv-hero__desc { font-size: 0.9375rem; color: rgba(255,255,255,0.5); }
-.nv-filter { position: sticky; top: 100px; z-index: 20; background: rgba(255,255,255,0.97); backdrop-filter: blur(10px); border-bottom: 1px solid #eee; }
-.nv-filter__inner { max-width: 1600px; margin: 0 auto; padding: 1rem 3rem; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
-.nv-filter__row { display: flex; gap: 0.5rem; }
-.nv-chip { padding: 0.5rem 1.25rem; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.1em; border: 1.5px solid #ddd; background: #fff; color: #555; cursor: pointer; transition: all 0.2s; }
+.nv-filter { position: sticky; top: 80px; z-index: 20; background: rgba(255,255,255,0.97); backdrop-filter: blur(10px); border-bottom: 1px solid #eee; }
+@media (min-width: 768px) { .nv-filter { top: 100px; } }
+.nv-filter__inner { max-width: 1600px; margin: 0 auto; padding: 0.75rem 1.25rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.nv-filter__row { display: flex; gap: 0.5rem; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.nv-filter__row::-webkit-scrollbar { display: none; }
+.nv-chip { flex-shrink: 0; padding: 0.5rem 1.25rem; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.1em; border: 1.5px solid #ddd; background: #fff; color: #555; cursor: pointer; transition: all 0.2s; }
 .nv-chip:hover { border-color: #111; color: #111; }
 .nv-chip--on { background: #111; border-color: #111; color: #fff; }
 .nv-chip--sm { padding: 0.375rem 0.875rem; font-size: 0.5625rem; }
+@media (min-width: 768px) {
+  .nv-filter__inner { padding: 1rem 3rem; gap: 1.5rem; }
+}
 .nv-filter__count { margin-left: auto; font-size: 0.6875rem; color: #999; letter-spacing: 0.1em; }
 .nv-loading { display: flex; justify-content: center; padding: 6rem; color: #ddd; }
 .nv-products { padding: 3rem 3rem 6rem; }
