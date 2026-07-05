@@ -148,7 +148,9 @@ onMounted(async () => {
         amount: Number(params.get('amount')),
       });
       if (confirmRes?.success) {
-        await createOrder();
+        // 토스가 실제로 승인한 금액(서버가 검증해서 돌려준 값)을 그대로 주문 생성에 넘긴다.
+        // URL의 amount 파라미터는 사용자가 손댈 수 있으므로 신뢰하지 않는다.
+        await createOrder(confirmRes.amount);
       } else {
         alert('결제 승인 실패: ' + (confirmRes?.message || ''));
       }
@@ -207,7 +209,7 @@ async function processTossPayment() {
   }
 }
 
-async function createOrder() {
+async function createOrder(paidAmount) {
   const memberId = authStore.user?.id;
   if (!memberId) return;
   await api.post(`/members/${memberId}/orders`, {
@@ -219,6 +221,8 @@ async function createOrder() {
       quantity: i.quantity,
       size: i.size || null,
     })),
+    // 토스 결제를 거친 주문만 채워짐 — 서버가 이 값과 실제 주문 금액이 일치하는지 검증 후 PAID 처리
+    paidAmount: paidAmount ?? null,
   });
   localStorage.setItem('forme_last_order', JSON.stringify({
     items: cartItems.value.map(i => ({ name: i.name, image: i.image, size: i.size, quantity: i.quantity, price: i.price })),
