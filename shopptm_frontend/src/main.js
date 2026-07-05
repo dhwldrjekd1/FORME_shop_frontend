@@ -27,8 +27,8 @@ app.mount("#app");
 // 로그인 상태면 장바구니/찜 DB에서 로드
 import { useCartStore } from "./stores/cartStore";
 import { useWishlistStore } from "./stores/wishlistStore";
-const token = localStorage.getItem("token");
-if (token) {
+const storedUser = localStorage.getItem("user");
+if (storedUser) {
   useCartStore().fetchCart();
   useWishlistStore().fetchWishlist();
 }

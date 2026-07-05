@@ -2,33 +2,28 @@ import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import api from "@/api";
 
-const TOKEN_KEY = "token";
 const USER_KEY = "user";
 
 export const useAuthStore = defineStore("auth", () => {
   // ── state ──────────────────────────────────
   // 페이지 새로고침 시에도 로그인 상태 유지하려고 localStorage 에서 복원
+  // 실제 인증은 httpOnly 쿠키(auth_token)가 담당 — 여기 저장하는 user는
+  // 화면 표시용(이름/등급 등)일 뿐, 자바스크립트로 읽을 수 있는 민감 정보는 아니다.
   const user = ref(loadStoredUser());
-  const token = ref(loadStoredToken());
 
   // ── getters ────────────────────────────────
-  const isLoggedIn = computed(() => !!token.value);
+  const isLoggedIn = computed(() => !!user.value);
   const userName = computed(() => user.value?.name ?? "");
 
   // ── actions ────────────────────────────────
   // 로그인 — Spring Boot POST /api/login
-  // 응답: { token, id, email, name, role, grade }
+  // 응답: { id, email, name, role, grade, ... } — 토큰은 응답 바디에 없고
+  // 서버가 httpOnly 쿠키로 내려준다 (자바스크립트는 그 값을 볼 수 없음)
   async function login(credentials) {
     const res = await api.post("/login", {
       email: credentials.email,
       password: credentials.password,
     });
-
-    const jwt = res?.token;
-    if (!jwt) throw new Error("토큰이 응답에 없습니다.");
-
-    token.value = jwt;
-    localStorage.setItem(TOKEN_KEY, jwt);
 
     // 응답에 회원 정보 포함 (id, email, name, role, grade)
     const fullUser = {
@@ -72,21 +67,18 @@ export const useAuthStore = defineStore("auth", () => {
     return member;
   }
 
-  // 로그아웃: 서버에 토큰 폐기 요청 후 토큰/유저 모두 제거
+  // 로그아웃: 서버에 토큰 폐기 + 쿠키 삭제 요청 후 화면 표시용 유저 정보도 제거
   // 서버 요청이 실패(네트워크 오류 등)하더라도 클라이언트 쪽 로그인 상태는 항상 정리한다
   async function logout() {
     try {
       await api.post("/logout");
     } catch {}
-    token.value = null;
     user.value = null;
-    localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
   }
 
   return {
     user,
-    token,
     isLoggedIn,
     userName,
     login,
@@ -96,14 +88,6 @@ export const useAuthStore = defineStore("auth", () => {
 });
 
 // ── localStorage helpers ─────────────────────
-function loadStoredToken() {
-  try {
-    return localStorage.getItem(TOKEN_KEY);
-  } catch {
-    return null;
-  }
-}
-
 function loadStoredUser() {
   try {
     const raw = localStorage.getItem(USER_KEY);

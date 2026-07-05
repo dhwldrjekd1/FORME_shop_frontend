@@ -617,16 +617,14 @@ async function submitProduct() {
       }
     }
 
-    const token = localStorage.getItem('token');
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+    // 인증은 httpOnly 쿠키(auth_token)로 처리 — credentials: 'include'면 자동으로 실림
     // Content-Type은 FormData가 자동 설정 (boundary 포함)
 
     const BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8302/api' : '/api');
     const url = isEdit.value ? `${BASE}/admin/products/${editId.value}` : `${BASE}/admin/products`;
     const method = isEdit.value ? 'PUT' : 'POST';
 
-    const res = await fetch(url, { method, headers, body: formData, credentials: 'include' });
+    const res = await fetch(url, { method, body: formData, credentials: 'include' });
 
     if (!res.ok) {
       const errBody = await res.json().catch(() => null);

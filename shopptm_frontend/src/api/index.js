@@ -28,13 +28,11 @@ async function request(path, { method = "GET", body, headers, ...rest } = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT);
 
-  // JWT 토큰 자동 첨부 (Spring Boot 연결 시 사용)
-  const token =
-    typeof localStorage !== "undefined" ? localStorage.getItem("token") : null;
-
+  // 인증은 httpOnly 쿠키(auth_token)로 처리 — 자바스크립트에서 토큰을 읽어와 헤더에
+  // 직접 실어보내지 않는다 (그러면 XSS로 토큰을 읽을 수 있는 통로가 다시 생김).
+  // credentials: "include"만 있으면 브라우저가 쿠키를 알아서 실어 보낸다.
   const finalHeaders = {
     "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...headers,
   };
 
@@ -58,7 +56,6 @@ async function request(path, { method = "GET", body, headers, ...rest } = {}) {
       // 401 (인증 만료/무효) 처리 — 남아있는 로그인 정보를 정리하고 로그인 페이지로 이동
       if (res.status === 401) {
         if (typeof localStorage !== "undefined") {
-          localStorage.removeItem("token");
           localStorage.removeItem("user");
         }
         if (
