@@ -399,7 +399,7 @@ async function withdrawMember() {
   if (!memberId) return;
   try {
     await api.delete(`/members/${memberId}`);
-    authStore.logout();
+    await authStore.logout();
     alert('회원 탈퇴가 완료되었습니다.');
     router.push('/');
   } catch (e) { alert(e?.message || '탈퇴 실패'); }
@@ -419,7 +419,7 @@ function getStatusClass(s) {
   return { 배송중: 'st--ship', 배송완료: 'st--done', 주문완료: 'st--paid', 취소: 'st--cancel' }[s] ?? '';
 }
 
-function logout() { authStore.logout(); router.push("/"); }
+async function logout() { await authStore.logout(); router.push("/"); }
 </script>
 
 <style scoped>

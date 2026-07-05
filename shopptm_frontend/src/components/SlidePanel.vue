@@ -178,8 +178,8 @@ const gradeDiscount = computed(() => GRADE_DISCOUNT[userGrade.value] || 0);
 const gradeDiscountAmount = computed(() => Math.round(cartTotal.value * gradeDiscount.value / 100));
 const finalTotal = computed(() => cartTotal.value - gradeDiscountAmount.value);
 
-function doLogout() {
-  authStore.logout();
+async function doLogout() {
+  await authStore.logout();
   panelStore.close();
   router.push("/");
 }

@@ -55,10 +55,18 @@ async function request(path, { method = "GET", body, headers, ...rest } = {}) {
       : await res.text().catch(() => null);
 
     if (!res.ok) {
-      // 401 (인증 만료) 처리
+      // 401 (인증 만료/무효) 처리 — 남아있는 로그인 정보를 정리하고 로그인 페이지로 이동
       if (res.status === 401) {
-        // TODO: Spring Boot 연결 시 라우터로 로그인 페이지 이동
-        // window.location.href = '/login'
+        if (typeof localStorage !== "undefined") {
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+        }
+        if (
+          typeof window !== "undefined" &&
+          !window.location.pathname.startsWith("/login")
+        ) {
+          window.location.href = "/login";
+        }
       }
       throw new ApiError(
         data?.message || `Request failed: ${res.status}`,

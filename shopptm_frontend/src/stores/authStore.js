@@ -72,8 +72,12 @@ export const useAuthStore = defineStore("auth", () => {
     return member;
   }
 
-  // 로그아웃: 토큰/유저 모두 제거
-  function logout() {
+  // 로그아웃: 서버에 토큰 폐기 요청 후 토큰/유저 모두 제거
+  // 서버 요청이 실패(네트워크 오류 등)하더라도 클라이언트 쪽 로그인 상태는 항상 정리한다
+  async function logout() {
+    try {
+      await api.post("/logout");
+    } catch {}
     token.value = null;
     user.value = null;
     localStorage.removeItem(TOKEN_KEY);
