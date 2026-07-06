@@ -2,7 +2,7 @@
   <Forme32Layout>
     <!-- ═══ Hero (50장 슬라이드) ═══ -->
     <section class="f32-hero">
-      <img :src="heroSlides[heroIndex].url" :alt="heroSlides[heroIndex].alt" class="f32-hero__bg" :key="heroIndex" />
+      <img :src="heroSlides[heroIndex].url" :alt="heroSlides[heroIndex].alt" class="f32-hero__bg" :key="heroIndex" :style="{ objectPosition: heroSlides[heroIndex].position || 'center 25%' }" />
       <div class="f32-hero__overlay"></div>
       <div class="f32-hero__content">
         <p class="f32-hero__tag">2026 SPRING COLLECTION</p>
@@ -140,18 +140,21 @@ function getBrandRating(brandName) {
 const defaultHeroSlides = [
   { url: "/new/home/hero_01.jpg", alt: "따뜻한 매장 인테리어" },
   { url: "/new/home/hero_04.jpg", alt: "쇼핑백 디스플레이" },
-  { url: "/new/home/hero_11.jpg", alt: "패션 포트레이트" },
-  { url: "/new/home/hero_12.jpg", alt: "런웨이 워킹" },
+  // 세로 사진(3:4 이하)은 가로로 넓은 히어로 배너에 그대로 씌우면
+  // object-fit: cover가 위아래 60% 이상을 잘라버려서, 인물/제품이 있는
+  // 위치에 맞춰 개별적으로 object-position을 지정함.
+  { url: "/new/home/hero_11.jpg", alt: "패션 포트레이트", position: "center 20%" },
+  { url: "/new/home/hero_12.jpg", alt: "런웨이 워킹", position: "center 15%" },
   { url: "/new/home/hero_13.jpg", alt: "그룹 스트릿" },
-  { url: "/new/home/hero_15.jpg", alt: "모델 블랙 앤 화이트" },
+  { url: "/new/home/hero_15.jpg", alt: "모델 블랙 앤 화이트", position: "center 38%" },
   { url: "/new/home/hero_16.jpg", alt: "도시 패션" },
   { url: "/new/home/hero_18.jpg", alt: "패션 런웨이" },
   { url: "/new/home/hero_21.jpg", alt: "접힌 셔츠 스택" },
   { url: "/new/home/hero_22.jpg", alt: "흰 셔츠 클로즈업" },
   { url: "/new/home/hero_24.jpg", alt: "캐주얼 플랫레이" },
-  { url: "/new/home/hero_27.jpg", alt: "미니멀 행거" },
-  { url: "/new/home/hero_28.jpg", alt: "접힌 청바지" },
-  { url: "/new/home/hero_40.jpg", alt: "니트 클로즈업" },
+  { url: "/new/home/hero_27.jpg", alt: "미니멀 행거", position: "center 50%" },
+  { url: "/new/home/hero_28.jpg", alt: "접힌 청바지", position: "center 40%" },
+  { url: "/new/home/hero_40.jpg", alt: "니트 클로즈업", position: "center 20%" },
   { url: "/new/home/hero_48.jpg", alt: "슈즈 컬렉션" },
 ];
 // DB에서 설정 로드 헬퍼
