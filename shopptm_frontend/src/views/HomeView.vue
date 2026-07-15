@@ -146,7 +146,7 @@ const defaultHeroSlides = [
   { url: "/new/home/hero_11.jpg", alt: "패션 포트레이트", position: "center 20%" },
   { url: "/new/home/hero_12.jpg", alt: "런웨이 워킹", position: "center 15%" },
   { url: "/new/home/hero_13.jpg", alt: "그룹 스트릿" },
-  { url: "/new/home/hero_15.jpg", alt: "모델 블랙 앤 화이트", position: "center 38%" },
+  { url: "/new/home/hero_15.jpg", alt: "모델 블랙 앤 화이트", position: "center" },
   { url: "/new/home/hero_16.jpg", alt: "도시 패션" },
   { url: "/new/home/hero_18.jpg", alt: "패션 런웨이" },
   { url: "/new/home/hero_21.jpg", alt: "접힌 셔츠 스택" },
