@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# npm run build 산출물 (vite.config.js build.outDir) - 백엔드 저장소로 복사되는 임시 경로
+backend/
+
 # 런타임에 사용자가 업로드한 파일 (버전관리 대상 아님)
 uploads/
 

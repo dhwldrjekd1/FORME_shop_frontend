@@ -60,8 +60,9 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import Forme32Layout from "@/layouts/Forme32Layout.vue";
+import api from "@/api";
 
 const tabs = ["전체", "주문", "배송", "반품", "결제", "상품", "계정"];
 const activeTab = ref("전체");
@@ -70,37 +71,41 @@ const openItems = ref({});
 function toggle(t, i) { const k = `${t}-${i}`; openItems.value[k] = !openItems.value[k]; }
 function isOpen(t, i) { return !!openItems.value[`${t}-${i}`]; }
 
-const sections = [
-  { title: "주문", tab: "주문", desc: "주문 상태 확인 및 관리", items: [
-    { q: "결제 수단은 어떤 것들이 있나요?", a: "비자, 마스터카드, 아메리칸 익스프레스 등 주요 신용카드를 지원합니다. 기기 및 브라우저 환경에 따라 애플 페이와 구글 페이도 사용 가능합니다." },
-    { q: "주문 후 취소가 가능한가요?", a: "배송 준비가 시작되기 전이라면 주문 취소가 가능합니다. 상품이 포장되거나 발송된 이후에는 취소가 어려울 수 있으며, 배송 완료 후 반품 신청을 이용해 주세요." },
-    { q: "비회원 주문 배송 조회는 어떻게 하나요?", a: "발송 후 전송된 배송 확인 이메일을 통해 조회하실 수 있습니다. 주문 번호와 이메일 주소를 입력하면 주문 조회 페이지에서도 확인 가능합니다." },
-  ]},
-  { title: "배송", tab: "배송", desc: "배송 일정 및 관련 안내", items: [
-    { q: "기본 배송 기간은 얼마나 되나요?", a: "국내 기본 배송은 발송 후 2~5 영업일 이내 도착합니다. 성수기에는 지연될 수 있습니다." },
-    { q: "브랜드별 해외 배송은 어떻게 진행되나요?", a: "브랜드 위치, 재고 창고, 수입 조건에 따라 일부 상품은 개별 발송될 수 있습니다. 이 경우 이메일로 업데이트된 배송 정보를 안내해 드립니다." },
-  ]},
-  { title: "반품", tab: "반품", desc: "반품 및 교환 정책 안내", items: [
-    { q: "상품은 어떻게 반품하나요?", a: "수령일로부터 14일 이내에 반품 신청이 가능합니다. 미착용, 미세탁 상태로 원래 포장을 유지한 상품에 한해 반품이 가능하며, 고객센터를 통해 신청해 주세요." },
-    { q: "환불은 언제 받을 수 있나요?", a: "반품 상품 수령 및 검수 완료 후 5~7 영업일 이내에 환불이 처리됩니다." },
-  ]},
-  { title: "결제", tab: "결제", desc: "결제 수단 및 보안 안내", items: [
-    { q: "결제 정보는 안전하게 보호되나요?", a: "네, 모든 거래는 SSL 암호화로 보호됩니다. 카드 정보는 서버에 저장되지 않습니다." },
-    { q: "할부 결제가 가능한가요?", a: "카드사에 따라 할부 결제가 가능할 수 있습니다. 자세한 사항은 카드사에 문의해 주세요." },
-  ]},
-  { title: "상품", tab: "상품", desc: "사이즈, 재고 관련 문의", items: [
-    { q: "사이즈는 어떻게 선택하나요?", a: "각 상품 페이지에 사이즈 가이드가 제공됩니다. 본인의 신체 치수를 측정한 후 브랜드별 사이즈 차트와 비교해 선택해 주세요." },
-    { q: "품절 상품은 언제 재입고되나요?", a: "상품 페이지에서 재고 현황을 확인하실 수 있습니다. 품절 상품은 알림 신청 기능을 이용하시면 재입고 시 알림을 받으실 수 있습니다." },
-  ]},
-  { title: "계정", tab: "계정", desc: "계정 및 개인정보 관리", items: [
-    { q: "비밀번호를 잊어버렸어요.", a: '로그인 페이지에서 "비밀번호 찾기"를 클릭하고 가입한 이메일을 입력해 주세요. 몇 분 이내로 재설정 링크가 전송됩니다.' },
-    { q: "이메일 주소를 변경할 수 있나요?", a: "로그인 후 계정 설정 페이지에서 이메일 주소를 변경하실 수 있습니다." },
-  ]},
-];
+// 카테고리별 소개 문구는 프론트에서 관리, 실제 질문/답변은 백엔드 FAQ API에서 받아온다
+const categoryDesc = {
+  주문: "주문 상태 확인 및 관리",
+  배송: "배송 일정 및 관련 안내",
+  반품: "반품 및 교환 정책 안내",
+  결제: "결제 수단 및 보안 안내",
+  상품: "사이즈, 재고 관련 문의",
+  계정: "계정 및 개인정보 관리",
+};
+
+const faqs = ref([]);
+onMounted(async () => {
+  try {
+    faqs.value = await api.get("/faq") || [];
+  } catch {
+    faqs.value = [];
+  }
+});
+
+const sections = computed(() =>
+  Object.keys(categoryDesc)
+    .map((category) => ({
+      title: category,
+      tab: category,
+      desc: categoryDesc[category],
+      items: faqs.value
+        .filter((f) => f.category === category)
+        .map((f) => ({ q: f.question, a: f.answer })),
+    }))
+    .filter((s) => s.items.length > 0)
+);
 
 const filteredSections = computed(() => {
-  if (activeTab.value === "전체") return sections;
-  return sections.filter((s) => s.tab === activeTab.value);
+  if (activeTab.value === "전체") return sections.value;
+  return sections.value.filter((s) => s.tab === activeTab.value);
 });
 </script>
 
