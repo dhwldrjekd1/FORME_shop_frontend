@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# 런타임에 사용자가 업로드한 파일 (버전관리 대상 아님)
+uploads/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
