@@ -138,6 +138,10 @@ src/
 - **문제**: `vite.config.js`의 `build.outDir`이 저장소 루트의 `backend/src/main/resources/static`을 가리키도록 설정되어 있는데(빌드 후 백엔드 저장소로 그대로 복사해 넣기 위함), 정작 `.gitignore`에는 `backend/`가 빠져 있어 오래된 빌드 산출물이 디스크에 계속 쌓이고 실수로 커밋될 위험이 있었음.
 - **해결**: `.gitignore`에 `backend/`를 추가. (`npm run build`를 실행하면 해당 경로에 산출물이 다시 생성됨 — 삭제해도 되는 캐시성 디렉터리)
 
+### 로그아웃해도 장바구니/찜 화면 상태가 그대로 남음
+- **문제**: `authStore.logout()`이 로그인 정보(`user`, localStorage)만 정리하고 `cartStore`/`wishlistStore`의 `items`는 그대로 둬서, 로그아웃 후에도(혹은 같은 브라우저에서 다른 계정으로 로그인하기 전까지) 화면에 이전 사용자의 장바구니·찜 목록이 그대로 보이는 문제. 공유 PC에서 계정을 바꿔가며 쓰는 경우 특히 문제가 됨.
+- **해결**: `cartStore`/`wishlistStore`에 서버 데이터는 건드리지 않고 화면 상태만 비우는 `resetLocal()`을 추가하고(기존 `clearCart()`는 서버의 장바구니 자체를 삭제하는 함수라 로그아웃에는 쓸 수 없어 별도로 분리), `authStore.logout()`에서 로그인 정보 정리와 함께 호출하도록 수정.
+
 ---
 
 ## 빌드 및 배포
