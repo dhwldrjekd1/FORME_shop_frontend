@@ -146,6 +146,10 @@ src/
 - **문제**: `router/index.js`의 `requiresAdmin` 가드가 `authStore.user?.role !== "ROLE_ADMIN"`만 검사하는데, `authStore.user`는 `localStorage`에서 그대로 복원한 값이라 서명이나 서버 검증이 없음. 브라우저 devtools에서 `localStorage`의 `role`을 `"ROLE_ADMIN"`으로 바꾸고 새로고침하면, 실제 데이터는 백엔드가 다시 막더라도 관리자 화면 UI 자체는 렌더링됐음.
 - **해결**: 가드에서 로컬 값을 신뢰하지 않고, 매번 `GET /api/members/{id}`(본인 정보 조회)로 서버가 실제로 알고 있는 role을 재확인한 뒤 통과 여부를 결정하도록 변경. 요청이 실패하거나(예: `id`를 다른 회원 것으로 조작해 403) 서버가 반환한 role이 `ROLE_ADMIN`이 아니면 홈으로 리다이렉트. 실제 계정으로 자기 자신을 조회하면 DB의 진짜 role이 내려오고, 남의 id로 바꿔도 소유자 검증(`SecurityUtil.checkOwnerOrAdmin`)에 걸려 403이 나므로 두 경우 모두 위조가 통하지 않는 것을 API로 확인함.
 
+### 로그인 시 fetchCart/fetchWishlist 레이스 컨디션
+- **문제**: `authStore.login()`이 `fetchCart()`/`fetchWishlist()`를 `await` 없이 호출하고, 두 스토어의 `fetchXxx()`도 응답을 조건 없이 그대로 반영해서, 로그아웃 직후 곧바로 다른 계정으로 로그인하는 경우 먼저 보낸 이전 계정의 응답이 나중에 도착하면 방금 로그인한 새 계정의 장바구니/찜 상태를 덮어쓸 수 있었음. 또한 로그인 직후 바로 이동하는 화면(예: 장바구니 리다이렉트)이 반영되기 전 상태를 보여줄 수도 있었음.
+- **해결**: `cartStore.fetchCart()`/`wishlistStore.fetchWishlist()`에 요청 순번 가드를 추가해 "가장 나중에 보낸 요청"의 응답만 반영하고, 먼저 보낸 요청이 나중에 응답해도 무시하도록 함. `authStore.login()`도 두 호출을 `Promise.all`로 기다리도록 변경. 가드 로직만 따로 떼어 Node로 재현 테스트한 결과, 가드가 없으면 실제로 이전 계정 응답이 새 계정 상태를 덮어쓰는 것을 확인했고, 가드 추가 후에는 항상 최신 요청의 응답만 반영되는 것을 확인함.
+
 ---
 
 ## 빌드 및 배포

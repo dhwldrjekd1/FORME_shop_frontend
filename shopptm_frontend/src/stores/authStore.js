@@ -39,12 +39,14 @@ export const useAuthStore = defineStore("auth", () => {
     user.value = fullUser;
     localStorage.setItem(USER_KEY, JSON.stringify(fullUser));
 
-    // 로그인 후 장바구니/찜 DB에서 로드
+    // 로그인 후 장바구니/찜 DB에서 로드 - await 없이 fire-and-forget으로 두면
+    // 로그인 직후 바로 이동하는 화면(장바구니 등)이 반영 전 상태를 보여줄 수 있고,
+    // 빠르게 로그아웃 후 재로그인하는 경우 이전 호출의 응답이 나중에 와서
+    // 새 계정 상태를 덮어쓸 위험도 있어 완료를 기다린다
     try {
       const { useCartStore } = await import("@/stores/cartStore");
       const { useWishlistStore } = await import("@/stores/wishlistStore");
-      useCartStore().fetchCart();
-      useWishlistStore().fetchWishlist();
+      await Promise.all([useCartStore().fetchCart(), useWishlistStore().fetchWishlist()]);
     } catch {}
   }
 

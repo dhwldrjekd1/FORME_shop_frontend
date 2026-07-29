@@ -13,12 +13,20 @@ export const useCartStore = defineStore("cart", () => {
     items.value.reduce((sum, item) => sum + item.price * item.quantity, 0),
   );
 
+  // 응답이 도착한 순서가 아니라 "가장 나중에 보낸 요청"만 반영하기 위한 순번.
+  // 로그아웃 후 곧바로 다른 계정으로 로그인하는 경우처럼 fetchCart가 짧은 시간에
+  // 여러 번 호출되면, 먼저 보낸 요청(이전 계정 것)이 나중에 응답이 와서
+  // 최신 상태를 덮어쓸 수 있어 이를 방지한다.
+  let fetchSeq = 0;
+
   // DB에서 장바구니 로드
   async function fetchCart() {
     const user = JSON.parse(localStorage.getItem("user") || "null");
     if (!user?.id) return;
+    const seq = ++fetchSeq;
     try {
       const data = await api.get(`/members/${user.id}/cart`);
+      if (seq !== fetchSeq) return; // 더 최신 요청이 이미 나가있으면 이 응답은 버림
       items.value = (data || []).map(c => ({
         id: c.id,
         productId: c.productId,

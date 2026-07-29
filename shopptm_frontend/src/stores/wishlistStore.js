@@ -14,12 +14,19 @@ export const useWishlistStore = defineStore("wishlist", () => {
     return items.value.some((i) => i.id === productId);
   }
 
+  // 응답이 도착한 순서가 아니라 "가장 나중에 보낸 요청"만 반영하기 위한 순번
+  // (cartStore.fetchCart와 동일한 이유 - 로그아웃 직후 재로그인 시 이전 계정 응답이
+  // 늦게 도착해 새 계정 상태를 덮어쓰는 것을 방지)
+  let fetchSeq = 0;
+
   // DB에서 찜 목록 로드
   async function fetchWishlist() {
     const user = getUser();
     if (!user?.id) return;
+    const seq = ++fetchSeq;
     try {
       const data = await api.get(`/members/${user.id}/wishlist`);
+      if (seq !== fetchSeq) return; // 더 최신 요청이 이미 나가있으면 이 응답은 버림
       items.value = (data || []).map(w => ({
         id: w.productId,
         name: w.productName || '',
