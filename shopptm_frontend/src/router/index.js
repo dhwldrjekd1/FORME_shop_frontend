@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "@/stores/authStore";
+import api from "@/api";
 
 // 메인 페이지 (forme32 기반)
 const HomeView = () => import("@/views/HomeView.vue");
@@ -144,7 +145,7 @@ const router = createRouter({
 });
 
 // 네비게이션 가드
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const authStore = useAuthStore();
 
   // 로그인 필요 페이지
@@ -155,11 +156,21 @@ router.beforeEach((to) => {
   }
 
   // 관리자 전용 페이지
+  // authStore.user는 localStorage에 저장된 값이라 자바스크립트로 얼마든지 조작 가능하므로,
+  // role 판단은 여기서 신뢰하지 않고 매번 서버(본인 정보 조회)로 재확인한다.
+  // 실제 데이터는 어차피 백엔드가 role을 다시 검증하지만, 조작된 값만으로 관리자 화면이
+  // 렌더링되는 것 자체를 막기 위함.
   if (to.meta.requiresAdmin) {
     if (!authStore.isLoggedIn) {
       return { name: "Login", query: { redirect: to.fullPath } };
     }
-    if (authStore.user?.role !== "ROLE_ADMIN") {
+    try {
+      const me = await api.get(`/members/${authStore.user.id}`);
+      if (me.role !== "ROLE_ADMIN") {
+        alert("관리자 권한이 필요합니다.");
+        return { name: "Home" };
+      }
+    } catch {
       alert("관리자 권한이 필요합니다.");
       return { name: "Home" };
     }

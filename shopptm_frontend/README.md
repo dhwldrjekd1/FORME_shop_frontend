@@ -142,6 +142,10 @@ src/
 - **문제**: `authStore.logout()`이 로그인 정보(`user`, localStorage)만 정리하고 `cartStore`/`wishlistStore`의 `items`는 그대로 둬서, 로그아웃 후에도(혹은 같은 브라우저에서 다른 계정으로 로그인하기 전까지) 화면에 이전 사용자의 장바구니·찜 목록이 그대로 보이는 문제. 공유 PC에서 계정을 바꿔가며 쓰는 경우 특히 문제가 됨.
 - **해결**: `cartStore`/`wishlistStore`에 서버 데이터는 건드리지 않고 화면 상태만 비우는 `resetLocal()`을 추가하고(기존 `clearCart()`는 서버의 장바구니 자체를 삭제하는 함수라 로그아웃에는 쓸 수 없어 별도로 분리), `authStore.logout()`에서 로그인 정보 정리와 함께 호출하도록 수정.
 
+### 관리자 라우터 가드가 위조 가능한 localStorage 값만으로 판단
+- **문제**: `router/index.js`의 `requiresAdmin` 가드가 `authStore.user?.role !== "ROLE_ADMIN"`만 검사하는데, `authStore.user`는 `localStorage`에서 그대로 복원한 값이라 서명이나 서버 검증이 없음. 브라우저 devtools에서 `localStorage`의 `role`을 `"ROLE_ADMIN"`으로 바꾸고 새로고침하면, 실제 데이터는 백엔드가 다시 막더라도 관리자 화면 UI 자체는 렌더링됐음.
+- **해결**: 가드에서 로컬 값을 신뢰하지 않고, 매번 `GET /api/members/{id}`(본인 정보 조회)로 서버가 실제로 알고 있는 role을 재확인한 뒤 통과 여부를 결정하도록 변경. 요청이 실패하거나(예: `id`를 다른 회원 것으로 조작해 403) 서버가 반환한 role이 `ROLE_ADMIN`이 아니면 홈으로 리다이렉트. 실제 계정으로 자기 자신을 조회하면 DB의 진짜 role이 내려오고, 남의 id로 바꿔도 소유자 검증(`SecurityUtil.checkOwnerOrAdmin`)에 걸려 403이 나므로 두 경우 모두 위조가 통하지 않는 것을 API로 확인함.
+
 ---
 
 ## 빌드 및 배포
