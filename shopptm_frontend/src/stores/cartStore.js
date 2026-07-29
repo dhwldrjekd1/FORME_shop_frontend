@@ -77,12 +77,17 @@ export const useCartStore = defineStore("cart", () => {
     if (item) item.quantity = quantity;
   }
 
-  // 장바구니 비우기 (DB 연동)
+  // 장바구니 비우기 (DB 연동 - 서버에 저장된 장바구니 자체를 삭제)
   async function clearCart() {
     const user = JSON.parse(localStorage.getItem("user") || "null");
     if (user?.id) {
       try { await api.delete(`/members/${user.id}/cart`); } catch {}
     }
+    items.value = [];
+  }
+
+  // 로그아웃 시 화면 상태만 초기화 (서버의 장바구니 데이터는 그대로 유지 - 다음 로그인 때 다시 보여야 함)
+  function resetLocal() {
     items.value = [];
   }
 
@@ -95,5 +100,6 @@ export const useCartStore = defineStore("cart", () => {
     removeItem,
     updateQuantity,
     clearCart,
+    resetLocal,
   };
 });

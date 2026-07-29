@@ -75,6 +75,15 @@ export const useAuthStore = defineStore("auth", () => {
     } catch {}
     user.value = null;
     localStorage.removeItem(USER_KEY);
+
+    // 장바구니/찜 화면 상태도 함께 정리 - 안 하면 같은 브라우저에서 다음 사람이
+    // 로그인하기 전까지(또는 비로그인 상태에서도) 이전 사용자의 목록이 그대로 보임
+    try {
+      const { useCartStore } = await import("@/stores/cartStore");
+      const { useWishlistStore } = await import("@/stores/wishlistStore");
+      useCartStore().resetLocal();
+      useWishlistStore().resetLocal();
+    } catch {}
   }
 
   return {

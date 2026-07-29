@@ -70,5 +70,10 @@ export const useWishlistStore = defineStore("wishlist", () => {
     items.value = items.value.filter((i) => i.id !== productId);
   }
 
-  return { items, count, isWished, fetchWishlist, toggle, remove };
+  // 로그아웃 시 화면 상태만 초기화 (서버의 찜 목록은 그대로 유지 - 다음 로그인 때 다시 보여야 함)
+  function resetLocal() {
+    items.value = [];
+  }
+
+  return { items, count, isWished, fetchWishlist, toggle, remove, resetLocal };
 });
