@@ -155,11 +155,13 @@ onMounted(async () => {
   const params = new URLSearchParams(window.location.search);
   if (params.get('paymentKey')) {
     try {
+      // 카드 결제는 이 호출로 이미 확정되므로, 마침 세션이 만료돼 401이 나더라도
+      // 페이지가 강제로 로그인 화면으로 넘어가 버리면 안 됨(이후 주문 생성/실패 안내가 못 이뤄짐)
       const confirmRes = await api.post('/payment/confirm', {
         paymentKey: params.get('paymentKey'),
         orderId: params.get('orderId'),
         amount: Number(params.get('amount')),
-      });
+      }, { skipAuthRedirect: true });
       if (confirmRes?.success) {
         // 토스가 실제로 승인한 금액(서버가 검증해서 돌려준 값)을 그대로 주문 생성에 넘긴다.
         // URL의 amount 파라미터는 사용자가 손댈 수 있으므로 신뢰하지 않는다.
@@ -225,6 +227,8 @@ async function processTossPayment() {
 async function createOrder(paidAmount) {
   const memberId = authStore.user?.id;
   if (!memberId) return;
+  // paidAmount가 있으면 토스 결제가 이미 확정된 뒤이므로, 여기서 401이 나도 강제 이동시키지 않고
+  // 아래 handleSubmit의 catch에서 안내 메시지를 보여주도록 함 (장바구니도 실패 시엔 그대로 유지됨)
   await api.post(`/members/${memberId}/orders`, {
     receiverName: form.value.name || authStore.user?.name || '고객',
     receiverPhone: form.value.phone || '',
@@ -236,7 +240,7 @@ async function createOrder(paidAmount) {
     })),
     // 토스 결제를 거친 주문만 채워짐 — 서버가 이 값과 실제 주문 금액이 일치하는지 검증 후 PAID 처리
     paidAmount: paidAmount ?? null,
-  });
+  }, { skipAuthRedirect: true });
   localStorage.setItem('forme_last_order', JSON.stringify({
     items: cartItems.value.map(i => ({ name: i.name, image: i.image, size: i.size, quantity: i.quantity, price: i.price })),
     totalAmount: finalTotal.value,

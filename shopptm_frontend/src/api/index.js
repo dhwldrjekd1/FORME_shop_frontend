@@ -21,7 +21,10 @@ class ApiError extends Error {
 }
 
 // ── 핵심 요청 함수 ─────────────────────────────
-async function request(path, { method = "GET", body, headers, ...rest } = {}) {
+async function request(
+  path,
+  { method = "GET", body, headers, skipAuthRedirect = false, ...rest } = {},
+) {
   const url = path.startsWith("http") ? path : `${BASE_URL}${path}`;
 
   // 타임아웃 처리 (AbortController)
@@ -53,8 +56,11 @@ async function request(path, { method = "GET", body, headers, ...rest } = {}) {
       : await res.text().catch(() => null);
 
     if (!res.ok) {
-      // 401 (인증 만료/무효) 처리 — 남아있는 로그인 정보를 정리하고 로그인 페이지로 이동
-      if (res.status === 401) {
+      // 401 (인증 만료/무효) 처리 — 남아있는 로그인 정보를 정리하고 로그인 페이지로 이동.
+      // skipAuthRedirect: 토스 결제 승인처럼 "지금 이 요청이 401이면 즉시 페이지를 이동시키는 것"이
+      // 오히려 해로운 흐름(카드 결제는 이미 끝났는데 화면이 강제로 넘어가 버려서 실패 안내도
+      // 못 보고 진행 중이던 주문 생성도 못 하게 되는 상황)에서, 호출부가 직접 에러를 처리하도록 비켜줌.
+      if (res.status === 401 && !skipAuthRedirect) {
         if (typeof localStorage !== "undefined") {
           localStorage.removeItem("user");
         }
@@ -62,7 +68,8 @@ async function request(path, { method = "GET", body, headers, ...rest } = {}) {
           typeof window !== "undefined" &&
           !window.location.pathname.startsWith("/login")
         ) {
-          window.location.href = "/login";
+          const redirect = window.location.pathname + window.location.search;
+          window.location.href = "/login?redirect=" + encodeURIComponent(redirect);
         }
       }
       throw new ApiError(
