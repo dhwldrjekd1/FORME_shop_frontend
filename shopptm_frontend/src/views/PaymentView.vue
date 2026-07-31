@@ -106,9 +106,14 @@ const { items: cartItems, totalPrice } = storeToRefs(cartStore);
 
 const isPaying = ref(false);
 
-// 등급별 할인
+// 등급별 할인 - authStore.user.grade는 localStorage에서 복원한 값이라 위조되거나
+// (다른 세션에서 등급이 바뀐 경우처럼) 오래된 값일 수 있음. 이 값 그대로 결제금액을
+// 계산해 토스에 넘기면, 실제 카드 결제는 그 금액으로 이미 승인돼버린 뒤 서버가
+// 진짜 등급 기준으로 재계산한 금액과 달라 주문 생성만 거부되는 상황이 생길 수 있어
+// (결제는 됐는데 주문은 안 잡히는 상태), 결제 진입 시점에 서버에서 최신 등급을 다시 확인한다.
+const freshGrade = ref((authStore.user?.grade || 'BRONZE').toUpperCase());
 const GRADE_DISCOUNT = { BRONZE: 0, SILVER: 5, GOLD: 8, VIP: 12 };
-const userGrade = computed(() => (authStore.user?.grade || 'BRONZE').toUpperCase());
+const userGrade = computed(() => freshGrade.value);
 const gradeName = computed(() => ({ BRONZE: 'Bronze', SILVER: 'Silver', GOLD: 'Gold', VIP: 'VIP' }[userGrade.value]));
 const gradeDiscount = computed(() => GRADE_DISCOUNT[userGrade.value] || 0);
 const gradeDiscountAmount = computed(() => Math.round(totalPrice.value * gradeDiscount.value / 100));
@@ -136,6 +141,14 @@ onMounted(async () => {
   try {
     const res = await api.get('/payment/client-key');
     tossClientKey.value = res.clientKey;
+  } catch {}
+
+  // 등급 할인 계산에 쓰이는 grade를 서버에서 다시 확인 (localStorage 값은 신뢰하지 않음)
+  try {
+    if (authStore.user?.id) {
+      const me = await api.get(`/members/${authStore.user.id}`);
+      if (me?.grade) freshGrade.value = me.grade.toUpperCase();
+    }
   } catch {}
 
   // 토스 결제 성공 리다이렉트 처리
