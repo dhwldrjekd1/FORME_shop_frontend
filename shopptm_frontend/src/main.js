@@ -24,11 +24,20 @@ installPageTracker(router);
 // index.html 의 <div id="app"> 에 마운트
 app.mount("#app");
 
-// 로그인 상태면 장바구니/찜 DB에서 로드
+// 로그인 상태면(localStorage 기준) 서버 세션이 실제로 유효한지 먼저 확인한 뒤
+// 장바구니/찜을 DB에서 로드 - 세션이 이미 만료/무효화됐다면 로그인 상태를 정리하고
+// 장바구니/찜 요청 자체를 보내지 않는다
+import { useAuthStore } from "./stores/authStore";
 import { useCartStore } from "./stores/cartStore";
 import { useWishlistStore } from "./stores/wishlistStore";
 const storedUser = localStorage.getItem("user");
 if (storedUser) {
-  useCartStore().fetchCart();
-  useWishlistStore().fetchWishlist();
+  useAuthStore()
+    .verifySession()
+    .then(() => {
+      if (useAuthStore().isLoggedIn) {
+        useCartStore().fetchCart();
+        useWishlistStore().fetchWishlist();
+      }
+    });
 }

@@ -88,6 +88,27 @@ export const useAuthStore = defineStore("auth", () => {
     } catch {}
   }
 
+  // 새로고침 시 localStorage에 복원된 로그인 상태를 그대로 믿지 않고, 서버 세션이
+  // 실제로 아직 유효한지 확인한다 - 쿠키가 만료되거나 로그아웃으로 무효화된 뒤에도
+  // 화면은 계속 로그인된 것처럼 보이다가, 실제 API 호출을 할 때가 돼서야 401로
+  // 드러나는 것을 막기 위함. 401은 여기서 조용히 로컬 상태만 정리하고, 전역 401
+  // 핸들러의 강제 이동은 건너뛴다(단순히 페이지를 새로고침했을 뿐인데 로그인
+  // 화면으로 튕겨나가면 안 됨).
+  async function verifySession() {
+    if (!user.value?.id) return;
+    try {
+      const me = await api.get(`/members/${user.value.id}`, { skipAuthRedirect: true });
+      user.value = { ...user.value, ...me };
+      localStorage.setItem(USER_KEY, JSON.stringify(user.value));
+    } catch (e) {
+      if (e.status === 401 || e.status === 403) {
+        user.value = null;
+        localStorage.removeItem(USER_KEY);
+      }
+      // 그 외(네트워크 오류 등)는 세션 만료와 구분할 수 없으므로 로컬 상태를 유지
+    }
+  }
+
   return {
     user,
     isLoggedIn,
@@ -95,6 +116,7 @@ export const useAuthStore = defineStore("auth", () => {
     login,
     register,
     logout,
+    verifySession,
   };
 });
 
