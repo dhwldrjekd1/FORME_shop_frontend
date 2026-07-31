@@ -80,8 +80,8 @@
             <div class="py-totals__row"><span>배송비</span><span class="py-totals__free">무료</span></div>
             <div class="py-totals__row py-totals__row--total"><span>총 결제금액</span><span>₩{{ finalTotal.toLocaleString() }}</span></div>
           </div>
-          <button class="py-submit" :disabled="isPaying" @click="handleSubmit">
-            {{ isPaying ? '결제 처리 중...' : `₩${finalTotal.toLocaleString()} 결제하기` }}
+          <button class="py-submit" :disabled="isPaying || gradeLoading" @click="handleSubmit">
+            {{ isPaying ? '결제 처리 중...' : gradeLoading ? '회원 정보 확인 중...' : `₩${finalTotal.toLocaleString()} 결제하기` }}
           </button>
           <p class="py-secure"><span class="material-symbols-outlined">verified_user</span>SSL 암호화로 안전하게 결제됩니다</p>
         </aside>
@@ -105,6 +105,10 @@ const router = useRouter();
 const { items: cartItems, totalPrice } = storeToRefs(cartStore);
 
 const isPaying = ref(false);
+// 서버의 최신 등급을 확인하는 동안 결제 버튼을 막아둠 - 안 그러면 그 사이에
+// 눌렀을 때 아직 localStorage 값(freshGrade 초기값)으로 계산된 finalTotal이
+// 그대로 토스 결제 금액으로 넘어갈 수 있어, 등급 재확인이 사실상 무력화됨
+const gradeLoading = ref(true);
 
 // 등급별 할인 - authStore.user.grade는 localStorage에서 복원한 값이라 위조되거나
 // (다른 세션에서 등급이 바뀐 경우처럼) 오래된 값일 수 있음. 이 값 그대로 결제금액을
@@ -149,7 +153,10 @@ onMounted(async () => {
       const me = await api.get(`/members/${authStore.user.id}`);
       if (me?.grade) freshGrade.value = me.grade.toUpperCase();
     }
-  } catch {}
+  } catch {
+  } finally {
+    gradeLoading.value = false;
+  }
 
   // 토스 결제 성공 리다이렉트 처리
   const params = new URLSearchParams(window.location.search);
@@ -177,7 +184,7 @@ onMounted(async () => {
 });
 
 async function handleSubmit() {
-  if (isPaying.value) return;
+  if (isPaying.value || gradeLoading.value) return;
   isPaying.value = true;
 
   // 유효성 검사
