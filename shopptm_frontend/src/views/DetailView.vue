@@ -847,9 +847,10 @@ function buyNow() {
   background-repeat: no-repeat; background-color: #f3f1ec;
   z-index: 2; pointer-events: none;
 }
-@media (max-width: 767px) {
-  /* 모바일(터치)에서는 hover 기반 확대가 성립하지 않고, 탭 시 합성 mouseenter만 걸려
-     확대 오버레이가 사진 위에 그대로 눌어붙는 문제가 생기므로 비활성화 */
+@media (hover: none), (pointer: coarse) {
+  /* 터치 기기에서는 hover 기반 확대가 성립하지 않고, 탭 시 합성 mouseenter만 걸려
+     확대 오버레이가 사진 위에 그대로 눌어붙는 문제가 생기므로 비활성화.
+     (창 폭이 아니라 실제 입력 방식 기준 — PC에서 창을 좁혀도 마우스면 계속 동작) */
   .dp-gallery__zoom { cursor: default; }
   .dp-gallery__lens, .dp-gallery__magnified { display: none; }
 }
