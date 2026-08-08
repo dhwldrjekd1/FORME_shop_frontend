@@ -43,13 +43,13 @@
                 @mouseleave="zoomOn = false"
               >
                 <img :src="currentImage" :alt="product.name" @load="onImgLoad" />
+                <div
+                  v-show="zoomOn"
+                  class="dp-gallery__magnified"
+                  :style="{ backgroundImage: `url(${currentImage})`, backgroundPosition: magBg, backgroundSize: magSize }"
+                />
                 <div v-show="zoomOn" class="dp-gallery__lens" :style="lensPos" />
               </div>
-              <div
-                v-show="zoomOn"
-                class="dp-gallery__magnified"
-                :style="{ backgroundImage: `url(${currentImage})`, backgroundPosition: magBg, backgroundSize: magSize }"
-              />
             </div>
             <!-- 썸네일 -->
             <div class="dp-gallery__thumbs">
@@ -846,6 +846,12 @@ function buyNow() {
   position: absolute; inset: 0;
   background-repeat: no-repeat; background-color: #f3f1ec;
   z-index: 2; pointer-events: none;
+}
+@media (max-width: 767px) {
+  /* 모바일(터치)에서는 hover 기반 확대가 성립하지 않고, 탭 시 합성 mouseenter만 걸려
+     확대 오버레이가 사진 위에 그대로 눌어붙는 문제가 생기므로 비활성화 */
+  .dp-gallery__zoom { cursor: default; }
+  .dp-gallery__lens, .dp-gallery__magnified { display: none; }
 }
 
 .dp-gallery__thumbs {
