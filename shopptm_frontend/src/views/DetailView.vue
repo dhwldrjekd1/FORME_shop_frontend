@@ -843,13 +843,9 @@ function buyNow() {
   pointer-events: none; z-index: 5;
 }
 .dp-gallery__magnified {
-  position: absolute; top: 0; left: calc(100% + 0.75rem);
-  width: 100%; height: 100%;
+  position: absolute; inset: 0;
   background-repeat: no-repeat; background-color: #f3f1ec;
-  border: 1px solid #eee; z-index: 50; pointer-events: none;
-}
-@media (max-width: 1023px) {
-  .dp-gallery__magnified { display: none; }
+  z-index: 2; pointer-events: none;
 }
 
 .dp-gallery__thumbs {
