@@ -177,8 +177,14 @@ onMounted(async () => {
         await createOrder(confirmRes.amount, confirmRes.paymentKey);
       } else {
         alert('결제 승인 실패: ' + (confirmRes?.message || ''));
+        // 주소창에 paymentKey가 남아있으면 새로고침/뒤로가기 시 결제 승인이 그대로 재생되므로 제거
+        window.history.replaceState(null, '', window.location.pathname);
       }
-    } catch (e) { alert('결제 승인 오류: ' + e.message); }
+    } catch (e) {
+      alert('결제 승인 오류: ' + e.message);
+      // 주문 생성까지 실패한 경우도 동일하게, 재생 방지를 위해 결제 관련 쿼리를 지움
+      window.history.replaceState(null, '', window.location.pathname);
+    }
   }
   if (params.get('fail')) {
     alert('결제가 취소되었습니다.');
