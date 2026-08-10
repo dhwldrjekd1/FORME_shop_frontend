@@ -337,7 +337,11 @@
                   </span>
                   <span class="dp-qna-item__badge" :class="q.isAnswered ? 'dp-qna-item__badge--done' : ''">{{ q.isAnswered ? '답변완료' : '대기중' }}</span>
                 </div>
-                <p class="dp-qna-item__content">{{ q.content }}</p>
+                <!-- 비밀글은 서버가 작성자 본인/관리자가 아니면 content를 null로 가려서 내려줌 -->
+                <p v-if="q.isSecret && q.content == null" class="dp-qna-item__content dp-qna-item__content--locked">
+                  비밀글입니다. 작성자와 관리자만 볼 수 있습니다.
+                </p>
+                <p v-else class="dp-qna-item__content">{{ q.content }}</p>
                 <div v-if="q.answer" class="dp-qna-item__answer">
                   <span class="dp-rv__reply-badge">FORME</span>
                   <p>{{ q.answer }}</p>
@@ -1142,6 +1146,7 @@ function buyNow() {
 .dp-qna-item__badge { display: inline-block; padding: 0.25rem 0.625rem; font-size: 0.5rem; font-weight: 700; letter-spacing: 0.1em; border-radius: 0.25rem; border: 1.5px solid #ddd; color: #999; }
 .dp-qna-item__badge--done { background: #111; color: #fff; border-color: #111; }
 .dp-qna-item__content { font-size: 0.8125rem; color: #333; line-height: 1.6; }
+.dp-qna-item__content--locked { color: #bbb; font-style: italic; }
 .dp-qna-item__answer { margin-top: 0.75rem; padding: 0.75rem 1rem; background: #fafaf8; border-left: 3px solid #111; border-radius: 0 0.25rem 0.25rem 0; }
 .dp-qna-item__answer p { font-size: 0.8125rem; color: #333; line-height: 1.6; margin-top: 0.375rem; }
 .dp-qna-item__meta { display: flex; gap: 1rem; font-size: 0.6875rem; color: #bbb; margin-top: 0.5rem; }

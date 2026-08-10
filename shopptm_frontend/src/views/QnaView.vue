@@ -176,7 +176,12 @@ async function submitWrite() {
 }
 
 function openDetail(item) {
-  if (item.locked && !authStore.isLoggedIn) { alert('비밀글입니다. 로그인이 필요합니다.'); return; }
+  // 비밀글 내용은 서버가 작성자 본인/관리자가 아니면 애초에 null로 가려서 내려주므로,
+  // content가 없는데 잠금 표시가 있는 경우는 "정말 못 보는 글"로 안내한다.
+  if (item.locked && item.content == null) {
+    alert(authStore.isLoggedIn ? '비밀글입니다. 작성자와 관리자만 볼 수 있습니다.' : '비밀글입니다. 로그인이 필요합니다.');
+    return;
+  }
   alert([`[${item.category}] ${item.title}`, `${item.writer} · ${item.date}`, '', item.content || '(내용 없음)', '', item.answer ? `[답변]\n${item.answer}` : '(아직 답변 없음)'].join('\n'));
 }
 </script>
