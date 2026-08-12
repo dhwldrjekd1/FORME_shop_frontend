@@ -129,10 +129,10 @@
 
             <!-- 액션 버튼 -->
             <div class="dp-actions">
-              <button class="dp-actions__cart" @click="addToCart">
-                장바구니 담기 — ₩{{ (salePrice * qty).toLocaleString() }}
+              <button class="dp-actions__cart" :disabled="cartActionPending" @click="addToCart">
+                {{ cartActionPending ? '담는 중...' : `장바구니 담기 — ₩${(salePrice * qty).toLocaleString()}` }}
               </button>
-              <button class="dp-actions__buy" @click="buyNow">바로 구매</button>
+              <button class="dp-actions__buy" :disabled="cartActionPending" @click="buyNow">바로 구매</button>
               <button class="dp-actions__wish" @click="toggleWish">
                 <span
                   class="material-symbols-outlined"
@@ -776,18 +776,26 @@ onMounted(async () => {
 watch(() => route.params.id, (id) => { if (id) loadProduct(id); });
 
 // ── 장바구니 / 구매 ──
-function addToCart() {
-  if (!product.value) return;
+// 담는 동안 버튼을 비활성화 — 그렇지 않으면 응답 오기 전에 연타해서 같은 상품이
+// 두 번 담기 요청되는 경우가 생김(서버가 그 경쟁을 원자적으로 처리하도록 고쳐뒀지만,
+// 애초에 중복 요청 자체가 안 나가는 게 더 낫다)
+const cartActionPending = ref(false);
+
+async function addToCartAndGo(destPath) {
+  if (!product.value || cartActionPending.value) return;
   if (!selSize.value) { alert('사이즈를 선택해주세요.'); return; }
-  cartStore.addItem({ productId: product.value.id, name: product.value.name, price: salePrice.value, image: currentImage.value, size: selSize.value, quantity: qty.value });
-  router.push('/cart');
+  cartActionPending.value = true;
+  try {
+    await cartStore.addItem({ productId: product.value.id, name: product.value.name, price: salePrice.value, image: currentImage.value, size: selSize.value, quantity: qty.value });
+    await router.push(destPath);
+  } catch (e) {
+    alert(e?.data?.message || e?.message || '장바구니 담기에 실패했습니다. 다시 시도해주세요.');
+  } finally {
+    cartActionPending.value = false;
+  }
 }
-function buyNow() {
-  if (!product.value) return;
-  if (!selSize.value) { alert('사이즈를 선택해주세요.'); return; }
-  cartStore.addItem({ productId: product.value.id, name: product.value.name, price: salePrice.value, image: currentImage.value, size: selSize.value, quantity: qty.value });
-  router.push('/payment');
-}
+function addToCart() { return addToCartAndGo('/cart'); }
+function buyNow() { return addToCartAndGo('/payment'); }
 </script>
 
 <style scoped>
@@ -991,6 +999,7 @@ function buyNow() {
   cursor: pointer; transition: opacity 0.2s;
 }
 .dp-actions__cart:hover { opacity: 0.85; }
+.dp-actions__cart:disabled { opacity: 0.6; cursor: not-allowed; }
 .dp-actions__buy {
   padding: 1rem 2rem; background: #fff; color: var(--b, #111);
   border: 1.5px solid var(--b, #111);
@@ -998,6 +1007,7 @@ function buyNow() {
   cursor: pointer; transition: all 0.2s;
 }
 .dp-actions__buy:hover { background: var(--b, #111); color: #fff; }
+.dp-actions__buy:disabled { opacity: 0.6; cursor: not-allowed; }
 .dp-actions__wish {
   width: 3rem; display: flex; align-items: center; justify-content: center;
   border: 1.5px solid #ddd; background: #fff; cursor: pointer;

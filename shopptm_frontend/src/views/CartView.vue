@@ -35,11 +35,11 @@
               </div>
               <div class="ct-item__bottom">
                 <div class="ct-item__qty">
-                  <button @click="cartStore.updateQuantity(item.id, item.quantity - 1)" :disabled="item.quantity <= 1">−</button>
+                  <button @click="changeQty(item, -1)" :disabled="item.quantity <= 1 || pendingIds.has(item.id)">−</button>
                   <span>{{ item.quantity }}</span>
-                  <button @click="cartStore.updateQuantity(item.id, item.quantity + 1)">+</button>
+                  <button @click="changeQty(item, 1)" :disabled="pendingIds.has(item.id)">+</button>
                 </div>
-                <button class="ct-item__remove" @click="cartStore.removeItem(item.id)">
+                <button class="ct-item__remove" :disabled="pendingIds.has(item.id)" @click="removeItem(item.id)">
                   <span class="material-symbols-outlined">delete_outline</span>
                   삭제
                 </button>
@@ -91,7 +91,7 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, reactive } from "vue";
 import { useCartStore } from "@/stores/cartStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useProductStore } from "@/stores/productStore";
@@ -111,6 +111,32 @@ const gradeName = computed(() => ({ BRONZE: 'Bronze', SILVER: 'Silver', GOLD: 'G
 const gradeDiscount = computed(() => GRADE_DISCOUNT[userGrade.value] || 0);
 const gradeDiscountAmount = computed(() => Math.round(totalPrice.value * gradeDiscount.value / 100));
 const finalTotal = computed(() => totalPrice.value - gradeDiscountAmount.value);
+
+// 요청이 진행중인 항목 id를 추적 — 이게 없으면 응답 오기 전에 +/-/삭제를 연타했을 때
+// 매번 같은(아직 안 바뀐) 수량을 기준으로 요청을 또 보내 하나가 유실되거나, 이미 지운
+// 항목을 또 지우려다 실패 알림이 잘못 뜨는 문제가 있었음
+const pendingIds = reactive(new Set());
+
+async function changeQty(item, delta) {
+  const nextQty = item.quantity + delta;
+  if (nextQty < 1 || pendingIds.has(item.id)) return;
+  pendingIds.add(item.id);
+  try {
+    await cartStore.updateQuantity(item.id, nextQty);
+  } finally {
+    pendingIds.delete(item.id);
+  }
+}
+
+async function removeItem(itemId) {
+  if (pendingIds.has(itemId)) return;
+  pendingIds.add(itemId);
+  try {
+    await cartStore.removeItem(itemId);
+  } finally {
+    pendingIds.delete(itemId);
+  }
+}
 
 const BRAND_COLORS = { BEANPOLE: '#103728', CARHARTT: '#9C4F18', "LEVI'S": '#8E1C28', DICKIES: '#1A1A1A' };
 
@@ -199,7 +225,8 @@ function getBrandName(productId) {
   background: none; border: none; font-size: 0.6875rem; color: #bbb;
   cursor: pointer; transition: color 0.2s;
 }
-.ct-item__remove:hover { color: #e53e3e; }
+.ct-item__remove:hover:not(:disabled) { color: #e53e3e; }
+.ct-item__remove:disabled { opacity: 0.5; cursor: not-allowed; }
 .ct-item__remove .material-symbols-outlined { font-size: 1rem; font-variation-settings: "wght" 300; }
 
 /* 주문 요약 */
