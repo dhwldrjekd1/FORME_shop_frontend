@@ -91,7 +91,7 @@
 </template>
 
 <script setup>
-import { computed, reactive } from "vue";
+import { computed, onMounted, reactive } from "vue";
 import { useCartStore } from "@/stores/cartStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useProductStore } from "@/stores/productStore";
@@ -104,7 +104,15 @@ const productStore = useProductStore();
 const { products } = storeToRefs(productStore);
 const { items, totalPrice } = storeToRefs(cartStore);
 
-// 등급별 할인
+// 등급별 할인 — authStore.user.grade는 localStorage에서 복원한 값이라 위조되거나
+// 오래됐을 수 있음(PaymentView.vue와 동일한 이유). 여기서 보여주는 할인은 실제 결제
+// 금액에 반영되는 게 아니라 미리보기일 뿐이지만, 등급이 바뀐 뒤에도 예전 등급 할인이
+// 계속 보이면 결제 화면에서 갑자기 금액이 달라 보여 혼란을 줄 수 있어, 마운트 시
+// authStore.verifySession()으로 서버의 최신 정보를 authStore.user에 그대로 반영한다.
+// (직접 fetch하지 않는 이유: verifySession이 이미 skipAuthRedirect·401 처리까지 갖추고
+// 있어서, 로그인 안 해도 되는 이 페이지에서 세션 만료로 강제 로그아웃 이동되는 걸 막아줌)
+onMounted(() => { authStore.verifySession(); });
+
 const GRADE_DISCOUNT = { BRONZE: 0, SILVER: 5, GOLD: 8, VIP: 12 };
 const userGrade = computed(() => (authStore.user?.grade || 'BRONZE').toUpperCase());
 const gradeName = computed(() => ({ BRONZE: 'Bronze', SILVER: 'Silver', GOLD: 'Gold', VIP: 'VIP' }[userGrade.value]));

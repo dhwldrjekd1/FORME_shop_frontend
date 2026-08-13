@@ -94,13 +94,22 @@ export const useAuthStore = defineStore("auth", () => {
   // 드러나는 것을 막기 위함. 401은 여기서 조용히 로컬 상태만 정리하고, 전역 401
   // 핸들러의 강제 이동은 건너뛴다(단순히 페이지를 새로고침했을 뿐인데 로그인
   // 화면으로 튕겨나가면 안 됨).
+  // 여러 화면(main.js 부팅, CartView, PaymentView 등)이 페이지 진입 때마다 각자
+  // verifySession()을 부를 수 있어, 응답이 뒤섞여 도착하면(느린 첫 요청이 나중에 와서)
+  // 오래된 응답이 최신 상태를 덮어쓸 수 있음 — cartStore.fetchCart와 동일한 이유로
+  // "가장 나중에 보낸 요청"만 반영한다.
+  let verifySeq = 0;
+
   async function verifySession() {
     if (!user.value?.id) return;
+    const seq = ++verifySeq;
     try {
       const me = await api.get(`/members/${user.value.id}`, { skipAuthRedirect: true });
+      if (seq !== verifySeq) return; // 더 최신 요청이 이미 나가있으면 이 응답은 버림
       user.value = { ...user.value, ...me };
       localStorage.setItem(USER_KEY, JSON.stringify(user.value));
     } catch (e) {
+      if (seq !== verifySeq) return;
       if (e.status === 401 || e.status === 403) {
         user.value = null;
         localStorage.removeItem(USER_KEY);

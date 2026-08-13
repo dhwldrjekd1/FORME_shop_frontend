@@ -192,6 +192,11 @@ src/
 - **문제**: `wishlistStore.js`의 `toggle()`에 진행중 가드가 없어서, 하트를 빠르게 두 번 누르면 두 번째 클릭이 아직 반영 안 된 `isWished()` 상태를 보고 첫 번째와 같은 방향으로 또 요청을 보냈음. 서버 실패도 `catch{}`로 조용히 삼키면서 화면 상태는 그대로 바꿔버려 서버와 어긋날 수 있었고, 실패해도 사용자에게 아무 안내가 없었음.
 - **해결**: 진행중인 상품 id를 추적하는 가드를 추가해 겹치는 요청 자체를 무시하도록 하고, 서버 성공 시에만 화면 상태를 바꾸도록 정리. 실패하면 안내(`alert`)를 띄우도록 함(기존엔 실패해도 아무 반응 없이 조용히 넘어갔음). 로그아웃 시 이 가드도 같이 초기화.
 - **교차검증에서 발견해 같이 고친 것**: 백엔드 `WishlistService.addWishlist()`도 장바구니와 같은 "확인 후 insert" 방식이라 동시에 두 번 찜하면 DB 제약 위반으로 500이 났음 — 백엔드 레포(같은 날짜 커밋)에서 원자적 upsert로 고침.
+
+### 장바구니 화면의 등급 할인 표시가 위조/오래된 localStorage 값 기준 (2026.08.14)
+- **문제**: `CartView.vue`가 등급 할인 미리보기를 `authStore.user.grade`(localStorage에서 복원한 값, 서버 재검증 없음)로만 계산했음. 실제 결제 금액에는 영향 없지만(PaymentView.vue가 이미 서버 값으로 재계산), 다른 세션에서 등급이 바뀐 뒤에도 장바구니에서는 예전 할인이 계속 보이다가 결제 화면에서 갑자기 금액이 달라 보이는 혼란이 있을 수 있었음.
+- **해결**: 처음엔 PaymentView.vue처럼 별도 `freshGrade` ref + 직접 `api.get` 호출로 고치려다, `authStore`에 이미 정확히 이 용도의 `verifySession()`(서버 최신 정보로 `authStore.user`를 갱신, `skipAuthRedirect` 처리까지 포함)이 있는 걸 확인하고 그걸 그대로 재사용하도록 단순화함. `userGrade`는 다시 `authStore.user?.grade`를 직접 읽는 단순한 computed로 되돌림(별도 상태를 안 만들어서 항상 최신 반영).
+- **교차검증에서 발견해 같이 고친 것**: (1) `PaymentView.vue`가 여전히 자체적으로 `/members/{id}`를 직접 호출하고 있었는데 `skipAuthRedirect`가 빠져 있어서, 결제 도중 세션이 만료되면 강제로 로그인 화면으로 튕겨나갈 수 있었음 — `PaymentView.vue`도 `authStore.verifySession()`을 쓰도록 통일해서 해결. (2) 여러 화면이 페이지 진입마다 각자 `verifySession()`을 부를 수 있어(부팅 시 `main.js`, 이제 `CartView`/`PaymentView`도), 응답이 뒤섞여 도착하면 오래된 응답이 최신 상태를 덮어쓸 수 있는 이론적 레이스가 있어 `verifySession()` 자체에 "가장 나중에 보낸 요청만 반영"하는 순번 가드를 추가(`cartStore`/`wishlistStore`에 이미 있던 것과 동일한 패턴).
 ---
 
 ## 빌드 및 배포

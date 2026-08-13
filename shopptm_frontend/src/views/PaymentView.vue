@@ -106,7 +106,7 @@ const { items: cartItems, totalPrice } = storeToRefs(cartStore);
 
 const isPaying = ref(false);
 // 서버의 최신 등급을 확인하는 동안 결제 버튼을 막아둠 - 안 그러면 그 사이에
-// 눌렀을 때 아직 localStorage 값(freshGrade 초기값)으로 계산된 finalTotal이
+// 눌렀을 때 아직 localStorage 값(authStore.user.grade 초기값)으로 계산된 finalTotal이
 // 그대로 토스 결제 금액으로 넘어갈 수 있어, 등급 재확인이 사실상 무력화됨
 const gradeLoading = ref(true);
 
@@ -115,9 +115,9 @@ const gradeLoading = ref(true);
 // 계산해 토스에 넘기면, 실제 카드 결제는 그 금액으로 이미 승인돼버린 뒤 서버가
 // 진짜 등급 기준으로 재계산한 금액과 달라 주문 생성만 거부되는 상황이 생길 수 있어
 // (결제는 됐는데 주문은 안 잡히는 상태), 결제 진입 시점에 서버에서 최신 등급을 다시 확인한다.
-const freshGrade = ref((authStore.user?.grade || 'BRONZE').toUpperCase());
+// (authStore.verifySession()이 그 확인을 하고 authStore.user에 그대로 반영해줌)
 const GRADE_DISCOUNT = { BRONZE: 0, SILVER: 5, GOLD: 8, VIP: 12 };
-const userGrade = computed(() => freshGrade.value);
+const userGrade = computed(() => (authStore.user?.grade || 'BRONZE').toUpperCase());
 const gradeName = computed(() => ({ BRONZE: 'Bronze', SILVER: 'Silver', GOLD: 'Gold', VIP: 'VIP' }[userGrade.value]));
 const gradeDiscount = computed(() => GRADE_DISCOUNT[userGrade.value] || 0);
 const gradeDiscountAmount = computed(() => Math.round(totalPrice.value * gradeDiscount.value / 100));
@@ -147,16 +147,13 @@ onMounted(async () => {
     tossClientKey.value = res.clientKey;
   } catch {}
 
-  // 등급 할인 계산에 쓰이는 grade를 서버에서 다시 확인 (localStorage 값은 신뢰하지 않음)
-  try {
-    if (authStore.user?.id) {
-      const me = await api.get(`/members/${authStore.user.id}`);
-      if (me?.grade) freshGrade.value = me.grade.toUpperCase();
-    }
-  } catch {
-  } finally {
-    gradeLoading.value = false;
-  }
+  // 등급 할인 계산에 쓰이는 grade를 서버에서 다시 확인 (localStorage 값은 신뢰하지 않음).
+  // 직접 fetch하지 않고 authStore.verifySession()을 쓰는 이유: 이 함수는 이미
+  // skipAuthRedirect와 401/403 처리를 갖추고 있어서, 결제 도중 세션이 만료돼도
+  // 강제로 로그인 화면으로 튕겨나가지 않고(이전엔 이 직접 호출 경로에 그 처리가
+  // 빠져있어 그럴 수 있었음) 조용히 로컬 상태만 정리됨.
+  await authStore.verifySession();
+  gradeLoading.value = false;
 
   // 토스 결제 성공 리다이렉트 처리
   const params = new URLSearchParams(window.location.search);
