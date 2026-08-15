@@ -17,7 +17,7 @@
               <td class="t-name">{{ m.name }}</td>
               <td>{{ m.email }}</td>
               <td>
-                <select class="am-sel" :disabled="gradePending.has(m.id)" :value="m.grade" @change="changeGrade(m.id, $event.target.value)">
+                <select class="am-sel" :disabled="gradePending.has(m.id)" :value="m.grade" @change="changeGrade(m, $event)">
                   <option v-for="g in grades" :key="g" :value="g">{{ g }}</option>
                 </select>
               </td>
@@ -51,11 +51,30 @@ async function doSearch() {
   if (!search.value.trim()) { await loadMembers(); return; }
   try { members.value = await api.get(`/admin/members/search?keyword=${encodeURIComponent(search.value)}`) || []; } catch {}
 }
-async function changeGrade(id, grade) {
-  if (gradePending.has(id)) return;
+// select가 v-model이 아니라 :value 바인딩이라, 취소/실패로 grade를 안 바꾸면
+// Vue가 값이 그대로라고 보고 DOM을 되돌려주지 않는다 — 드롭다운엔 방금 고른(반영 안 된)
+// 등급이 계속 보이는 채로 남을 수 있어, 취소·실패 시엔 select의 DOM 값도 직접 되돌린다.
+// 요청 중 검색(doSearch)으로 members.value가 통째로 교체될 수 있으므로, id/name/기존
+// 등급은 미리 값으로 떼어두고 실제 반영은 항상 응답 후 members.value에서 다시 찾아서 한다
+async function changeGrade(m, event) {
+  const id = m.id, name = m.name, oldGrade = m.grade;
+  const grade = event.target.value;
+  if (gradePending.has(id) || grade === oldGrade) { event.target.value = oldGrade; return; }
+  if (!confirm(`${name}님의 등급을 ${oldGrade} → ${grade}로 변경하시겠습니까?`)) {
+    event.target.value = oldGrade;
+    return;
+  }
   gradePending.add(id);
-  try { await api.patch(`/admin/members/${id}/grade?grade=${grade}`); const m = members.value.find(x => x.id === id); if (m) m.grade = grade; } catch (e) { alert(e.message); }
-  finally { gradePending.delete(id); }
+  try {
+    await api.patch(`/admin/members/${id}/grade?grade=${grade}`);
+    const cur = members.value.find(x => x.id === id);
+    if (cur) cur.grade = grade;
+  } catch (e) {
+    alert(e.message);
+    event.target.value = oldGrade;
+  } finally {
+    gradePending.delete(id);
+  }
 }
 async function ban(id) {
   if (banPending.has(id)) return;
