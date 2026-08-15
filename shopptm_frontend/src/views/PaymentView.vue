@@ -241,7 +241,7 @@ async function createOrder(paidAmount, paymentKey) {
   if (!memberId) return;
   // paidAmount가 있으면 토스 결제가 이미 확정된 뒤이므로, 여기서 401이 나도 강제 이동시키지 않고
   // 아래 handleSubmit의 catch에서 안내 메시지를 보여주도록 함 (장바구니도 실패 시엔 그대로 유지됨)
-  await api.post(`/members/${memberId}/orders`, {
+  const order = await api.post(`/members/${memberId}/orders`, {
     receiverName: form.value.name || authStore.user?.name || '고객',
     receiverPhone: form.value.phone || '',
     address: (form.value.address + ' ' + form.value.address2).trim() || '서울시',
@@ -256,6 +256,7 @@ async function createOrder(paidAmount, paymentKey) {
     paymentKey: paymentKey ?? null,
   }, { skipAuthRedirect: true });
   localStorage.setItem('forme_last_order', JSON.stringify({
+    orderId: order?.id ?? null,
     items: cartItems.value.map(i => ({ name: i.name, image: i.image, size: i.size, quantity: i.quantity, price: i.price })),
     totalAmount: finalTotal.value,
     receiverName: form.value.name,

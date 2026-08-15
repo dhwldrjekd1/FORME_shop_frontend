@@ -221,6 +221,12 @@ src/
 - **해결**: `authStore.js`에 `isAdmin` computed를 새로 추가(`isLoggedIn`과 같은 패턴)하고, `SlidePanel.vue`는 이걸 쓰도록 변경. `router/index.js`의 `requiresAdmin` 가드가 이미 남기고 있던 것과 같은 취지의 주석을 `isAdmin` 옆에도 남겨서, "이 값은 화면에 메뉴를 보여줄지만 정하는 용도이고, `/admin` 진입 권한의 실제 검증은 라우터가 매번 서버로 재확인한다"는 게 코드만 봐도 드러나게 함(라우터 쪽 로직은 이미 그렇게 되어 있었고, 그 부분은 이번에 바꾸지 않음).
 - **교차검증에서 발견해 같이 고친 것**: 이 문자열 비교가 다른 파일에도 중복돼 있는지(`TheHeader.vue`, `Forme32Layout.vue`, `MyPageView.vue` 등) 확인했는데, 이 파일 한 곳뿐이라 별도로 고칠 곳은 없었음.
 - **검증**: 프런트 빌드 통과 확인, 교차검증에서 추가 문제 없음 확인(동작은 그대로이고 표현만 정리한 리팩터라 실사용 테스트는 관리자/일반 계정 각각 로그인해 메뉴 노출 여부만 코드 상으로 재확인).
+
+### 주문완료 화면의 주문번호가 실제 주문과 무관한 난수였음 (2026.08.16)
+- **문제**: `PaymentView.vue`의 `createOrder()`가 `POST /members/{id}/orders` 응답(실제 생성된 주문의 `id` 포함)을 받아놓고 그냥 버렸음. `OrderCompleteView.vue`는 대신 `Math.floor(Math.random() * 900000 + 100000)`으로 화면에만 존재하는 번호를 "주문번호"로 표시 — 매 주문마다 100% 발생하며, 이 번호로는 실제 주문을 찾을 수 없어 나중에 고객센터 문의 시 매칭이 안 됨.
+- **해결**: `createOrder()`가 응답을 `order` 변수로 받아 `order?.id`를 `localStorage`의 `forme_last_order`에 `orderId`로 함께 저장하도록 수정. `OrderCompleteView.vue`는 난수 생성 대신 이 `orderId`를 그대로 표시(`'#' + lastOrder.orderId`), 혹시라도 값이 없는 채로(예: 이 페이지에 직접 접근) 들어온 경우에만 "확인 중"으로 대체 표시.
+- **교차검증에서 발견해 같이 고친 것**: 없음 — `api.post()`가 응답 바디를 그대로 반환하는 것, 백엔드가 래퍼 없이 `OrderResponseDto`를 그대로 돌려주며 `id`가 최상위 필드인 것, `forme_last_order` 키를 이 두 파일 외엔 아무도 안 쓰는 것까지 모두 확인했지만 추가 결함은 없었음.
+- **검증**: 프런트 빌드 통과, 교차검증(findings 0건), 백엔드 `OrderResponseDto`/`OrderController` 실제 코드로 응답 형태 재확인.
 ---
 
 ## 빌드 및 배포

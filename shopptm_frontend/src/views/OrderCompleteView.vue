@@ -74,7 +74,6 @@
 import { ref } from "vue";
 import Forme32Layout from "@/layouts/Forme32Layout.vue";
 
-const orderNumber = '#' + Math.floor(Math.random() * 900000 + 100000);
 const orderDate = new Date().toLocaleString('ko-KR', {
   year: 'numeric', month: '2-digit', day: '2-digit',
   hour: '2-digit', minute: '2-digit',
@@ -83,6 +82,10 @@ const orderDate = new Date().toLocaleString('ko-KR', {
 // localStorage에서 주문 데이터 로드
 let lastOrder = { items: [], totalAmount: 0 };
 try { lastOrder = JSON.parse(localStorage.getItem('forme_last_order')) || lastOrder; } catch {}
+
+// PaymentView.vue가 저장해둔 실제 주문 id를 그대로 보여줌. 혹시라도 이 값이 없는 채로
+// (예: 이 페이지에 직접 접근) 들어온 경우에만 안내용 표시로 대체한다
+const orderNumber = lastOrder.orderId ? '#' + lastOrder.orderId : '확인 중';
 
 const orderItems = ref(lastOrder.items || []);
 const totalAmount = ref(lastOrder.totalAmount || orderItems.value.reduce((s, i) => s + (i.price || 0) * (i.quantity || 1), 0));
