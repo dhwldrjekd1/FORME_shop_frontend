@@ -59,8 +59,9 @@
               <button
                 v-if="order.rawStatus === 'PENDING' || order.rawStatus === 'PAID'"
                 class="mp-order__cancel"
+                :disabled="orderCancelPending.has(order.rawId)"
                 @click="cancelOrder(order.rawId)"
-              >주문 취소</button>
+              >{{ orderCancelPending.has(order.rawId) ? '취소 중...' : '주문 취소' }}</button>
             </div>
           </div>
         </div>
@@ -80,7 +81,7 @@
           >
             <div class="mp-wish__img">
               <img :src="item.image" :alt="item.name" />
-              <button class="mp-wish__remove" @click.prevent="wishlistStore.remove(item.id)">
+              <button class="mp-wish__remove" :disabled="wishlistStore.isPending(item.id)" @click.prevent="wishlistStore.remove(item.id)">
                 <span class="material-symbols-outlined">close</span>
               </button>
             </div>
@@ -110,13 +111,13 @@
             <!-- 수정 모드 -->
             <div v-if="editingReviewId === r.id" class="mp-review__edit">
               <div class="mp-review__edit-stars">
-                <span v-for="s in 5" :key="s" class="material-symbols-outlined" @click="editReviewRating = s"
+                <span v-for="s in 5" :key="s" class="material-symbols-outlined" @click="!reviewPending.has(r.id) && (editReviewRating = s)"
                   :style="{ fontVariationSettings: s <= editReviewRating ? '\'FILL\' 1' : '\'FILL\' 0', color: s <= editReviewRating ? '#111' : '#ddd', cursor: 'pointer', fontSize: '1rem' }">star</span>
               </div>
-              <textarea v-model="editReviewContent" rows="3"></textarea>
+              <textarea v-model="editReviewContent" rows="3" :disabled="reviewPending.has(r.id)"></textarea>
               <div class="mp-review__edit-actions">
-                <button class="mp-btn mp-btn--ghost mp-btn--sm" @click="editingReviewId = null">취소</button>
-                <button class="mp-btn mp-btn--fill mp-btn--sm" @click="updateReview(r.id)">저장</button>
+                <button class="mp-btn mp-btn--ghost mp-btn--sm" :disabled="reviewPending.has(r.id)" @click="editingReviewId = null">취소</button>
+                <button class="mp-btn mp-btn--fill mp-btn--sm" :disabled="reviewPending.has(r.id)" @click="updateReview(r.id)">{{ reviewPending.has(r.id) ? '저장 중...' : '저장' }}</button>
               </div>
             </div>
             <div v-if="r.reply" class="mp-review__reply">
@@ -124,8 +125,8 @@
               <p>{{ r.reply }}</p>
             </div>
             <div v-if="editingReviewId !== r.id" class="mp-review__actions">
-              <button class="mp-review__act" @click="startEditReview(r)">수정</button>
-              <button class="mp-review__act mp-review__act--del" @click="deleteReview(r.id)">삭제</button>
+              <button class="mp-review__act" :disabled="reviewPending.size > 0" @click="startEditReview(r)">수정</button>
+              <button class="mp-review__act mp-review__act--del" :disabled="reviewPending.has(r.id)" @click="deleteReview(r.id)">삭제</button>
             </div>
           </div>
         </div>
@@ -146,11 +147,11 @@
             <p v-if="editingQnaId !== q.id" class="mp-qna__content">{{ q.content }}</p>
             <!-- 수정 모드 -->
             <div v-if="editingQnaId === q.id" class="mp-qna__edit">
-              <input v-model="editQnaTitle" type="text" placeholder="제목" />
-              <textarea v-model="editQnaContent" rows="3"></textarea>
+              <input v-model="editQnaTitle" type="text" placeholder="제목" :disabled="qnaPending.has(q.id)" />
+              <textarea v-model="editQnaContent" rows="3" :disabled="qnaPending.has(q.id)"></textarea>
               <div class="mp-qna__edit-actions">
-                <button class="mp-btn mp-btn--ghost mp-btn--sm" @click="editingQnaId = null">취소</button>
-                <button class="mp-btn mp-btn--fill mp-btn--sm" @click="updateQna(q.id)">저장</button>
+                <button class="mp-btn mp-btn--ghost mp-btn--sm" :disabled="qnaPending.has(q.id)" @click="editingQnaId = null">취소</button>
+                <button class="mp-btn mp-btn--fill mp-btn--sm" :disabled="qnaPending.has(q.id)" @click="updateQna(q.id)">{{ qnaPending.has(q.id) ? '저장 중...' : '저장' }}</button>
               </div>
             </div>
             <div v-if="q.answer" class="mp-qna__answer">
@@ -162,8 +163,8 @@
               <span v-if="q.productName">{{ q.productName }}</span>
             </div>
             <div v-if="editingQnaId !== q.id && !q.isAnswered" class="mp-qna__actions">
-              <button class="mp-review__act" @click="startEditQna(q)">수정</button>
-              <button class="mp-review__act mp-review__act--del" @click="deleteQna(q.id)">삭제</button>
+              <button class="mp-review__act" :disabled="qnaPending.size > 0" @click="startEditQna(q)">수정</button>
+              <button class="mp-review__act mp-review__act--del" :disabled="qnaPending.has(q.id)" @click="deleteQna(q.id)">삭제</button>
             </div>
           </div>
         </div>
@@ -174,24 +175,24 @@
         <div class="mp-form">
           <div class="mp-form__field">
             <label>이름</label>
-            <input v-model="profile.name" type="text" :disabled="!isEditing" />
+            <input v-model="profile.name" type="text" :disabled="!isEditing || savingProfile" />
           </div>
           <div class="mp-form__field">
             <label>이메일</label>
-            <input v-model="profile.email" type="email" :disabled="!isEditing" />
+            <input v-model="profile.email" type="email" :disabled="!isEditing || savingProfile" />
           </div>
           <div class="mp-form__field">
             <label>연락처</label>
-            <input v-model="profile.phone" type="tel" :disabled="!isEditing" placeholder="010-0000-0000" />
+            <input v-model="profile.phone" type="tel" :disabled="!isEditing || savingProfile" placeholder="010-0000-0000" />
           </div>
           <div class="mp-form__row">
             <div class="mp-form__field">
               <label>키 (cm)</label>
-              <input v-model.number="profile.height" type="number" :disabled="!isEditing" placeholder="170" />
+              <input v-model.number="profile.height" type="number" :disabled="!isEditing || savingProfile" placeholder="170" />
             </div>
             <div class="mp-form__field">
               <label>몸무게 (kg)</label>
-              <input v-model.number="profile.weight" type="number" :disabled="!isEditing" placeholder="70" />
+              <input v-model.number="profile.weight" type="number" :disabled="!isEditing || savingProfile" placeholder="70" />
             </div>
           </div>
           <div class="mp-form__field">
@@ -200,8 +201,8 @@
               <button v-for="f in fitOptions" :key="f.value" type="button"
                 class="mp-form__fit-btn"
                 :class="{ 'mp-form__fit-btn--on': profile.fit === f.value }"
-                :disabled="!isEditing"
-                @click="isEditing && (profile.fit = f.value)"
+                :disabled="!isEditing || savingProfile"
+                @click="isEditing && !savingProfile && (profile.fit = f.value)"
               >{{ f.label }}</button>
             </div>
           </div>
@@ -215,12 +216,12 @@
           <div class="mp-form__actions">
             <button v-if="!isEditing" class="mp-btn mp-btn--fill" @click="isEditing = true">정보 수정</button>
             <template v-else>
-              <button class="mp-btn mp-btn--ghost" @click="isEditing = false">취소</button>
-              <button class="mp-btn mp-btn--fill" @click="saveProfile">저장</button>
+              <button class="mp-btn mp-btn--ghost" :disabled="savingProfile" @click="isEditing = false">취소</button>
+              <button class="mp-btn mp-btn--fill" :disabled="savingProfile" @click="saveProfile">{{ savingProfile ? '저장 중...' : '저장' }}</button>
             </template>
           </div>
           <div class="mp-form__withdraw">
-            <button class="mp-withdraw" @click="withdrawMember">회원 탈퇴</button>
+            <button class="mp-withdraw" :disabled="withdrawing" @click="withdrawMember">{{ withdrawing ? '처리 중...' : '회원 탈퇴' }}</button>
           </div>
         </div>
       </section>
@@ -229,7 +230,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, reactive, computed, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/authStore";
 import { useWishlistStore } from "@/stores/wishlistStore";
@@ -275,9 +276,12 @@ const fitOptions = [
   { value: 'standard', label: '스탠다드' },
   { value: 'wide', label: '와이드' },
 ];
+const savingProfile = ref(false);
 async function saveProfile() {
+  if (savingProfile.value) return;
   const memberId = authStore.user?.id;
   if (!memberId) { alert('로그인 정보가 없습니다.'); return; }
+  savingProfile.value = true;
   try {
     await api.put(`/members/${memberId}`, {
       name: profile.value.name,
@@ -298,6 +302,8 @@ async function saveProfile() {
     alert('✅ 회원 정보가 저장되었습니다.');
   } catch (e) {
     alert(e.data?.message || e.message || '저장에 실패했습니다.');
+  } finally {
+    savingProfile.value = false;
   }
 }
 
@@ -347,23 +353,34 @@ async function loadMyReviews() {
   if (!memberId) return;
   try { myReviews.value = await api.get(`/members/${memberId}/reviews`) || []; } catch { myReviews.value = []; }
 }
+// 리뷰 수정/삭제 진행중인 id — 응답 오기 전에 같은(또는 다른) 리뷰를 또 조작하면
+// 두 요청이 겹치거나, 진행중인 리뷰의 수정 모드가 다른 리뷰로 바뀌어 엉뚱한
+// 리뷰에 저장될 수 있어 막는다
+const reviewPending = reactive(new Set());
 function startEditReview(r) {
+  if (reviewPending.size) return;
   editingReviewId.value = r.id;
   editReviewContent.value = r.content;
   editReviewRating.value = r.rating;
 }
 async function updateReview(id) {
+  if (reviewPending.has(id)) return;
   if (!editReviewContent.value.trim()) return;
+  reviewPending.add(id);
   try {
     await api.put(`/reviews/${id}`, { rating: editReviewRating.value, content: editReviewContent.value.trim() });
     editingReviewId.value = null;
     await loadMyReviews();
   } catch (e) { alert(e?.message || '수정 실패'); }
+  finally { reviewPending.delete(id); }
 }
 async function deleteReview(id) {
+  if (reviewPending.has(id)) return;
   if (!confirm('리뷰를 삭제하시겠습니까?')) return;
+  reviewPending.add(id);
   try { await api.delete(`/reviews/${id}`); await loadMyReviews(); }
   catch (e) { alert(e?.message || '삭제 실패'); }
+  finally { reviewPending.delete(id); }
 }
 
 // 내 문의
@@ -372,47 +389,66 @@ async function loadMyQna() {
   if (!memberId) return;
   try { myQna.value = await api.get(`/members/${memberId}/qna`) || []; } catch { myQna.value = []; }
 }
+// 문의 수정/삭제도 리뷰와 동일한 이유로 진행중 가드 적용
+const qnaPending = reactive(new Set());
 function startEditQna(q) {
+  if (qnaPending.size) return;
   editingQnaId.value = q.id;
   editQnaTitle.value = q.title;
   editQnaContent.value = q.content;
 }
 async function updateQna(id) {
+  if (qnaPending.has(id)) return;
   if (!editQnaTitle.value.trim() || !editQnaContent.value.trim()) return;
+  qnaPending.add(id);
   try {
     await api.put(`/qna/${id}`, { title: editQnaTitle.value.trim(), content: editQnaContent.value.trim() });
     editingQnaId.value = null;
     await loadMyQna();
   } catch (e) { alert(e?.message || '수정 실패'); }
+  finally { qnaPending.delete(id); }
 }
 async function deleteQna(id) {
+  if (qnaPending.has(id)) return;
   if (!confirm('문의를 삭제하시겠습니까?')) return;
+  qnaPending.add(id);
   try { await api.delete(`/qna/${id}`); await loadMyQna(); }
   catch (e) { alert(e?.message || '삭제 실패'); }
+  finally { qnaPending.delete(id); }
 }
 
 // 회원 탈퇴
+const withdrawing = ref(false);
 async function withdrawMember() {
+  if (withdrawing.value) return;
   if (!confirm('정말 탈퇴하시겠습니까?\n탈퇴 후 복구할 수 없습니다.')) return;
   if (!confirm('모든 주문 내역, 리뷰, 문의가 삭제됩니다.\n정말 진행하시겠습니까?')) return;
   const memberId = authStore.user?.id;
   if (!memberId) return;
+  withdrawing.value = true;
   try {
     await api.delete(`/members/${memberId}`);
     await authStore.logout();
     alert('회원 탈퇴가 완료되었습니다.');
     router.push('/');
   } catch (e) { alert(e?.message || '탈퇴 실패'); }
+  finally { withdrawing.value = false; }
 }
 
+// 주문 취소 진행중인 주문 id — 응답 오기 전에 같은 주문을 또 눌러 중복 취소 요청이
+// 나가는 것을 막는다
+const orderCancelPending = reactive(new Set());
 async function cancelOrder(orderId) {
+  if (orderCancelPending.has(orderId)) return;
   if (!confirm('주문을 취소하시겠습니까?')) return;
+  orderCancelPending.add(orderId);
   try {
     await api.patch(`/orders/${orderId}/cancel`);
     const o = orders.value.find(x => x.rawId === orderId);
     if (o) { o.status = '취소'; o.rawStatus = 'CANCELLED'; }
     alert('주문이 취소되었습니다.');
   } catch (e) { alert(e?.data?.message || e?.message || '취소 실패'); }
+  finally { orderCancelPending.delete(orderId); }
 }
 
 function getStatusClass(s) {
@@ -526,6 +562,7 @@ async function logout() { await authStore.logout(); router.push("/"); }
   padding: 0.375rem 1rem; border-radius: 0.25rem; cursor: pointer; transition: all 0.2s;
 }
 .mp-order__cancel:hover { border-color: #e53e3e; color: #e53e3e; }
+.mp-order__cancel:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* 찜 */
 .mp-wish-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 2rem 1.5rem; }
@@ -542,6 +579,7 @@ async function logout() { await authStore.logout(); router.push("/"); }
 }
 .mp-wish:hover .mp-wish__remove { opacity: 1; }
 .mp-wish__remove:hover { color: #e53e3e; }
+.mp-wish__remove:disabled { opacity: 0.5; cursor: not-allowed; }
 .mp-wish__remove .material-symbols-outlined { font-size: 0.875rem; }
 .mp-wish__cat { font-size: 0.5rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: #999; margin-bottom: 0.25rem; }
 .mp-wish__name { font-size: 0.8125rem; font-weight: 600; color: #111; margin-bottom: 0.25rem; }
@@ -586,6 +624,7 @@ async function logout() { await authStore.logout(); router.push("/"); }
 .mp-btn--ghost { border: 1.5px solid #ddd; color: #666; background: #fff; }
 .mp-btn--ghost:hover { border-color: #111; color: #111; }
 .mp-btn--sm { padding: 0.5rem 1rem; font-size: 0.6875rem; }
+.mp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* 내 리뷰 */
 .mp-reviews { display: flex; flex-direction: column; gap: 1rem; }
@@ -603,10 +642,12 @@ async function logout() { await authStore.logout(); router.push("/"); }
 .mp-review__act { font-size: 0.625rem; color: #999; cursor: pointer; background: none; border: 1px solid #ddd; padding: 0.25rem 0.75rem; border-radius: 0.25rem; transition: all 0.2s; }
 .mp-review__act:hover { border-color: #111; color: #111; }
 .mp-review__act--del:hover { border-color: #e53e3e; color: #e53e3e; }
+.mp-review__act:disabled { opacity: 0.5; cursor: not-allowed; }
 .mp-review__edit { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; }
 .mp-review__edit-stars { margin-bottom: 0.25rem; }
 .mp-review__edit textarea { width: 100%; padding: 0.625rem; border: 1.5px solid #e8e8e8; border-radius: 0.375rem; font-size: 0.8125rem; font-family: inherit; outline: none; resize: vertical; }
 .mp-review__edit textarea:focus { border-color: #111; }
+.mp-review__edit textarea:disabled { background: #fafaf8; color: #999; }
 .mp-review__edit-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
 
 /* 내 문의 */
@@ -625,10 +666,12 @@ async function logout() { await authStore.logout(); router.push("/"); }
 .mp-qna__edit { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem; }
 .mp-qna__edit input, .mp-qna__edit textarea { width: 100%; padding: 0.625rem; border: 1.5px solid #e8e8e8; border-radius: 0.375rem; font-size: 0.8125rem; font-family: inherit; outline: none; }
 .mp-qna__edit input:focus, .mp-qna__edit textarea:focus { border-color: #111; }
+.mp-qna__edit input:disabled, .mp-qna__edit textarea:disabled { background: #fafaf8; color: #999; }
 .mp-qna__edit-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
 
 /* 회원 탈퇴 */
 .mp-form__withdraw { margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #eee; }
 .mp-withdraw { font-size: 0.6875rem; color: #bbb; background: none; border: none; cursor: pointer; transition: color 0.2s; text-decoration: underline; }
 .mp-withdraw:hover { color: #e53e3e; }
+.mp-withdraw:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>

@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref, computed } from "vue";
+import { ref, reactive, computed } from "vue";
 import api from "@/api";
 
 export const useWishlistStore = defineStore("wishlist", () => {
@@ -43,7 +43,10 @@ export const useWishlistStore = defineStore("wishlist", () => {
   // 둘 다 isWished()를 응답 오기 전(아직 안 바뀐) 상태로 판단해서 둘 다 "추가"로
   // 처리되거나 둘 다 "삭제"로 처리돼 서버 상태와 화면이 어긋날 수 있어 진행중인
   // productId는 무시한다.
-  const pendingIds = new Set();
+  const pendingIds = reactive(new Set());
+  function isPending(productId) {
+    return pendingIds.has(productId);
+  }
 
   // 찜 토글 (DB 연동)
   async function toggle(product) {
@@ -79,13 +82,20 @@ export const useWishlistStore = defineStore("wishlist", () => {
     }
   }
 
-  // 찜 삭제
+  // 찜 삭제 (MyPageView/SlidePanel의 찜 목록에서 바로 삭제할 때) — toggle()과 같은 이유로
+  // 진행중 가드를 두고, 서버 삭제가 성공했을 때만 화면에서도 지운다
   async function remove(productId) {
-    const user = getUser();
-    if (user?.id) {
-      try { await api.delete(`/members/${user.id}/wishlist/${productId}`); } catch {}
+    if (pendingIds.has(productId)) return;
+    pendingIds.add(productId);
+    try {
+      const user = getUser();
+      if (user?.id) await api.delete(`/members/${user.id}/wishlist/${productId}`);
+      items.value = items.value.filter((i) => i.id !== productId);
+    } catch {
+      alert('찜 삭제에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      pendingIds.delete(productId);
     }
-    items.value = items.value.filter((i) => i.id !== productId);
   }
 
   // 로그아웃 시 화면 상태만 초기화 (서버의 찜 목록은 그대로 유지 - 다음 로그인 때 다시 보여야 함)
@@ -96,5 +106,5 @@ export const useWishlistStore = defineStore("wishlist", () => {
     pendingIds.clear();
   }
 
-  return { items, count, isWished, fetchWishlist, toggle, remove, resetLocal };
+  return { items, count, isWished, isPending, fetchWishlist, toggle, remove, resetLocal };
 });

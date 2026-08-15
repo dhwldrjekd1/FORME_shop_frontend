@@ -94,7 +94,7 @@
                 <p class="sp-item__meta">{{ item.category }}</p>
                 <p class="sp-item__price">₩{{ item.price?.toLocaleString() }}</p>
               </div>
-              <button class="sp-item__del" @click="wishlistStore.remove(item.id)">
+              <button class="sp-item__del" :disabled="wishlistStore.isPending(item.id)" @click="wishlistStore.remove(item.id)">
                 <span class="material-symbols-outlined">close</span>
               </button>
             </div>
@@ -289,6 +289,7 @@ async function doLogout() {
   transition: color 0.2s;
 }
 .sp-item__del:hover { color: #e53e3e; }
+.sp-item__del:disabled { opacity: 0.5; cursor: not-allowed; }
 .sp-item__del .material-symbols-outlined { font-size: 1rem; font-variation-settings: "wght" 300; }
 
 /* 푸터 (장바구니) */
