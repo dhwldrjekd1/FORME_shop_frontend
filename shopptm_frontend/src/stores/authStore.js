@@ -14,6 +14,10 @@ export const useAuthStore = defineStore("auth", () => {
   // ── getters ────────────────────────────────
   const isLoggedIn = computed(() => !!user.value);
   const userName = computed(() => user.value?.name ?? "");
+  // 화면에서 관리자 메뉴를 보여줄지 정할 때만 쓰는 값 — user는 localStorage에서
+  // 복원되는 화면 표시용 값이라 조작 가능하므로, 실제 /admin 접근 권한 검증은
+  // 여기가 아니라 router.beforeEach(requiresAdmin)에서 매번 서버로 재확인한다.
+  const isAdmin = computed(() => user.value?.role === "ROLE_ADMIN");
 
   // ── actions ────────────────────────────────
   // 로그인 — Spring Boot POST /api/login
@@ -121,6 +125,7 @@ export const useAuthStore = defineStore("auth", () => {
   return {
     user,
     isLoggedIn,
+    isAdmin,
     userName,
     login,
     register,

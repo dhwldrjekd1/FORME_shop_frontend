@@ -135,7 +135,7 @@
               <RouterLink to="/mypage?tab=profile" class="sp-menu__item" @click="panelStore.close()">
                 <span class="material-symbols-outlined">settings</span>회원 정보
               </RouterLink>
-              <RouterLink v-if="authStore.user?.role === 'ROLE_ADMIN'" to="/admin" class="sp-menu__item sp-menu__item--admin" @click="panelStore.close()">
+              <RouterLink v-if="authStore.isAdmin" to="/admin" class="sp-menu__item sp-menu__item--admin" @click="panelStore.close()">
                 <span class="material-symbols-outlined">admin_panel_settings</span>관리자 페이지
               </RouterLink>
               <button class="sp-menu__item sp-menu__item--logout" @click="doLogout">
