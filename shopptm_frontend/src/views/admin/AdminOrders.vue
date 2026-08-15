@@ -28,7 +28,7 @@
                 <td class="t-items">{{ o.orderItems?.length || 0 }}건</td>
                 <td class="t-r">₩{{ o.totalPrice?.toLocaleString() }}</td>
                 <td>
-                  <select class="ao-sel" :value="o.status" @change="changeStatus(o.id, $event.target.value)">
+                  <select class="ao-sel" :value="o.status" :disabled="statusPending.has(o.id)" @change="changeStatus(o.id, $event.target.value)">
                     <option v-for="s in statuses" :key="s.key" :value="s.key">{{ s.label }}</option>
                   </select>
                 </td>
@@ -59,15 +59,15 @@
                       <div v-if="deliveries[o.id]" class="ao-delivery__info">
                         <div class="ao-delivery__row">
                           <label>택배사</label>
-                          <input v-model="deliveries[o.id].carrier" type="text" placeholder="택배사" />
+                          <input v-model="deliveries[o.id].carrier" type="text" placeholder="택배사" :disabled="deliveryPending.has(o.id)" />
                         </div>
                         <div class="ao-delivery__row">
                           <label>운송장 번호</label>
-                          <input v-model="deliveries[o.id].trackingNumber" type="text" placeholder="운송장 번호" />
+                          <input v-model="deliveries[o.id].trackingNumber" type="text" placeholder="운송장 번호" :disabled="deliveryPending.has(o.id)" />
                         </div>
                         <div class="ao-delivery__row">
                           <label>배송 상태</label>
-                          <select v-model="deliveries[o.id].status">
+                          <select v-model="deliveries[o.id].status" :disabled="deliveryPending.has(o.id)">
                             <option value="READY">준비</option>
                             <option value="IN_TRANSIT">배송중</option>
                             <option value="OUT_FOR_DELIVERY">배달중</option>
@@ -78,14 +78,14 @@
                           <span v-if="deliveries[o.id].shippedAt">출고: {{ deliveries[o.id].shippedAt?.slice(0,10) }}</span>
                           <span v-if="deliveries[o.id].deliveredAt">도착: {{ deliveries[o.id].deliveredAt?.slice(0,10) }}</span>
                         </div>
-                        <button class="ao-delivery__btn" @click="updateDelivery(o.id)">배송 정보 수정</button>
+                        <button class="ao-delivery__btn" :disabled="deliveryPending.has(o.id)" @click="updateDelivery(o.id)">{{ deliveryPending.has(o.id) ? '처리 중...' : '배송 정보 수정' }}</button>
                       </div>
                       <div v-else class="ao-delivery__none">
                         <p>등록된 배송 정보가 없습니다</p>
                         <div class="ao-delivery__create">
-                          <input v-model="newDelivery.carrier" type="text" placeholder="택배사" />
-                          <input v-model="newDelivery.trackingNumber" type="text" placeholder="운송장 번호 (선택)" />
-                          <button class="ao-delivery__btn" @click="createDelivery(o.id)">배송 등록</button>
+                          <input v-model="newDelivery.carrier" type="text" placeholder="택배사" :disabled="deliveryPending.has(o.id)" />
+                          <input v-model="newDelivery.trackingNumber" type="text" placeholder="운송장 번호 (선택)" :disabled="deliveryPending.has(o.id)" />
+                          <button class="ao-delivery__btn" :disabled="deliveryPending.has(o.id)" @click="createDelivery(o.id)">{{ deliveryPending.has(o.id) ? '처리 중...' : '배송 등록' }}</button>
                         </div>
                       </div>
                     </div>
@@ -102,7 +102,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, reactive, computed, onMounted } from "vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
 import api from "@/api";
 
@@ -144,17 +144,27 @@ onMounted(async () => {
   try { orders.value = await api.get('/admin/orders') || []; } catch {}
 });
 
+// 상태변경 진행중인 주문 id — 응답 오기 전에 같은 select를 또 바꾸면 두 요청이 겹쳐
+// 나중에 도착한 응답이 아니라 먼저 보낸 요청 순서대로 화면이 어긋날 수 있어 막는다
+const statusPending = reactive(new Set());
+
 async function changeStatus(id, status) {
+  if (statusPending.has(id)) return;
+  statusPending.add(id);
   try {
     await api.patch(`/admin/orders/${id}/status`, { status });
     const o = orders.value.find(x => x.id === id);
     if (o) o.status = status;
   } catch (e) { alert(e.message); }
+  finally { statusPending.delete(id); }
 }
 
 async function toggleDetail(id) {
   if (openId.value === id) { openId.value = null; return; }
   openId.value = id;
+  // newDelivery는 주문마다 새로 열 때 초기화 — 안 그러면 A 주문에서 입력하다 만 배송 등록 폼이
+  // B 주문 화면에 그대로 남아있다가 엉뚱한 주문에 A의 택배사 정보로 배송이 등록될 수 있음
+  newDelivery.value = { carrier: '', trackingNumber: '' };
   // 배송 정보 로드
   if (!deliveries.value[id]) {
     try {
@@ -164,8 +174,14 @@ async function toggleDetail(id) {
   }
 }
 
+// 배송 등록/수정 진행중인 주문 id — 응답 오기 전에 버튼을 또 누르면 배송 정보가
+// 중복 등록되거나 같은 수정 요청이 두 번 나갈 수 있어 겹치는 요청을 막는다
+const deliveryPending = reactive(new Set());
+
 async function createDelivery(orderId) {
+  if (deliveryPending.has(orderId)) return;
   if (!newDelivery.value.carrier.trim()) { alert('택배사를 입력해주세요.'); return; }
+  deliveryPending.add(orderId);
   try {
     const d = await api.post(`/admin/orders/${orderId}/delivery`, {
       carrier: newDelivery.value.carrier.trim(),
@@ -174,11 +190,14 @@ async function createDelivery(orderId) {
     deliveries.value[orderId] = { ...d };
     newDelivery.value = { carrier: '', trackingNumber: '' };
   } catch (e) { alert(e?.data?.message || e?.message || '배송 등록 실패'); }
+  finally { deliveryPending.delete(orderId); }
 }
 
 async function updateDelivery(orderId) {
+  if (deliveryPending.has(orderId)) return;
   const del = deliveries.value[orderId];
   if (!del) return;
+  deliveryPending.add(orderId);
   try {
     const d = await api.put(`/admin/deliveries/${del.id}`, {
       carrier: del.carrier, trackingNumber: del.trackingNumber, status: del.status,
@@ -186,6 +205,7 @@ async function updateDelivery(orderId) {
     deliveries.value[orderId] = { ...d };
     alert('배송 정보가 수정되었습니다.');
   } catch (e) { alert(e?.data?.message || e?.message || '수정 실패'); }
+  finally { deliveryPending.delete(orderId); }
 }
 </script>
 
@@ -207,6 +227,7 @@ async function updateDelivery(orderId) {
 .t-link { font-size: 0.625rem; color: #111; cursor: pointer; background: none; border: 1px solid #ddd; padding: 0.2rem 0.625rem; border-radius: 0.25rem; }
 .t-link:hover { border-color: #111; }
 .ao-sel { font-size: 0.6875rem; padding: 0.375rem 0.5rem; border: 1.5px solid #e8e8e8; border-radius: 0.25rem; cursor: pointer; outline: none; }
+.ao-sel:disabled { opacity: 0.5; cursor: not-allowed; }
 .ao-row--open { background: #fafaf8; }
 
 /* 상세 */
@@ -234,12 +255,14 @@ async function updateDelivery(orderId) {
   font-size: 0.8125rem; outline: none;
 }
 .ao-delivery__row input:focus, .ao-delivery__row select:focus { border-color: #111; }
+.ao-delivery__row input:disabled, .ao-delivery__row select:disabled { background: #fafaf8; color: #999; }
 .ao-delivery__dates { display: flex; gap: 1rem; font-size: 0.6875rem; color: #999; margin-top: 0.25rem; }
 .ao-delivery__btn {
   margin-top: 0.5rem; padding: 0.5rem 1.25rem; background: #111; color: #fff;
   font-size: 0.6875rem; font-weight: 700; border-radius: 0.25rem; cursor: pointer;
   align-self: flex-start;
 }
+.ao-delivery__btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .ao-delivery__none { }
 .ao-delivery__none p { font-size: 0.75rem; color: #bbb; margin-bottom: 0.75rem; }
 .ao-delivery__create { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
@@ -248,4 +271,5 @@ async function updateDelivery(orderId) {
   font-size: 0.8125rem; outline: none; width: 160px;
 }
 .ao-delivery__create input:focus { border-color: #111; }
+.ao-delivery__create input:disabled { background: #fafaf8; color: #999; }
 </style>

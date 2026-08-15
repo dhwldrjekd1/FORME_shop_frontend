@@ -197,6 +197,12 @@ src/
 - **문제**: `CartView.vue`가 등급 할인 미리보기를 `authStore.user.grade`(localStorage에서 복원한 값, 서버 재검증 없음)로만 계산했음. 실제 결제 금액에는 영향 없지만(PaymentView.vue가 이미 서버 값으로 재계산), 다른 세션에서 등급이 바뀐 뒤에도 장바구니에서는 예전 할인이 계속 보이다가 결제 화면에서 갑자기 금액이 달라 보이는 혼란이 있을 수 있었음.
 - **해결**: 처음엔 PaymentView.vue처럼 별도 `freshGrade` ref + 직접 `api.get` 호출로 고치려다, `authStore`에 이미 정확히 이 용도의 `verifySession()`(서버 최신 정보로 `authStore.user`를 갱신, `skipAuthRedirect` 처리까지 포함)이 있는 걸 확인하고 그걸 그대로 재사용하도록 단순화함. `userGrade`는 다시 `authStore.user?.grade`를 직접 읽는 단순한 computed로 되돌림(별도 상태를 안 만들어서 항상 최신 반영).
 - **교차검증에서 발견해 같이 고친 것**: (1) `PaymentView.vue`가 여전히 자체적으로 `/members/{id}`를 직접 호출하고 있었는데 `skipAuthRedirect`가 빠져 있어서, 결제 도중 세션이 만료되면 강제로 로그인 화면으로 튕겨나갈 수 있었음 — `PaymentView.vue`도 `authStore.verifySession()`을 쓰도록 통일해서 해결. (2) 여러 화면이 페이지 진입마다 각자 `verifySession()`을 부를 수 있어(부팅 시 `main.js`, 이제 `CartView`/`PaymentView`도), 응답이 뒤섞여 도착하면 오래된 응답이 최신 상태를 덮어쓸 수 있는 이론적 레이스가 있어 `verifySession()` 자체에 "가장 나중에 보낸 요청만 반영"하는 순번 가드를 추가(`cartStore`/`wishlistStore`에 이미 있던 것과 동일한 패턴).
+
+### 관리자 패널 모달·행 작업에 중복제출/레이스 가드가 전혀 없었음 (2026.08.15)
+- **문제**: `AdminFaq.vue`/`AdminQna.vue`/`AdminReviews.vue`/`AdminCategories.vue`의 저장 모달과 `AdminOrders.vue`/`AdminMembers.vue`의 상태변경·배송등록·등급변경·정지 버튼에 진행중 가드가 전혀 없었음. 저장 요청이 응답을 기다리는 동안 관리자가 다른 행(다른 FAQ/문의/리뷰/카테고리/주문/회원)을 열거나 다시 클릭하면, 응답이 뒤늦게 도착했을 때 화면에 이미 바뀐 엉뚱한 항목(`currentQ`/`editingId`/`currentReview` 등 공유 상태)에 그대로 반영되어 데이터가 잘못된 항목에 저장되거나 방금 새로 연 항목의 작성중이던 내용이 날아갈 수 있었음.
+- **해결**: 각 파일에 `submitting`(모달형) 또는 진행중 id를 추적하는 `reactive(Set)`(행형: `AdminOrders.vue`의 `statusPending`/`deliveryPending`, `AdminMembers.vue`의 `gradePending`/`banPending`)을 추가해 겹치는 요청 자체를 막음. 저장 버튼뿐 아니라 모달을 다른 항목으로 다시 여는 함수(`openEdit`/`openAnswer`/`openReply`/`openCreate`)와 배경 클릭/취소/닫기 버튼, 입력 필드까지 진행중엔 비활성화해 진행중 상태를 안전하게 감쌈.
+- **교차검증에서 발견해 같이 고친 것**: (1) 처음 요청받은 4개 파일 외에도 같은 클래스의 버그가 `AdminCategories.vue`(카테고리 등록/수정)와 `AdminMembers.vue`(등급변경/정지)에도 그대로 있어서 함께 고침. (2) `AdminFaq.vue`/`AdminQna.vue`/`AdminReviews.vue`의 "삭제"/"답글삭제" 버튼이 새로 추가한 가드에서 빠져있어서, 저장 요청이 진행중인데 같은 행을 삭제하거나 반대로 삭제 중에 같은 행을 열어 저장하는 레이스가 남아있었음 — 삭제 함수들도 동일한 `submitting` 가드로 감쌈. (3) `AdminOrders.vue`의 배송정보 수정/등록 입력창(택배사·운송장번호·상태)이 버튼만 비활성화되고 입력창 자체는 계속 입력 가능해서, 요청이 진행중일 때 고친 값이 응답으로 덮어써져 사라질 수 있었음 — 입력창도 진행중엔 비활성화. (4) `newDelivery`(배송 등록 입력값)가 주문별로 분리되어 있지 않은 전역 상태라, A 주문에서 입력하다 만 값이 B 주문의 배송 등록 화면에 그대로 남아 있다가 엉뚱한 주문에 등록될 수 있었음 — 다른 주문 상세를 열 때마다 초기화하도록 수정.
+- **검증**: 각 파일 저장/삭제 버튼을 응답 대기 중 연타해도 요청이 한 번만 나가는 것, 저장 진행중 다른 행을 열려고 해도 막히는 것, 프런트 빌드가 에러 없이 통과하는 것을 확인.
 ---
 
 ## 빌드 및 배포

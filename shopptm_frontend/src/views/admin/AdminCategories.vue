@@ -6,7 +6,7 @@
           <p class="ac-code">[ 08 / CATEGORIES ]</p>
           <h1 class="ac-title">카테고리 관리</h1>
         </div>
-        <button class="ac-add" @click="openCreate">
+        <button class="ac-add" :disabled="saving" @click="openCreate">
           <span class="material-symbols-outlined">add</span> 카테고리 추가
         </button>
       </div>
@@ -29,7 +29,7 @@
               </td>
               <td class="t-date">{{ c.createdAt?.slice(0, 10) }}</td>
               <td class="t-actions">
-                <button class="t-link" @click="openEdit(c)">수정</button>
+                <button class="t-link" :disabled="saving" @click="openEdit(c)">수정</button>
                 <button class="t-link t-link--del" @click="deleteCategory(c.id)">삭제</button>
               </td>
             </tr>
@@ -40,35 +40,35 @@
 
       <!-- 모달 -->
       <Teleport to="body">
-        <div v-if="showModal" class="ac-modal" @click.self="showModal = false">
+        <div v-if="showModal" class="ac-modal" @click.self="!saving && (showModal = false)">
           <div class="ac-modal__box">
             <header class="ac-modal__head">
               <h2>{{ editId ? '카테고리 수정' : '카테고리 추가' }}</h2>
-              <button @click="showModal = false"><span class="material-symbols-outlined">close</span></button>
+              <button :disabled="saving" @click="showModal = false"><span class="material-symbols-outlined">close</span></button>
             </header>
             <form class="ac-modal__form" @submit.prevent="submitCategory">
               <div class="ac-modal__field">
                 <label>카테고리명</label>
-                <input v-model="form.name" type="text" placeholder="카테고리명" required />
+                <input v-model="form.name" type="text" placeholder="카테고리명" :disabled="saving" required />
               </div>
               <div class="ac-modal__field">
                 <label>설명</label>
-                <input v-model="form.description" type="text" placeholder="설명 (선택)" />
+                <input v-model="form.description" type="text" placeholder="설명 (선택)" :disabled="saving" />
               </div>
               <div class="ac-modal__field">
                 <label>정렬 순서</label>
-                <input v-model.number="form.sortOrder" type="number" placeholder="0" />
+                <input v-model.number="form.sortOrder" type="number" placeholder="0" :disabled="saving" />
               </div>
               <div v-if="editId" class="ac-modal__field">
                 <label>상태</label>
-                <select v-model="form.isActive">
+                <select v-model="form.isActive" :disabled="saving">
                   <option :value="true">활성</option>
                   <option :value="false">비활성</option>
                 </select>
               </div>
               <p v-if="formError" class="ac-modal__error">{{ formError }}</p>
               <div class="ac-modal__actions">
-                <button type="button" class="ac-modal__btn ac-modal__btn--ghost" @click="showModal = false">취소</button>
+                <button type="button" class="ac-modal__btn ac-modal__btn--ghost" :disabled="saving" @click="showModal = false">취소</button>
                 <button type="submit" class="ac-modal__btn ac-modal__btn--fill" :disabled="saving">
                   {{ saving ? '처리 중...' : (editId ? '수정' : '등록') }}
                 </button>
@@ -99,7 +99,10 @@ async function loadCategories() {
   try { categories.value = await api.get('/admin/categories') || []; } catch { categories.value = []; }
 }
 
+// 저장 중엔 다른 카테고리로 바꿔 열지 못하게 막음 — 안 그러면 저장 완료 시 editId가
+// 이미 다른 카테고리를 가리키고 있어서 그 카테고리에 엉뚱하게 수정 내용이 반영될 수 있음
 function openCreate() {
+  if (saving.value) return;
   editId.value = null;
   form.value = { name: '', description: '', sortOrder: 0, isActive: true };
   formError.value = '';
@@ -107,6 +110,7 @@ function openCreate() {
 }
 
 function openEdit(c) {
+  if (saving.value) return;
   editId.value = c.id;
   form.value = { name: c.name, description: c.description || '', sortOrder: c.sortOrder || 0, isActive: c.isActive };
   formError.value = '';
@@ -114,6 +118,7 @@ function openEdit(c) {
 }
 
 async function submitCategory() {
+  if (saving.value) return;
   if (!form.value.name.trim()) { formError.value = '카테고리명을 입력해주세요.'; return; }
   saving.value = true; formError.value = '';
   try {
@@ -178,6 +183,9 @@ async function deleteCategory(id) {
   font-size: 0.8125rem; font-family: inherit; outline: none;
 }
 .ac-modal__field input:focus, .ac-modal__field select:focus { border-color: #111; }
+.ac-modal__field input:disabled, .ac-modal__field select:disabled { background: #fafaf8; color: #999; }
+.ac-modal__head button:disabled { opacity: 0.5; cursor: not-allowed; }
+.ac-add:disabled, .t-link:disabled { opacity: 0.5; cursor: not-allowed; }
 .ac-modal__error { font-size: 0.75rem; color: #e53e3e; }
 .ac-modal__actions { display: flex; gap: 0.625rem; margin-top: 0.5rem; }
 .ac-modal__btn { flex: 1; padding: 0.875rem; font-size: 0.8125rem; font-weight: 700; border-radius: 0.375rem; cursor: pointer; transition: all 0.2s; }

@@ -17,14 +17,14 @@
               <td class="t-name">{{ m.name }}</td>
               <td>{{ m.email }}</td>
               <td>
-                <select class="am-sel" :value="m.grade" @change="changeGrade(m.id, $event.target.value)">
+                <select class="am-sel" :disabled="gradePending.has(m.id)" :value="m.grade" @change="changeGrade(m.id, $event.target.value)">
                   <option v-for="g in grades" :key="g" :value="g">{{ g }}</option>
                 </select>
               </td>
               <td><span class="tag" :class="m.isActive !== false ? 'tag--on' : 'tag--off'">{{ m.isActive !== false ? '활성' : '정지' }}</span></td>
               <td class="t-date">{{ m.createdAt?.slice(0,10) }}</td>
               <td>
-                <button v-if="m.isActive !== false" class="t-ban" @click="ban(m.id)">정지</button>
+                <button v-if="m.isActive !== false" class="t-ban" :disabled="banPending.has(m.id)" @click="ban(m.id)">정지</button>
                 <span v-else class="t-banned">정지됨</span>
               </td>
             </tr>
@@ -36,11 +36,15 @@
   </AdminLayout>
 </template>
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
 import api from "@/api";
 const members = ref([]); const search = ref('');
 const grades = ['BRONZE','SILVER','GOLD','VIP'];
+// 등급변경/정지 진행중인 회원 id — 응답 오기 전에 같은 회원을 또 조작하면 두 요청이 겹쳐
+// 나중에 도착한 응답이 아니라 먼저 보낸 요청 순서대로 화면이 어긋날 수 있어 막는다
+const gradePending = reactive(new Set());
+const banPending = reactive(new Set());
 onMounted(async () => { await loadMembers(); });
 async function loadMembers() { try { members.value = await api.get('/admin/members') || []; } catch {} }
 async function doSearch() {
@@ -48,11 +52,17 @@ async function doSearch() {
   try { members.value = await api.get(`/admin/members/search?keyword=${encodeURIComponent(search.value)}`) || []; } catch {}
 }
 async function changeGrade(id, grade) {
+  if (gradePending.has(id)) return;
+  gradePending.add(id);
   try { await api.patch(`/admin/members/${id}/grade?grade=${grade}`); const m = members.value.find(x => x.id === id); if (m) m.grade = grade; } catch (e) { alert(e.message); }
+  finally { gradePending.delete(id); }
 }
 async function ban(id) {
+  if (banPending.has(id)) return;
   if (!confirm('이 회원을 정지하시겠습니까?')) return;
+  banPending.add(id);
   try { await api.patch(`/admin/members/${id}/ban`); const m = members.value.find(x => x.id === id); if (m) m.isActive = false; } catch (e) { alert(e.message); }
+  finally { banPending.delete(id); }
 }
 </script>
 <style scoped>
@@ -72,8 +82,10 @@ async function ban(id) {
 .t-date { font-size: 0.6875rem; color: #bbb; }
 .t-empty { text-align: center; color: #ccc; padding: 3rem; }
 .t-ban { font-size: 0.625rem; color: #e53e3e; cursor: pointer; background: none; border: none; }
+.t-ban:disabled { opacity: 0.5; cursor: not-allowed; }
 .t-banned { font-size: 0.625rem; color: #bbb; }
 .am-sel { font-size: 0.6875rem; padding: 0.375rem 0.5rem; border: 1.5px solid #e8e8e8; border-radius: 0.25rem; cursor: pointer; outline: none; }
+.am-sel:disabled { opacity: 0.5; cursor: not-allowed; }
 .tag { font-size: 0.5rem; font-weight: 800; letter-spacing: 0.1em; padding: 0.2rem 0.5rem; }
 .tag--on { background: #38a169; color: #fff; }
 .tag--off { background: #e53e3e; color: #fff; }

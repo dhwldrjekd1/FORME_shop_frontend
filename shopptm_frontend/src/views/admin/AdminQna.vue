@@ -13,8 +13,8 @@
               <td><span class="tag" :class="q.isAnswered ? 'tag--done' : 'tag--wait'">{{ q.isAnswered ? '답변완료' : '대기' }}</span></td>
               <td class="t-date">{{ q.createdAt?.slice(0,10) }}</td>
               <td class="t-actions">
-                <button class="t-btn" @click="openAnswer(q)">{{ q.isAnswered ? '수정' : '답변' }}</button>
-                <button class="t-del" @click="del(q.id)">삭제</button>
+                <button class="t-btn" :disabled="submitting" @click="openAnswer(q)">{{ q.isAnswered ? '수정' : '답변' }}</button>
+                <button class="t-del" :disabled="submitting" @click="del(q.id)">삭제</button>
               </td>
             </tr>
             <tr v-if="!items.length"><td colspan="6" class="t-empty">문의 없음</td></tr>
@@ -24,15 +24,15 @@
 
       <!-- 답변 모달 -->
       <Teleport to="body">
-        <div v-if="showModal" class="modal" @click.self="showModal = false">
+        <div v-if="showModal" class="modal" @click.self="!submitting && (showModal = false)">
           <div class="modal__box">
             <h2 class="modal__title">답변 작성</h2>
             <p class="modal__q">{{ currentQ?.title }}</p>
             <p class="modal__content">{{ currentQ?.content }}</p>
-            <textarea v-model="answerText" rows="5" placeholder="답변을 입력하세요"></textarea>
+            <textarea v-model="answerText" :disabled="submitting" rows="5" placeholder="답변을 입력하세요"></textarea>
             <div class="modal__actions">
-              <button class="modal__btn modal__btn--ghost" @click="showModal = false">취소</button>
-              <button class="modal__btn modal__btn--fill" @click="submitAnswer">저장</button>
+              <button class="modal__btn modal__btn--ghost" :disabled="submitting" @click="showModal = false">취소</button>
+              <button class="modal__btn modal__btn--fill" :disabled="submitting" @click="submitAnswer">{{ submitting ? '저장 중...' : '저장' }}</button>
             </div>
           </div>
         </div>
@@ -45,13 +45,28 @@ import { ref, onMounted } from "vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
 import api from "@/api";
 const items = ref([]); const showModal = ref(false); const currentQ = ref(null); const answerText = ref('');
+const submitting = ref(false);
 onMounted(async () => { try { items.value = await api.get('/qna') || []; } catch {} });
-function openAnswer(q) { currentQ.value = q; answerText.value = q.answer || ''; showModal.value = true; }
+// 저장 중엔 다른 문의로 바꿔 열지 못하게 막음 — 안 그러면 저장 요청이 끝난 뒤
+// currentQ가 이미 다른 문의를 가리키고 있어서 그 문의에 엉뚱하게 답변이 붙을 수 있음
+function openAnswer(q) { if (submitting.value) return; currentQ.value = q; answerText.value = q.answer || ''; showModal.value = true; }
 async function submitAnswer() {
-  if (!answerText.value.trim()) return;
-  try { await api.post(`/admin/qna/${currentQ.value.id}/answer`, { answer: answerText.value.trim() }); currentQ.value.answer = answerText.value.trim(); currentQ.value.isAnswered = true; showModal.value = false; } catch (e) { alert(e.message); }
+  if (!answerText.value.trim() || submitting.value) return;
+  submitting.value = true;
+  // currentQ.value를 미리 고정해둔다 — await 도중 누군가 currentQ를 바꿀 수는 없어졌지만(가드 추가),
+  // 그래도 응답 처리 시점엔 항상 "이 요청이 실제로 보낸 대상"에만 반영되도록 방어적으로 고정
+  const target = currentQ.value;
+  try { await api.post(`/admin/qna/${target.id}/answer`, { answer: answerText.value.trim() }); target.answer = answerText.value.trim(); target.isAnswered = true; showModal.value = false; } catch (e) { alert(e.message); }
+  finally { submitting.value = false; }
 }
-async function del(id) { if (!confirm('삭제하시겠습니까?')) return; try { await api.delete(`/admin/qna/${id}`); items.value = items.value.filter(q => q.id !== id); } catch (e) { alert(e.message); } }
+async function del(id) {
+  if (submitting.value) return;
+  if (!confirm('삭제하시겠습니까?')) return;
+  submitting.value = true;
+  try { await api.delete(`/admin/qna/${id}`); items.value = items.value.filter(q => q.id !== id); }
+  catch (e) { alert(e.message); }
+  finally { submitting.value = false; }
+}
 </script>
 <style scoped>
 .aq-head { margin-bottom: 1.5rem; }
@@ -68,8 +83,10 @@ async function del(id) { if (!confirm('삭제하시겠습니까?')) return; try 
 .t-actions { display: flex; gap: 0.5rem; }
 .t-btn { font-size: 0.625rem; color: #111; cursor: pointer; background: none; border: 1px solid #ddd; padding: 0.25rem 0.625rem; border-radius: 0.25rem; }
 .t-btn:hover { border-color: #111; }
+.t-btn:disabled, .modal__btn--ghost:disabled { opacity: 0.5; cursor: not-allowed; }
 .t-del { font-size: 0.625rem; color: #bbb; cursor: pointer; background: none; border: none; }
 .t-del:hover { color: #e53e3e; }
+.t-del:disabled { opacity: 0.5; cursor: not-allowed; }
 .tag { font-size: 0.5rem; font-weight: 800; letter-spacing: 0.1em; padding: 0.2rem 0.5rem; }
 .tag--done { background: #111; color: #fff; }
 .tag--wait { background: #f0f0f0; color: #999; }
@@ -80,8 +97,10 @@ async function del(id) { if (!confirm('삭제하시겠습니까?')) return; try 
 .modal__content { font-size: 0.8125rem; color: #666; margin-bottom: 1.25rem; line-height: 1.6; }
 .modal__box textarea { width: 100%; padding: 0.875rem; border: 1.5px solid #e8e8e8; border-radius: 0.375rem; font-size: 0.8125rem; font-family: inherit; resize: vertical; outline: none; margin-bottom: 1rem; }
 .modal__box textarea:focus { border-color: #111; }
+.modal__box textarea:disabled { background: #fafaf8; color: #999; }
 .modal__actions { display: flex; gap: 0.625rem; }
 .modal__btn { flex: 1; padding: 0.875rem; font-size: 0.8125rem; font-weight: 700; border-radius: 0.375rem; cursor: pointer; }
 .modal__btn--fill { background: #111; color: #fff; }
+.modal__btn--fill:disabled { opacity: 0.5; cursor: not-allowed; }
 .modal__btn--ghost { border: 1.5px solid #ddd; color: #666; background: #fff; }
 </style>

@@ -18,9 +18,9 @@
               </td>
               <td class="t-date">{{ r.createdAt?.slice(0,10) }}</td>
               <td class="t-actions">
-                <button class="t-btn" @click="openReply(r)">{{ r.reply ? '수정' : '답글' }}</button>
-                <button v-if="r.reply" class="t-btn t-btn--del" @click="deleteReply(r.id)">답글삭제</button>
-                <button class="t-del" @click="del(r.id)">삭제</button>
+                <button class="t-btn" :disabled="submitting" @click="openReply(r)">{{ r.reply ? '수정' : '답글' }}</button>
+                <button v-if="r.reply" class="t-btn t-btn--del" :disabled="submitting" @click="deleteReply(r.id)">답글삭제</button>
+                <button class="t-del" :disabled="submitting" @click="del(r.id)">삭제</button>
               </td>
             </tr>
             <tr v-if="!reviews.length"><td colspan="8" class="t-empty">리뷰 없음</td></tr>
@@ -34,7 +34,7 @@
           <div class="modal__box">
             <header class="modal__head">
               <h2>리뷰 답글</h2>
-              <button @click="showModal = false"><span class="material-symbols-outlined">close</span></button>
+              <button :disabled="submitting" @click="showModal = false"><span class="material-symbols-outlined">close</span></button>
             </header>
             <div class="modal__body">
               <div class="modal__review">
@@ -42,10 +42,10 @@
                 <p class="modal__review-author">{{ currentReview?.memberName }} · {{ currentReview?.productName }}</p>
                 <p class="modal__review-content">{{ currentReview?.content }}</p>
               </div>
-              <textarea v-model="replyText" rows="4" placeholder="답글을 입력하세요"></textarea>
+              <textarea v-model="replyText" :disabled="submitting" rows="4" placeholder="답글을 입력하세요"></textarea>
               <div class="modal__actions">
-                <button class="modal__btn modal__btn--ghost" @click="showModal = false">취소</button>
-                <button class="modal__btn modal__btn--fill" @click="submitReply">저장</button>
+                <button class="modal__btn modal__btn--ghost" :disabled="submitting" @click="showModal = false">취소</button>
+                <button class="modal__btn modal__btn--fill" :disabled="submitting" @click="submitReply">{{ submitting ? '저장 중...' : '저장' }}</button>
               </div>
             </div>
           </div>
@@ -64,6 +64,7 @@ const reviews = ref([]);
 const showModal = ref(false);
 const currentReview = ref(null);
 const replyText = ref('');
+const submitting = ref(false);
 
 onMounted(async () => { await loadReviews(); });
 
@@ -71,29 +72,43 @@ async function loadReviews() {
   try { reviews.value = await api.get('/admin/reviews') || []; } catch {}
 }
 
+// 저장 중엔 다른 리뷰로 바꿔 열지 못하게 막음 — 안 그러면 저장 완료 시 showModal을
+// 그냥 false로 닫아버려서, 방금 새로 연 다른 리뷰의 답글 작성 중이던 내용이 날아감
 function openReply(r) {
+  if (submitting.value) return;
   currentReview.value = r;
   replyText.value = r.reply || '';
   showModal.value = true;
 }
 
 async function submitReply() {
+  if (submitting.value) return;
   if (!replyText.value.trim()) { alert('답글을 입력해주세요.'); return; }
+  submitting.value = true;
   try {
     await api.post(`/admin/reviews/${currentReview.value.id}/reply`, { reply: replyText.value.trim() });
     showModal.value = false;
     await loadReviews();
   } catch (e) { alert(e.message || '답글 저장 실패'); }
+  finally { submitting.value = false; }
 }
 
 async function deleteReply(id) {
+  if (submitting.value) return;
   if (!confirm('답글을 삭제하시겠습니까?')) return;
-  try { await api.delete(`/admin/reviews/${id}/reply`); await loadReviews(); } catch (e) { alert(e.message); }
+  submitting.value = true;
+  try { await api.delete(`/admin/reviews/${id}/reply`); await loadReviews(); }
+  catch (e) { alert(e.message); }
+  finally { submitting.value = false; }
 }
 
 async function del(id) {
+  if (submitting.value) return;
   if (!confirm('리뷰를 삭제하시겠습니까?')) return;
-  try { await api.delete(`/admin/reviews/${id}`); reviews.value = reviews.value.filter(r => r.id !== id); } catch (e) { alert(e.message); }
+  submitting.value = true;
+  try { await api.delete(`/admin/reviews/${id}`); reviews.value = reviews.value.filter(r => r.id !== id); }
+  catch (e) { alert(e.message); }
+  finally { submitting.value = false; }
 }
 </script>
 
@@ -118,10 +133,12 @@ async function del(id) {
 .t-actions { display: flex; gap: 0.375rem; }
 .t-btn { font-size: 0.625rem; color: #111; cursor: pointer; background: none; border: 1px solid #ddd; padding: 0.2rem 0.5rem; border-radius: 0.2rem; }
 .t-btn:hover { border-color: #111; }
+.t-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .t-btn--del { color: #e53e3e; border-color: #fecaca; }
 .t-btn--del:hover { border-color: #e53e3e; }
 .t-del { font-size: 0.625rem; color: #bbb; cursor: pointer; background: none; border: none; }
 .t-del:hover { color: #e53e3e; }
+.t-del:disabled { opacity: 0.5; cursor: not-allowed; }
 .t-empty { text-align: center; color: #ccc; padding: 3rem; }
 
 /* 모달 */
@@ -137,8 +154,11 @@ async function del(id) {
 .modal__review-content { font-size: 0.8125rem; color: #333; line-height: 1.6; }
 .modal__body textarea { width: 100%; padding: 0.875rem; border: 1.5px solid #e8e8e8; border-radius: 0.375rem; font-size: 0.8125rem; font-family: inherit; resize: vertical; outline: none; margin-bottom: 1rem; }
 .modal__body textarea:focus { border-color: #111; }
+.modal__body textarea:disabled { background: #fafaf8; color: #999; }
+.modal__head button:disabled { opacity: 0.5; cursor: not-allowed; }
 .modal__actions { display: flex; gap: 0.625rem; }
 .modal__btn { flex: 1; padding: 0.875rem; font-size: 0.8125rem; font-weight: 700; border-radius: 0.375rem; cursor: pointer; }
 .modal__btn--fill { background: #111; color: #fff; }
+.modal__btn--fill:disabled { opacity: 0.5; cursor: not-allowed; }
 .modal__btn--ghost { border: 1.5px solid #ddd; color: #666; background: #fff; }
 </style>
