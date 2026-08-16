@@ -17,6 +17,7 @@ function getPageName(path) {
   if (path === "/") return "home";
   if (path === "/products") return "products";
   if (path.startsWith("/products/")) return "product-detail";
+  if (path === "/brand-story") return "brand-story";
   if (path === "/cart") return "cart";
   if (path === "/payment") return "payment";
   if (path === "/order-complete") return "order-complete";

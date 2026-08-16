@@ -40,7 +40,8 @@ src/
 │   ├── NewView.vue             # 신상품
 │   ├── SaleView.vue            # 세일
 │   ├── DetailView.vue          # 상품 상세
-│   ├── ListView.vue            # 상품 목록
+│   ├── ProductsView.vue        # 상품 목록/검색 결과
+│   ├── BrandStoryView.vue      # 브랜드 스토리
 │   ├── CartView.vue            # 장바구니
 │   ├── PaymentView.vue         # 결제
 │   ├── OrderCompleteView.vue   # 주문 완료
@@ -227,6 +228,23 @@ src/
 - **해결**: `createOrder()`가 응답을 `order` 변수로 받아 `order?.id`를 `localStorage`의 `forme_last_order`에 `orderId`로 함께 저장하도록 수정. `OrderCompleteView.vue`는 난수 생성 대신 이 `orderId`를 그대로 표시(`'#' + lastOrder.orderId`), 혹시라도 값이 없는 채로(예: 이 페이지에 직접 접근) 들어온 경우에만 "확인 중"으로 대체 표시.
 - **교차검증에서 발견해 같이 고친 것**: 없음 — `api.post()`가 응답 바디를 그대로 반환하는 것, 백엔드가 래퍼 없이 `OrderResponseDto`를 그대로 돌려주며 `id`가 최상위 필드인 것, `forme_last_order` 키를 이 두 파일 외엔 아무도 안 쓰는 것까지 모두 확인했지만 추가 결함은 없었음.
 - **검증**: 프런트 빌드 통과, 교차검증(findings 0건), 백엔드 `OrderResponseDto`/`OrderController` 실제 코드로 응답 형태 재확인.
+
+### 헤더 검색이 결과 없이 항상 막다른 길로 감 — `/products`가 실제로는 상품이 하나도 없는 브랜드 스토리 페이지였음 (2026.08.16)
+- **문제**: 검색창에서 엔터를 치면 `/products?search=...`로 이동했는데, 그 경로에 연결된 `ListView.vue`는 실제로는 상품 그리드가 전혀 없는 정적 "브랜드 스토리" 콘텐츠 페이지였음(`route.query`도 안 읽음). 게다가 홈 "COLLECTION", 장바구니 "쇼핑 계속하기", 상품상세 "목록으로", 각 브랜드 페이지 CTA, 푸터 "All Products" 등 앱 전체 15곳 넘는 링크가 `/products`를 "전체 상품 보기"라는 의미로 걸고 있었는데, 실제로는 상품이 하나도 안 보이는 페이지로 연결되고 있었음. 헤더 네비게이션의 "BRAND" 탭 하나만 이 콘텐츠와 실제로 맞았음.
+- **해결**: `/products`에 실제 상품 그리드+검색+브랜드/성별 필터를 갖춘 새 `ProductsView.vue`(BestView.vue와 같은 패턴)를 만들어 연결하고, 기존 브랜드 스토리 콘텐츠는 `ListView.vue`를 `BrandStoryView.vue`로 이름을 바꿔 새 경로 `/brand-story`로 옮김. 헤더 "BRAND" 탭과 그동안 아무 데도 안 걸려있던 푸터의 `<a>브랜드 스토리</a>`(href 없음, `Forme32Layout.vue`·`forme31/HomeView.vue` 둘 다)를 `/brand-story`로 연결. 헤더의 실시간 검색 드롭다운과 결과 페이지가 같은 기준으로 매칭되도록 `Forme32Layout.vue`에 인라인으로 있던 검색 매칭 로직(한국어 브랜드명 변환 포함)을 `productFilters.js`의 `searchProducts()`로 뽑아 공용화.
+- **교차검증에서 발견해 같이 고친 것** (여러 차례 반복 검증하며 아래를 순서대로 발견·수정):
+  - `App.vue`의 `isAuthPage`(전역 헤더/푸터 노출 여부)가 새 `/brand-story` 경로를 몰라서, 그 페이지에서 전역 헤더/푸터와 `Forme32Layout`의 자체 헤더/푸터가 이중으로 나올 뻔함 — `isAuthPage` 목록에 추가해 막음. (이후 이 목록을 라우터 `meta`로 옮기는 리팩터를 시도했다가, 다시 되돌리는 과정에서 로그인/회원가입 두 경로만 남기는 실수로 정반대 방향(모든 페이지에 전역 헤더/푸터 중복)의 훨씬 심각한 회귀를 낼 뻔했음 — 교차검증이 매 단계 다시 잡아내어, 결국 원래 검증된 경로 목록 방식에 `/brand-story` 한 줄만 추가하는 가장 보수적인 형태로 확정.)
+  - `route.query.search`가 URL에 두 번(`?search=a&search=b`) 들어오면 vue-router가 배열로 넘겨 `.trim()`이 없어 페이지 전체가 깨질 수 있었음 — 배열이면 첫 값만 쓰도록 방어.
+  - 헤더에서 브랜드/성별 칩을 고른 채로 새로 검색하면(같은 라우트라 컴포넌트가 재마운트 안 됨) 칩이 그대로 남아, 실제로 결과가 있는 검색인데도 칩에 걸러져 "결과 없음"으로 보일 수 있었음 — 검색어가 바뀌면 칩을 전체로 초기화.
+  - 검색창을 열자마자 타이핑하면 상품 목록이 아직 로딩 중이라 결과가 빈 채로 굳어버리고 로딩이 끝나도 다시 안 채워지는 문제, 그리고 이걸 고치며 `searchResults`를 수동으로 다시 채워주는 코드를 빼먹기 쉬운 구조였던 것 — `searchResults`를 수동 갱신 `ref`에서 `allProducts`/`searchQuery`로부터 자동으로 다시 계산되는 `computed`로 바꿔 구조적으로 막음.
+  - 검색창을 여는 것만으로 `/products` 화면에 이미 보이던 상품 그리드가 잠깐 사라졌다 다시 나타나는 깜빡임 — 헤더 검색과 `ProductsView.vue`가 같은 `productStore`의 `isLoading`을 공유해서 생겼음. 이미 불러온 목록이 있으면 재요청하지 않도록 하고, `productStore.fetchProducts()` 자체에 이미 진행 중인 요청이 있으면 새로 요청하지 않고 그 요청을 같이 기다리는 중복요청 방지 로직을 추가(두 화면이 동시에 최초 요청을 보내는 경우까지 안전하게).
+  - 검색 결과 페이지(`/products` 라우트) 이름이 예전 `ListView` 시절 그대로 `List`였던 것, `pageTracker.js`의 페이지 이름 매핑에 `/brand-story`가 없던 것도 함께 정리.
+- **검증**: 프런트 빌드 통과, 5차례 이상의 교차검증 반복(매번 실제로 새로운 결함을 잡아내 즉시 수정 후 재검증), 배포 후 `/products`·`/brand-story` 모두 HTTP 200 확인.
+
+### 주문완료 화면 주문번호가 0번 주문이면 "확인 중"으로 잘못 표시될 뻔한 방어 코드 (2026.08.16)
+- **문제**: 위 검색 수정을 교차검증하던 중, `OrderCompleteView.vue`가 `lastOrder.orderId ? ... : '확인 중'`처럼 참/거짓 체크를 쓰고 있는 걸 발견함. 실제 주문 id는 1부터 시작하는 시퀀스라 지금 당장 재현되진 않지만, `id`가 `0`이면 `false`로 취급돼 정상적으로 저장된 주문번호인데도 "확인 중"으로 잘못 표시될 수 있는 잠재 결함이었음.
+- **해결**: `lastOrder.orderId != null`로 null/undefined만 "값 없음"으로 취급하도록 수정(값을 쓰는 `PaymentView.vue`의 `order?.id ?? null`과 일관된 방식).
+- **검증**: 프런트 빌드 통과, 교차검증에서 추가 문제 없음 확인.
 ---
 
 ## 빌드 및 배포

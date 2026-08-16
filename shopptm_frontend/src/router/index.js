@@ -12,7 +12,8 @@ const Forme30Home = () => import("@/views/forme30/HomeView.vue");
 const Forme31Home = () => import("@/views/forme31/HomeView.vue");
 
 // 기존 페이지
-const ListView = () => import("@/views/ListView.vue");
+const BrandStoryView = () => import("@/views/BrandStoryView.vue");
+const ProductsView = () => import("@/views/ProductsView.vue");
 const NewView = () => import("@/views/NewView.vue");
 const BestView = () => import("@/views/BestView.vue");
 const SaleView = () => import("@/views/SaleView.vue");
@@ -64,14 +65,19 @@ const routes = [
   // ── 상품 ──
   {
     path: "/products",
-    name: "List",
-    component: ListView,
+    name: "Products",
+    component: ProductsView,
   },
   {
     path: "/products/:id",
     name: "Detail",
     component: DetailView,
     props: true,
+  },
+  {
+    path: "/brand-story",
+    name: "BrandStory",
+    component: BrandStoryView,
   },
 
   // ── 결제 흐름 ──
@@ -93,7 +99,7 @@ const routes = [
     component: OrderCompleteView,
   },
 
-  // ── 인증 ──
+  // ── 인증 (헤더/푸터 없이 폼만 단독으로 보여줌 — App.vue 참고) ──
   { path: "/login",  name: "Login",  component: LoginView },
   { path: "/signup", name: "Signup", component: SignupView },
 

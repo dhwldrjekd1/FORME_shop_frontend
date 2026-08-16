@@ -36,8 +36,8 @@ const isAuthPage = computed(() => {
   if (["/new", "/best", "/sale"].includes(p)) return true;
   // 브랜드 페이지: Forme32Layout 자체 헤더/푸터 사용
   if (["/beanpole", "/carhartt", "/levis", "/dickies"].includes(p)) return true;
-  // 상품 목록/상세: Forme32Layout 사용
-  if (p === "/products" || p.startsWith("/products/")) return true;
+  // 상품 목록/상세, 브랜드 스토리: Forme32Layout 사용
+  if (p === "/products" || p.startsWith("/products/") || p === "/brand-story") return true;
   // 장바구니/결제/주문완료: Forme32Layout 사용
   if (["/cart", "/payment", "/order-complete"].includes(p)) return true;
   // FAQ/QnA/게시판/마이페이지: Forme32Layout 사용

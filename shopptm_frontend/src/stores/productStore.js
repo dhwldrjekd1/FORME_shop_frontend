@@ -62,18 +62,28 @@ export const useProductStore = defineStore("product", () => {
     return result;
   });
 
+  // 같은 상품 목록을 서로 다른 화면(예: /products 진입과 헤더 검색창 열기)이 거의 동시에
+  // 요청하면 두 요청이 각자 isLoading을 따로 켰다 끄면서, 먼저 끝난 쪽이 isLoading을 false로
+  // 되돌려 아직 안 끝난 나머지 요청이 있는데도 로딩이 끝난 것처럼 보이는 레이스가 생길 수 있어,
+  // 이미 진행 중인 요청이 있으면 새로 요청하지 않고 그 요청을 그대로 같이 기다린다
+  let fetchPromise = null;
   async function fetchProducts() {
+    if (fetchPromise) return fetchPromise;
     isLoading.value = true;
     error.value = null;
-    try {
-      const data = await api.get("/products");
-      products.value = Array.isArray(data) ? data.map(adaptProduct) : [];
-    } catch (err) {
-      error.value = "상품을 불러오지 못했습니다.";
-      products.value = [];
-    } finally {
-      isLoading.value = false;
-    }
+    fetchPromise = (async () => {
+      try {
+        const data = await api.get("/products");
+        products.value = Array.isArray(data) ? data.map(adaptProduct) : [];
+      } catch (err) {
+        error.value = "상품을 불러오지 못했습니다.";
+        products.value = [];
+      } finally {
+        isLoading.value = false;
+        fetchPromise = null;
+      }
+    })();
+    return fetchPromise;
   }
 
   async function fetchProductById(id) {

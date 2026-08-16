@@ -19,7 +19,6 @@
               placeholder="검색..."
               class="f32-search-inline__input"
               ref="searchInput"
-              @input="onSearchInput"
               @keyup.enter="doSearch"
               @keyup.escape="showSearch = false"
             />
@@ -37,7 +36,7 @@
                 </div>
               </RouterLink>
             </div>
-            <p v-if="showSearch && searchQuery && !searchResults.length" class="f32-search-inline__empty">검색 결과 없음</p>
+            <p v-if="showSearch && searchQuery.trim() && !searchResults.length" class="f32-search-inline__empty">검색 결과 없음</p>
           </div>
           <span class="material-symbols-outlined f32-topbar__mi" @click="toggleSearch">search</span>
           <span class="f32-topbar__mi-wish" @click="panelStore.toggle('wishlist')">
@@ -52,7 +51,7 @@
         </div>
       </div>
       <nav class="f32-catnav">
-        <RouterLink to="/products" class="f32-catnav__link" :class="{ 'f32-catnav__link--active': route.path === '/products' }">BRAND</RouterLink>
+        <RouterLink to="/brand-story" class="f32-catnav__link" :class="{ 'f32-catnav__link--active': route.path === '/brand-story' }">BRAND</RouterLink>
         <RouterLink to="/new" class="f32-catnav__link" :class="{ 'f32-catnav__link--active': route.path === '/new' }">NEW</RouterLink>
         <RouterLink to="/best" class="f32-catnav__link" :class="{ 'f32-catnav__link--active': route.path === '/best' }">BEST</RouterLink>
         <RouterLink to="/beanpole" class="f32-catnav__link" :class="{ 'f32-catnav__link--active': route.path === '/beanpole' }">BEANPOLE</RouterLink>
@@ -89,7 +88,7 @@
           </div>
           <div class="f32-foot__col">
             <h4>ABOUT</h4>
-            <a>브랜드 스토리</a>
+            <RouterLink to="/brand-story">브랜드 스토리</RouterLink>
           </div>
         </div>
       </div>
@@ -110,6 +109,7 @@ import { useCartStore } from "@/stores/cartStore";
 import { useWishlistStore } from "@/stores/wishlistStore";
 import { usePanelStore } from "@/stores/panelStore";
 import SlidePanel from "@/components/SlidePanel.vue";
+import { searchProducts } from "@/utils/productFilters";
 
 const route = useRoute();
 const router = useRouter();
@@ -117,8 +117,13 @@ const router = useRouter();
 const showSearch = ref(false);
 const searchQuery = ref('');
 const searchInput = ref(null);
-const searchResults = ref([]);
 const allProducts = ref([]);
+
+// allProducts/searchQuery가 바뀔 때마다 자동으로 다시 계산되는 computed라, 상품 목록을
+// 아직 불러오는 도중에 검색어를 입력해도(그땐 allProducts가 비어있었음) 로딩이 끝나는 순간
+// 자연히 다시 반영된다 — 예전엔 이걸 ref에 수동으로 담아서, 로딩 완료 시점에 다시 채워주는
+// 코드를 별도로 챙겨야 했고 빼먹으면 결과가 빈 채로 남는 버그가 있었음
+const searchResults = computed(() => searchProducts(allProducts.value, searchQuery.value).slice(0, 8));
 
 function toggleSearch() {
   showSearch.value = !showSearch.value;
@@ -127,7 +132,6 @@ function toggleSearch() {
     if (!allProducts.value.length) loadAllProducts();
   } else {
     searchQuery.value = '';
-    searchResults.value = [];
   }
 }
 
@@ -135,28 +139,16 @@ async function loadAllProducts() {
   try {
     const { useProductStore } = await import('@/stores/productStore');
     const ps = useProductStore();
-    await ps.fetchProducts();
+    // 이미 불러온 목록이 있으면 재요청하지 않는다 — ps.fetchProducts()는 ps.isLoading도 같이
+    // 켜는데, 마침 /products 화면(ProductsView.vue)이 이 값으로 상품 그리드를 숨기고 로딩
+    // 스피너를 보여주기 때문에, 검색창을 여는 것만으로 이미 보이던 상품 목록이 잠깐 사라졌다
+    // 다시 나타나는 깜빡임이 생김. 목록이 아직 없어서(0건) 새로 요청해야 하는 경우엔
+    // productStore.fetchProducts() 자체가 이미 진행 중인 요청을 중복 요청하지 않고 같이
+    // 기다려주므로(productStore.js 참고), /products가 막 자기 목록을 불러오는 도중에 검색창을
+    // 열어도 안전하다
+    if (!ps.products.length) await ps.fetchProducts();
     allProducts.value = ps.filteredProducts || [];
   } catch {}
-}
-
-const brandKorMap = { '빈폴': 'BEANPOLE', '칼하트': 'CARHARTT', '리바이스': "LEVI'S", '리바이': "LEVI'S", '디키즈': 'DICKIES' };
-
-function onSearchInput() {
-  const q = searchQuery.value.trim().toLowerCase();
-  if (!q) { searchResults.value = []; return; }
-  // 한국어 브랜드명 → 영문 변환
-  const brandMatch = Object.entries(brandKorMap).find(([kor]) => q.includes(kor));
-  const brandEng = brandMatch ? brandMatch[1].toLowerCase() : null;
-
-  searchResults.value = allProducts.value
-    .filter(p => {
-      const name = p.name?.toLowerCase() || '';
-      const brand = p.brand?.toLowerCase() || '';
-      const cat = p.category?.toLowerCase() || '';
-      return name.includes(q) || brand.includes(q) || cat.includes(q) || (brandEng && brand.includes(brandEng));
-    })
-    .slice(0, 8);
 }
 
 function doSearch() {
@@ -164,7 +156,6 @@ function doSearch() {
   showSearch.value = false;
   router.push(`/products?search=${encodeURIComponent(searchQuery.value.trim())}`);
   searchQuery.value = '';
-  searchResults.value = [];
 }
 const authStore = useAuthStore();
 const cartStore = useCartStore();

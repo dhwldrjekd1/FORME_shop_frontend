@@ -248,7 +248,7 @@
           </div>
           <div class="f31-foot__col">
             <h4>ABOUT</h4>
-            <a>브랜드 스토리</a><a>입점 문의</a><a>채용</a>
+            <RouterLink to="/brand-story">브랜드 스토리</RouterLink><a>입점 문의</a><a>채용</a>
           </div>
         </div>
       </div>

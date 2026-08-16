@@ -40,3 +40,21 @@ export function filterByBrandAndGender(list, brand, gender) {
   }
   return result;
 }
+
+const BRAND_KOR_MAP = { '빈폴': 'BEANPOLE', '칼하트': 'CARHARTT', '리바이스': "LEVI'S", '리바이': "LEVI'S", '디키즈': 'DICKIES' };
+
+// 헤더 검색창(실시간 드롭다운)과 검색결과 페이지가 동일한 기준으로 매칭되도록
+// 공통 검색 로직을 여기 하나로 모음 (한국어 브랜드명 → 영문 변환 포함)
+export function searchProducts(list, query) {
+  const q = query?.trim().toLowerCase();
+  if (!q) return [];
+  const brandMatch = Object.entries(BRAND_KOR_MAP).find(([kor]) => q.includes(kor));
+  const brandEng = brandMatch ? brandMatch[1].toLowerCase() : null;
+
+  return list.filter((p) => {
+    const name = p.name?.toLowerCase() || '';
+    const brand = p.brand?.toLowerCase() || '';
+    const cat = p.category?.toLowerCase() || '';
+    return name.includes(q) || brand.includes(q) || cat.includes(q) || (brandEng && brand.includes(brandEng));
+  });
+}
