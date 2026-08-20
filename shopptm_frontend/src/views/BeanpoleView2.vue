@@ -374,11 +374,6 @@ onMounted(async () => {
   color: #103728;
   margin-bottom: 0.5rem;
 }
-.bp-sec-head__title {
-  font-size: clamp(1.75rem, 3vw, 2.25rem);
-  font-weight: 900;
-  letter-spacing: -0.02em;
-}
 
 /* ── Products ── */
 .bp-gender-filter { display: flex; align-items: center; gap: 0.5rem; padding: 1.5rem 3rem 0; max-width: 1600px; margin: 0 auto; }

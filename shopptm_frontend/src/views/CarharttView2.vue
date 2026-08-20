@@ -373,11 +373,6 @@ onMounted(async () => {
   color: #9C4F18;
   margin-bottom: 0.5rem;
 }
-.ch-sec-head__title {
-  font-size: clamp(1.75rem, 3vw, 2.25rem);
-  font-weight: 900;
-  letter-spacing: -0.02em;
-}
 
 /* ── Products ── */
 .ch-products {

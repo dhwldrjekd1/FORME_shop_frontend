@@ -411,7 +411,7 @@ const wishlistStore = useWishlistStore();
 
 const recentStore = useRecentStore();
 const authStore = useAuthStore();
-const { currentProduct: product, isLoading, products } = storeToRefs(productStore);
+const { currentProduct: product, isLoading } = storeToRefs(productStore);
 
 // ── 브랜드 ──
 const BRAND_COLORS = { BEANPOLE: '#103728', CARHARTT: '#9C4F18', "LEVI'S": '#8E1C28', DICKIES: '#1A1A1A' };
@@ -581,13 +581,6 @@ function isSelectedRow(row) {
 const szForm = ref({ height: null, weight: null, fit: 'standard' });
 const szResult = ref(null);
 const szLoading = ref(false);
-
-// 브랜드 → 국가 매핑
-const brandCountryMap = { BEANPOLE: 'KR', DICKIES: 'US', CARHARTT: 'UK', "LEVI'S": 'EU' };
-const brandCountryLabel = computed(() => {
-  const c = brandCountryMap[brandLabel.value] || 'KR';
-  return { KR: '한국 🇰🇷', US: '미국 🇺🇸', UK: '영국 🇬🇧', EU: '유럽 🇪🇺' }[c];
-});
 
 async function recommendSize() {
   if (!szForm.value.height || !szForm.value.weight) { alert('키와 몸무게를 입력해주세요.'); return; }
@@ -1230,42 +1223,6 @@ function buyNow() { return addToCartAndGo('/payment'); }
 .dp-sz__user-info { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
 .dp-sz__user-info span { font-size: 0.5625rem; font-weight: 600; color: #999; background: #f5f5f5; padding: 0.25rem 0.625rem; border-radius: 999px; }
 .dp-sz__no-size { font-size: 0.875rem; color: #bbb; padding: 2rem 0; }
-.dp-sz__title { font-size: 1.125rem; font-weight: 800; margin-bottom: 0.75rem; }
-.dp-sz__brand-note { font-size: 0.75rem; color: #666; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-.dp-sz__brand-flag { font-size: 0.5rem; font-weight: 800; letter-spacing: 0.1em; color: #fff; padding: 0.2rem 0.5rem; }
-.dp-sz__form { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
-.dp-sz__field { display: flex; flex-direction: column; gap: 0.375rem; }
-.dp-sz__field label { font-size: 0.6875rem; font-weight: 600; color: #555; }
-.dp-sz__field input, .dp-sz__field select {
-  padding: 0.75rem 0.875rem; border: 1.5px solid #e8e8e8; border-radius: 0.375rem;
-  font-size: 0.8125rem; color: #111; outline: none; transition: border-color 0.2s;
-}
-.dp-sz__field input:focus, .dp-sz__field select:focus { border-color: var(--b, #111); }
-.dp-sz__btn {
-  grid-column: span 2; padding: 0.875rem; background: var(--b, #111); color: #fff;
-  font-size: 0.8125rem; font-weight: 700; border-radius: 0.375rem; cursor: pointer;
-  transition: opacity 0.2s;
-}
-.dp-sz__btn:hover { opacity: 0.85; }
-.dp-sz__btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.dp-sz__result { border-top: 1px solid #eee; padding-top: 2rem; }
-.dp-sz__recommend {
-  display: flex; align-items: center; gap: 2rem; margin-bottom: 1rem;
-  padding: 1.5rem; background: #fafaf8; border-radius: 0.5rem;
-}
-.dp-sz__recommend-main, .dp-sz__recommend-brand {
-  display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
-}
-.dp-sz__recommend-size {
-  font-size: 2.5rem; font-weight: 900; color: var(--b, #111); line-height: 1;
-}
-.dp-sz__recommend-foreign {
-  font-size: 1.75rem; font-weight: 800; color: #555; line-height: 1;
-}
-.dp-sz__recommend-label {
-  font-size: 0.5625rem; font-weight: 600; color: #999; letter-spacing: 0.05em;
-}
-.dp-sz__recommend-msg { font-size: 0.8125rem; color: #555; line-height: 1.5; margin-bottom: 1.5rem; }
 .dp-sz__chart { width: 100%; border-collapse: collapse; }
 .dp-sz__chart th {
   font-size: 0.5625rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;

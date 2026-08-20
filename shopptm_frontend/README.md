@@ -51,10 +51,10 @@ src/
 │   ├── FaqView.vue             # FAQ
 │   ├── QnaView.vue             # QnA
 │   ├── BoardView.vue           # 게시판
-│   ├── LevisView.vue           # 리바이스 브랜드 페이지
-│   ├── CarharttView.vue        # 칼하트 브랜드 페이지
-│   ├── BeanpoleView.vue        # 빈폴 브랜드 페이지
-│   ├── DickiesView.vue         # 딕키즈 브랜드 페이지
+│   ├── LevisView2.vue          # 리바이스 브랜드 페이지
+│   ├── CarharttView2.vue       # 칼하트 브랜드 페이지
+│   ├── BeanpoleView2.vue       # 빈폴 브랜드 페이지
+│   ├── DickiesView2.vue        # 딕키즈 브랜드 페이지
 │   └── admin/
 │       ├── AdminDashboard.vue  # 대시보드
 │       ├── AdminMembers.vue    # 회원 관리
@@ -68,8 +68,6 @@ src/
 │       ├── AdminQna.vue        # QnA 관리
 │       └── AdminSettings.vue   # 사이트 설정
 ├── components/
-│   ├── TheHeader.vue           # 헤더 (햄버거 메뉴 포함)
-│   ├── TheFooter.vue           # 푸터
 │   └── SlidePanel.vue          # 사이드 슬라이드 패널
 ├── layouts/
 │   ├── Forme32Layout.vue       # 일반 레이아웃
@@ -245,6 +243,17 @@ src/
 - **문제**: 위 검색 수정을 교차검증하던 중, `OrderCompleteView.vue`가 `lastOrder.orderId ? ... : '확인 중'`처럼 참/거짓 체크를 쓰고 있는 걸 발견함. 실제 주문 id는 1부터 시작하는 시퀀스라 지금 당장 재현되진 않지만, `id`가 `0`이면 `false`로 취급돼 정상적으로 저장된 주문번호인데도 "확인 중"으로 잘못 표시될 수 있는 잠재 결함이었음.
 - **해결**: `lastOrder.orderId != null`로 null/undefined만 "값 없음"으로 취급하도록 수정(값을 쓰는 `PaymentView.vue`의 `order?.id ?? null`과 일관된 방식).
 - **검증**: 프런트 빌드 통과, 교차검증에서 추가 문제 없음 확인.
+
+### 죽은 코드/미사용 CSS 정리 (2026.08.19)
+- **배경**: 정기 점검 중 여러 에이전트로 죽은 코드·미사용 CSS를 조사(교차검증 포함)한 뒤 정리함. 기능 변경은 없음.
+- **가장 큰 항목 — 전역 헤더/푸터(`TheHeader.vue`/`TheFooter.vue`)가 통째로 렌더링될 일이 없었음**: `App.vue`의 `isAuthPage`(전역 헤더/푸터를 숨길지 정하는 값)가 라우터에 정의된 모든 경로에 대해 항상 `true`였음(로그인/홈/상품/장바구니/관리자 등 전부 각자 `Forme32Layout`/`AdminLayout`으로 자체 헤더·푸터를 그리고, 남는 게 하나도 없었음) — 즉 `isAuthPage=false`가 되는 경로가 애초에 존재하지 않아 `<TheHeader/><RouterView/><TheFooter/>` 분기(전역 헤더/푸터 자체를 그리는 별도의 검색 모달·네비게이션까지 포함해 총 677줄)가 완전히 죽은 코드였음. `App.vue`를 `<RouterView/>` 하나로 단순화하고 두 컴포넌트 파일을 삭제 — 메인 번들(`index-*.js`)이 76.5kB → 60.4kB로 줄어듦.
+- **완전히 안 쓰이던 파일 4개 삭제**: `CarharttView.vue`/`LevisView.vue`/`DickiesView.vue`/`BeanpoleView.vue`(라우터는 전부 `*View2.vue`만 사용, 총 ~1,234줄).
+- **`DetailView.vue`**: 안 쓰는 `products` 구조분해(store에서 꺼내놓고 어디서도 안 씀), 죽은 `brandCountryMap`/`brandCountryLabel`(실제로 쓰이는 `brandCountryMap2`/`brandCountryCode`와 완전 중복), 예전 사이즈 추천 UI(현재 폼과 다른 구조)의 미사용/중복 CSS 블록(`.dp-sz__title`/`.dp-sz__form`/`.dp-sz__field`/`.dp-sz__btn`/`.dp-sz__result`/`.dp-sz__recommend-main` 등, `.dp-sz__recommend`/`-size`/`-msg`는 살아있는 규칙과 중복 정의까지 있었음) 제거.
+- **`productStore.js`**: 아무도 호출하지 않는 `setFilter()` 액션과, 그 결과로 항상 기본값(`newest`)만 타던 `filteredProducts`의 카테고리 필터·가격순 정렬 분기 제거 — `filteredProducts`는 헤더 검색(`Forme32Layout.vue`)이 실제로 쓰고 있어서 계산 자체는 남기되 "최신순 정렬"만 하도록 단순화. 어디서도 읽지 않던 write-only `error` 상태도 제거.
+- **`recentStore.js`**: 아무 데서도 안 부르는 `clear()` 액션 제거.
+- **그 외 미사용 CSS**: `AdminSettings.vue`의 안 쓰는 `reactive` import, `SlidePanel.vue`의 `.sp-foot__total`(살아있는 `.sp-foot__row--total`과 중복), `Forme32Layout.vue`의 `.f32-topbar__mi-link`, 브랜드 페이지 4개(`BeanpoleView2`/`CarharttView2`/`DickiesView2`/`LevisView2`)에 각각 있던 미사용 `.{prefix}-sec-head__title`.
+- **README 파일 트리도 함께 정리**: 이미 삭제된 `ListView.vue`/`TheHeader.vue`/`TheFooter.vue` 항목을 지우고, 실제로 쓰이는 `*View2.vue` 파일명으로 갱신(예전부터 실제 사용 파일과 어긋나 있었음).
+- **검증**: 프런트 빌드 통과(에러 없음), 교차검증에서 추가 결함 없음 확인, 배포 후 `/`·`/products`·`/brand-story`·`/beanpole` 등 여러 라우트가 전부 정상 렌더링되는 것(HTTP 200 및 각 라우트의 자체 레이아웃이 그대로 나오는 것) 확인.
 ---
 
 ## 빌드 및 배포

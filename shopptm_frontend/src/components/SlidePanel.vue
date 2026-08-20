@@ -300,10 +300,6 @@ async function doLogout() {
 .sp-foot__row { display: flex; justify-content: space-between; font-size: 0.8125rem; color: #555; }
 .sp-foot__row--dc { color: #FF2D2D; font-weight: 600; }
 .sp-foot__row--total { font-size: 1rem; font-weight: 900; color: #111; padding-top: 0.5rem; border-top: 1px solid #eee; }
-.sp-foot__total {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 1rem; font-size: 1rem; font-weight: 900;
-}
 .sp-foot__btn {
   display: block; width: 100%; padding: 0.875rem; text-align: center;
   background: #111; color: #fff; font-size: 0.8125rem; font-weight: 700;

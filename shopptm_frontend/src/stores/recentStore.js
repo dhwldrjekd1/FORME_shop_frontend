@@ -44,10 +44,5 @@ export const useRecentStore = defineStore("recent", () => {
     save();
   }
 
-  function clear() {
-    items.value = [];
-    save();
-  }
-
-  return { items, add, clear };
+  return { items, add };
 });

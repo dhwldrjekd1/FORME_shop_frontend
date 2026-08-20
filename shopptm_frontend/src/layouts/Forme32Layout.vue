@@ -225,7 +225,6 @@ onMounted(async () => {
   transition: opacity 0.2s;
 }
 .f32-topbar__mi:hover { opacity: 0.5; }
-.f32-topbar__mi-link { display: flex; align-items: center; color: inherit; text-decoration: none; }
 .f32-topbar__mi-wish { position: relative; cursor: pointer; display: flex; align-items: center; }
 .f32-topbar__mi-wish em {
   position: absolute; top: -6px; right: -8px;

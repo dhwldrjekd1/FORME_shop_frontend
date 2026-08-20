@@ -40,27 +40,12 @@ export const useProductStore = defineStore("product", () => {
   const products = ref([]);
   const currentProduct = ref(null);
   const isLoading = ref(false);
-  const error = ref(null);
 
-  const filters = ref({
-    category: "",
-    sort: "newest",
-  });
-
-  const filteredProducts = computed(() => {
-    let result = [...products.value];
-    if (filters.value.category) {
-      result = result.filter((p) => p.category === filters.value.category);
-    }
-    if (filters.value.sort === "newest") {
-      result.sort((a, b) => b.id - a.id);
-    } else if (filters.value.sort === "price-asc") {
-      result.sort((a, b) => a.price - b.price);
-    } else if (filters.value.sort === "price-desc") {
-      result.sort((a, b) => b.price - a.price);
-    }
-    return result;
-  });
+  // 최신순(id 내림차순) 정렬된 전체 상품 목록. ProductsView.vue/Forme32Layout.vue(헤더 검색)가
+  // 사용하며, 브랜드/성별 필터는 각 화면에서 filterByBrandAndGender()로 별도 적용한다.
+  const filteredProducts = computed(() =>
+    [...products.value].sort((a, b) => b.id - a.id)
+  );
 
   // 같은 상품 목록을 서로 다른 화면(예: /products 진입과 헤더 검색창 열기)이 거의 동시에
   // 요청하면 두 요청이 각자 isLoading을 따로 켰다 끄면서, 먼저 끝난 쪽이 isLoading을 false로
@@ -70,13 +55,11 @@ export const useProductStore = defineStore("product", () => {
   async function fetchProducts() {
     if (fetchPromise) return fetchPromise;
     isLoading.value = true;
-    error.value = null;
     fetchPromise = (async () => {
       try {
         const data = await api.get("/products");
         products.value = Array.isArray(data) ? data.map(adaptProduct) : [];
-      } catch (err) {
-        error.value = "상품을 불러오지 못했습니다.";
+      } catch {
         products.value = [];
       } finally {
         isLoading.value = false;
@@ -88,31 +71,22 @@ export const useProductStore = defineStore("product", () => {
 
   async function fetchProductById(id) {
     isLoading.value = true;
-    error.value = null;
     try {
       const data = await api.get(`/products/${id}`);
       currentProduct.value = adaptProduct(data);
-    } catch (err) {
-      error.value = "상품 정보를 불러오지 못했습니다.";
+    } catch {
       currentProduct.value = null;
     } finally {
       isLoading.value = false;
     }
   }
 
-  function setFilter(key, value) {
-    filters.value[key] = value;
-  }
-
   return {
     products,
     currentProduct,
     isLoading,
-    error,
-    filters,
     filteredProducts,
     fetchProducts,
     fetchProductById,
-    setFilter,
   };
 });
