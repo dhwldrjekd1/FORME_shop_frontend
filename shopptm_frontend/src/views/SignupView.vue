@@ -259,8 +259,8 @@ function goStep2() {
 
 async function handleSubmit() {
   errorMsg.value = "";
-  if (form.value.password.length < 4) {
-    errorMsg.value = "비밀번호는 4자 이상이어야 합니다.";
+  if (form.value.password.length < 8) {
+    errorMsg.value = "비밀번호는 8자 이상이어야 합니다.";
     return;
   }
   if (form.value.password !== form.value.password2) {
