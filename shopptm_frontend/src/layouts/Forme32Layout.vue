@@ -2,7 +2,7 @@
   <main class="f32-layout" :style="{ '--nav-accent': navAccent }">
     <!-- ═══ 데모 배너 ═══ -->
     <div class="demo-banner">
-      <span>관리자 계정 &nbsp;|&nbsp; <b>admin@forme.com</b> &nbsp;/&nbsp; <b>1234</b></span>
+      <span>관리자 계정 &nbsp;|&nbsp; <b>admin@forme.com</b> &nbsp;/&nbsp; <b>12345678</b></span>
     </div>
     <!-- ═══ 헤더 ═══ -->
     <header class="f32-topbar">
