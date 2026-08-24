@@ -221,11 +221,34 @@
             </template>
           </div>
           <div class="mp-form__withdraw">
-            <button class="mp-withdraw" :disabled="withdrawing" @click="withdrawMember">{{ withdrawing ? '처리 중...' : '회원 탈퇴' }}</button>
+            <button class="mp-withdraw" :disabled="withdrawing || showWithdrawModal" @click="startWithdraw">회원 탈퇴</button>
           </div>
         </div>
       </section>
     </div>
+
+    <!-- 탈퇴 확인용 현재 비밀번호 입력 모달 -->
+    <Teleport to="body">
+      <div v-if="showWithdrawModal" class="modal" @click.self="!withdrawing && closeWithdrawModal()">
+        <div class="modal__box">
+          <h2 class="modal__title">회원 탈퇴</h2>
+          <p class="modal__desc">본인 확인을 위해 현재 비밀번호를 입력해주세요.</p>
+          <input
+            v-model="withdrawPassword"
+            type="password"
+            placeholder="현재 비밀번호"
+            class="modal__input"
+            :disabled="withdrawing"
+            autocomplete="current-password"
+            @keyup.enter="withdrawMember"
+          />
+          <div class="modal__actions">
+            <button class="modal__btn modal__btn--ghost" :disabled="withdrawing" @click="closeWithdrawModal">취소</button>
+            <button class="modal__btn modal__btn--fill" :disabled="withdrawing" @click="withdrawMember">{{ withdrawing ? '처리 중...' : '탈퇴' }}</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </Forme32Layout>
 </template>
 
@@ -417,21 +440,41 @@ async function deleteQna(id) {
   finally { qnaPending.delete(id); }
 }
 
-// 회원 탈퇴
+// 회원 탈퇴 — 세션이 탈취된 상태(XSS, 방치된 브라우저 등)에서도 진짜 비밀번호를 몰라야
+// 탈퇴(계정 정지)를 못 시키도록, 실행 전에 현재 비밀번호 확인을 받는다(비밀번호 변경과 동일한 이유).
 const withdrawing = ref(false);
-async function withdrawMember() {
-  if (withdrawing.value) return;
+const showWithdrawModal = ref(false);
+const withdrawPassword = ref('');
+function startWithdraw() {
   if (!confirm('정말 탈퇴하시겠습니까?\n탈퇴 후 복구할 수 없습니다.')) return;
   if (!confirm('모든 주문 내역, 리뷰, 문의가 삭제됩니다.\n정말 진행하시겠습니까?')) return;
+  withdrawPassword.value = '';
+  showWithdrawModal.value = true;
+}
+// 취소/배경클릭으로 모달을 닫을 때도 입력해둔 비밀번호를 메모리에서 지운다 — 안 그러면
+// 탈퇴를 취소해도 방금 입력한 평문 비밀번호가 컴포넌트 상태에 그대로 남아있게 된다.
+function closeWithdrawModal() {
+  showWithdrawModal.value = false;
+  withdrawPassword.value = '';
+}
+async function withdrawMember() {
+  if (withdrawing.value) return;
+  if (!withdrawPassword.value) { alert('현재 비밀번호를 입력해주세요.'); return; }
   const memberId = authStore.user?.id;
   if (!memberId) return;
   withdrawing.value = true;
   try {
-    await api.delete(`/members/${memberId}`);
+    await api.delete(`/members/${memberId}`, { currentPassword: withdrawPassword.value });
+    closeWithdrawModal();
     await authStore.logout();
     alert('회원 탈퇴가 완료되었습니다.');
     router.push('/');
-  } catch (e) { alert(e?.message || '탈퇴 실패'); }
+  } catch (e) {
+    // 비밀번호가 틀려서 실패했을 수도, 일시적인 네트워크 오류일 수도 있어 여기서 입력값을
+    // 지우지 않는다 — 지우면 네트워크 문제로 실패했을 뿐인데도 맞게 입력한 비밀번호를 다시
+    // 치게 만든다. 모달을 닫을 때(closeWithdrawModal)만 비운다.
+    alert(e?.message || '탈퇴 실패');
+  }
   finally { withdrawing.value = false; }
 }
 
@@ -674,4 +717,18 @@ async function logout() { await authStore.logout(); router.push("/"); }
 .mp-withdraw { font-size: 0.6875rem; color: #bbb; background: none; border: none; cursor: pointer; transition: color 0.2s; text-decoration: underline; }
 .mp-withdraw:hover { color: #e53e3e; }
 .mp-withdraw:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* 탈퇴 확인 모달 */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1.5rem; }
+.modal__box { background: #fff; width: 100%; max-width: 420px; border-radius: 0.75rem; padding: 2rem; }
+.modal__title { font-size: 1.125rem; font-weight: 800; margin-bottom: 0.5rem; }
+.modal__desc { font-size: 0.8125rem; color: #666; margin-bottom: 1.25rem; line-height: 1.6; }
+.modal__input { width: 100%; padding: 0.875rem; border: 1.5px solid #e8e8e8; border-radius: 0.375rem; font-size: 0.8125rem; font-family: inherit; outline: none; margin-bottom: 1.25rem; }
+.modal__input:focus { border-color: #111; }
+.modal__input:disabled { background: #fafaf8; color: #999; }
+.modal__actions { display: flex; gap: 0.625rem; }
+.modal__btn { flex: 1; padding: 0.875rem; font-size: 0.8125rem; font-weight: 700; border-radius: 0.375rem; cursor: pointer; }
+.modal__btn--fill { background: #111; color: #fff; }
+.modal__btn--fill:disabled, .modal__btn--ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+.modal__btn--ghost { border: 1.5px solid #ddd; color: #666; background: #fff; }
 </style>
