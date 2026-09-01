@@ -23,26 +23,23 @@
       </div>
 
       <!-- 답변 모달 -->
-      <Teleport to="body">
-        <div v-if="showModal" class="modal" @click.self="!submitting && (showModal = false)">
-          <div class="modal__box">
-            <h2 class="modal__title">답변 작성</h2>
-            <p class="modal__q">{{ currentQ?.title }}</p>
-            <p class="modal__content">{{ currentQ?.content }}</p>
-            <textarea v-model="answerText" :disabled="submitting" rows="5" placeholder="답변을 입력하세요"></textarea>
-            <div class="modal__actions">
-              <button class="modal__btn modal__btn--ghost" :disabled="submitting" @click="showModal = false">취소</button>
-              <button class="modal__btn modal__btn--fill" :disabled="submitting" @click="submitAnswer">{{ submitting ? '저장 중...' : '저장' }}</button>
-            </div>
-          </div>
+      <BaseModal :show="showModal" max-width="520px" :locked="submitting" @close="showModal = false">
+        <h2 class="modal__title">답변 작성</h2>
+        <p class="modal__q">{{ currentQ?.title }}</p>
+        <p class="modal__content">{{ currentQ?.content }}</p>
+        <textarea v-model="answerText" :disabled="submitting" rows="5" placeholder="답변을 입력하세요"></textarea>
+        <div class="modal__actions">
+          <button class="modal__btn modal__btn--ghost" :disabled="submitting" @click="showModal = false">취소</button>
+          <button class="modal__btn modal__btn--fill" :disabled="submitting" @click="submitAnswer">{{ submitting ? '저장 중...' : '저장' }}</button>
         </div>
-      </Teleport>
+      </BaseModal>
     </div>
   </AdminLayout>
 </template>
 <script setup>
 import { ref, onMounted } from "vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
+import BaseModal from "@/components/BaseModal.vue";
 import api from "@/api";
 const items = ref([]); const showModal = ref(false); const currentQ = ref(null); const answerText = ref('');
 const submitting = ref(false);
@@ -83,24 +80,19 @@ async function del(id) {
 .t-actions { display: flex; gap: 0.5rem; }
 .t-btn { font-size: 0.625rem; color: #111; cursor: pointer; background: none; border: 1px solid #ddd; padding: 0.25rem 0.625rem; border-radius: 0.25rem; }
 .t-btn:hover { border-color: #111; }
-.t-btn:disabled, .modal__btn--ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+.t-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .t-del { font-size: 0.625rem; color: #bbb; cursor: pointer; background: none; border: none; }
 .t-del:hover { color: #e53e3e; }
 .t-del:disabled { opacity: 0.5; cursor: not-allowed; }
 .tag { font-size: 0.5rem; font-weight: 800; letter-spacing: 0.1em; padding: 0.2rem 0.5rem; }
 .tag--done { background: #111; color: #fff; }
 .tag--wait { background: #f0f0f0; color: #999; }
-.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1.5rem; }
-.modal__box { background: #fff; width: 100%; max-width: 520px; border-radius: 0.75rem; padding: 2rem; }
-.modal__title { font-size: 1.125rem; font-weight: 800; margin-bottom: 1rem; }
+/* 모달 공용 뼈대(.modal/.modal__box)와 actions/btn 스타일은 BaseModal.vue가 전역으로 제공.
+   title 간격은 이 화면(질문/내용 미리보기가 바로 붙는 배치)에 맞춰 기존 값(1rem)을 유지. */
+.modal__title { margin-bottom: 1rem; }
 .modal__q { font-size: 0.9375rem; font-weight: 600; margin-bottom: 0.5rem; }
 .modal__content { font-size: 0.8125rem; color: #666; margin-bottom: 1.25rem; line-height: 1.6; }
-.modal__box textarea { width: 100%; padding: 0.875rem; border: 1.5px solid #e8e8e8; border-radius: 0.375rem; font-size: 0.8125rem; font-family: inherit; resize: vertical; outline: none; margin-bottom: 1rem; }
-.modal__box textarea:focus { border-color: #111; }
-.modal__box textarea:disabled { background: #fafaf8; color: #999; }
-.modal__actions { display: flex; gap: 0.625rem; }
-.modal__btn { flex: 1; padding: 0.875rem; font-size: 0.8125rem; font-weight: 700; border-radius: 0.375rem; cursor: pointer; }
-.modal__btn--fill { background: #111; color: #fff; }
-.modal__btn--fill:disabled { opacity: 0.5; cursor: not-allowed; }
-.modal__btn--ghost { border: 1.5px solid #ddd; color: #666; background: #fff; }
+textarea { width: 100%; padding: 0.875rem; border: 1.5px solid #e8e8e8; border-radius: 0.375rem; font-size: 0.8125rem; font-family: inherit; resize: vertical; outline: none; margin-bottom: 1rem; }
+textarea:focus { border-color: #111; }
+textarea:disabled { background: #fafaf8; color: #999; }
 </style>

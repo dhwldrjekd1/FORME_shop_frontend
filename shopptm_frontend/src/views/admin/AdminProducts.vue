@@ -56,14 +56,12 @@
     </div>
 
     <!-- ═══ 등록/수정 모달 ═══ -->
-    <Teleport to="body">
-      <div v-if="showModal" class="modal">
-        <div class="modal__box">
-          <header class="modal__head">
-            <h2>{{ isEdit ? '상품 수정' : '상품 등록' }}</h2>
-            <button @click="showModal = false"><span class="material-symbols-outlined">close</span></button>
-          </header>
-          <form class="modal__form" @submit.prevent="submitProduct">
+    <BaseModal :show="showModal" max-width="800px" z-index="9999" no-padding max-height="90vh" :close-on-backdrop="false">
+      <header class="modal__head">
+        <h2>{{ isEdit ? '상품 수정' : '상품 등록' }}</h2>
+        <button @click="showModal = false"><span class="material-symbols-outlined">close</span></button>
+      </header>
+      <form class="modal__form" @submit.prevent="submitProduct">
             <div class="modal__row" style="grid-template-columns: 100px 1fr 1fr;">
               <div class="modal__field">
                 <label>상품 ID</label>
@@ -275,15 +273,14 @@
               </button>
             </div>
           </form>
-        </div>
-      </div>
-    </Teleport>
+    </BaseModal>
   </AdminLayout>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
+import BaseModal from "@/components/BaseModal.vue";
 import api from "@/api";
 
 const products = ref([]);
@@ -782,12 +779,10 @@ async function del(id) {
 .tag--on { background: #111; color: #fff; }
 .tag--off { background: #f0f0f0; color: #bbb; }
 
-/* 모달 */
-.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 1.5rem; }
-.modal__box { background: #fff; width: 100%; max-width: 800px; border-radius: 0.75rem; overflow: hidden; max-height: 90vh; overflow-y: auto; }
-.modal__head { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid #eee; }
-.modal__head h2 { font-size: 1.125rem; font-weight: 800; }
-.modal__head button { background: none; border: none; cursor: pointer; color: #999; display: flex; }
+/* 모달 공용 뼈대(.modal/.modal__box/.modal__head)는 BaseModal.vue가 전역으로 제공.
+   .modal__actions/.modal__btn*는 이 화면만 hover/transition 등 추가 스타일이 있어서
+   전역 기본값을 덮어쓰도록 로컬(scoped)에 그대로 남겨둔다 — scoped 선택자가 전역보다
+   우선하므로 아래 있는 로컬 규칙이 그대로 적용된다. */
 .modal__form { padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
 .modal__row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .modal__field { display: flex; flex-direction: column; gap: 0.375rem; }

@@ -29,28 +29,24 @@
       </div>
 
       <!-- 답글 모달 -->
-      <Teleport to="body">
-        <div v-if="showModal" class="modal">
-          <div class="modal__box">
-            <header class="modal__head">
-              <h2>리뷰 답글</h2>
-              <button :disabled="submitting" @click="showModal = false"><span class="material-symbols-outlined">close</span></button>
-            </header>
-            <div class="modal__body">
-              <div class="modal__review">
-                <div class="modal__review-stars"><span v-for="n in 5" :key="n" :class="n <= currentReview?.rating ? 'star-on' : 'star-off'">★</span></div>
-                <p class="modal__review-author">{{ currentReview?.memberName }} · {{ currentReview?.productName }}</p>
-                <p class="modal__review-content">{{ currentReview?.content }}</p>
-              </div>
-              <textarea v-model="replyText" :disabled="submitting" rows="4" placeholder="답글을 입력하세요"></textarea>
-              <div class="modal__actions">
-                <button class="modal__btn modal__btn--ghost" :disabled="submitting" @click="showModal = false">취소</button>
-                <button class="modal__btn modal__btn--fill" :disabled="submitting" @click="submitReply">{{ submitting ? '저장 중...' : '저장' }}</button>
-              </div>
-            </div>
+      <BaseModal :show="showModal" max-width="520px" z-index="9999" no-padding :close-on-backdrop="false">
+        <header class="modal__head">
+          <h2>리뷰 답글</h2>
+          <button :disabled="submitting" @click="showModal = false"><span class="material-symbols-outlined">close</span></button>
+        </header>
+        <div class="modal__body">
+          <div class="modal__review">
+            <div class="modal__review-stars"><span v-for="n in 5" :key="n" :class="n <= currentReview?.rating ? 'star-on' : 'star-off'">★</span></div>
+            <p class="modal__review-author">{{ currentReview?.memberName }} · {{ currentReview?.productName }}</p>
+            <p class="modal__review-content">{{ currentReview?.content }}</p>
+          </div>
+          <textarea v-model="replyText" :disabled="submitting" rows="4" placeholder="답글을 입력하세요"></textarea>
+          <div class="modal__actions">
+            <button class="modal__btn modal__btn--ghost" :disabled="submitting" @click="showModal = false">취소</button>
+            <button class="modal__btn modal__btn--fill" :disabled="submitting" @click="submitReply">{{ submitting ? '저장 중...' : '저장' }}</button>
           </div>
         </div>
-      </Teleport>
+      </BaseModal>
     </div>
   </AdminLayout>
 </template>
@@ -58,6 +54,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
+import BaseModal from "@/components/BaseModal.vue";
 import api from "@/api";
 
 const reviews = ref([]);
@@ -141,24 +138,14 @@ async function del(id) {
 .t-del:disabled { opacity: 0.5; cursor: not-allowed; }
 .t-empty { text-align: center; color: #ccc; padding: 3rem; }
 
-/* 모달 */
-.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 1.5rem; }
-.modal__box { background: #fff; width: 100%; max-width: 520px; border-radius: 0.75rem; overflow: hidden; }
-.modal__head { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid #eee; }
-.modal__head h2 { font-size: 1.125rem; font-weight: 800; }
-.modal__head button { background: none; border: none; cursor: pointer; color: #999; display: flex; }
+/* 모달 공용 뼈대(.modal/.modal__box/.modal__head/actions/btn)는 BaseModal.vue가 전역으로
+   제공 — 이 화면에서만 쓰는 리뷰 표시 영역만 여기 남긴다. */
 .modal__body { padding: 1.5rem; }
 .modal__review { background: #fafaf8; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.25rem; }
 .modal__review-stars { margin-bottom: 0.5rem; }
 .modal__review-author { font-size: 0.6875rem; color: #999; margin-bottom: 0.5rem; }
 .modal__review-content { font-size: 0.8125rem; color: #333; line-height: 1.6; }
-.modal__body textarea { width: 100%; padding: 0.875rem; border: 1.5px solid #e8e8e8; border-radius: 0.375rem; font-size: 0.8125rem; font-family: inherit; resize: vertical; outline: none; margin-bottom: 1rem; }
-.modal__body textarea:focus { border-color: #111; }
-.modal__body textarea:disabled { background: #fafaf8; color: #999; }
-.modal__head button:disabled { opacity: 0.5; cursor: not-allowed; }
-.modal__actions { display: flex; gap: 0.625rem; }
-.modal__btn { flex: 1; padding: 0.875rem; font-size: 0.8125rem; font-weight: 700; border-radius: 0.375rem; cursor: pointer; }
-.modal__btn--fill { background: #111; color: #fff; }
-.modal__btn--fill:disabled { opacity: 0.5; cursor: not-allowed; }
-.modal__btn--ghost { border: 1.5px solid #ddd; color: #666; background: #fff; }
+textarea { width: 100%; padding: 0.875rem; border: 1.5px solid #e8e8e8; border-radius: 0.375rem; font-size: 0.8125rem; font-family: inherit; resize: vertical; outline: none; margin-bottom: 1rem; }
+textarea:focus { border-color: #111; }
+textarea:disabled { background: #fafaf8; color: #999; }
 </style>
