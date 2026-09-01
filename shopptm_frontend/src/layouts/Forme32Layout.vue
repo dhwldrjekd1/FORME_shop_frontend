@@ -101,7 +101,7 @@
 </template>
 
 <script setup>
-import { computed, ref, nextTick, watch, onMounted } from "vue";
+import { computed, ref, nextTick, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/authStore";
 import api from "@/api";

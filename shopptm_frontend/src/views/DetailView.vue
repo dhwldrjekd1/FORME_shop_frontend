@@ -1219,7 +1219,6 @@ function buyNow() { return addToCartAndGo('/payment'); }
 .dp-sz__selected-val { font-size: 2.5rem; font-weight: 900; color: var(--b, #111); line-height: 1; }
 .dp-sz__selected-val--sub { font-size: 1.75rem; color: #555; }
 .dp-sz__selected-label { font-size: 0.5625rem; font-weight: 600; color: #999; }
-.dp-sz__selected-msg { font-size: 0.8125rem; font-weight: 600; }
 .dp-sz__user-info { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
 .dp-sz__user-info span { font-size: 0.5625rem; font-weight: 600; color: #999; background: #f5f5f5; padding: 0.25rem 0.625rem; border-radius: 999px; }
 .dp-sz__no-size { font-size: 0.875rem; color: #bbb; padding: 2rem 0; }

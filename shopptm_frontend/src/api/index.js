@@ -103,5 +103,4 @@ const api = {
     request(path, { ...options, method: "DELETE", body }),
 };
 
-export { ApiError };
 export default api;
