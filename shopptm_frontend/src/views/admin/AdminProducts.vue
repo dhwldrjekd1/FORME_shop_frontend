@@ -901,7 +901,7 @@ async function del(id) {
 .modal__actions { display: flex; gap: 0.625rem; margin-top: 0.5rem; }
 .modal__btn { flex: 1; padding: 0.875rem; font-size: 0.8125rem; font-weight: 700; border-radius: 0.375rem; cursor: pointer; transition: all 0.2s; }
 .modal__btn--fill { background: #111; color: #fff; }
-.modal__btn--fill:disabled { opacity: 0.4; cursor: not-allowed; }
+.modal__btn--fill:disabled { cursor: not-allowed; }
 .modal__btn--ghost { border: 1.5px solid #ddd; color: #666; background: #fff; }
 .modal__btn--ghost:hover { border-color: #111; color: #111; }
 </style>
