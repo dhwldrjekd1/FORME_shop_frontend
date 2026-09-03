@@ -59,7 +59,7 @@
     <BaseModal :show="showModal" max-width="800px" z-index="9999" no-padding max-height="90vh" :close-on-backdrop="false">
       <header class="modal__head">
         <h2>{{ isEdit ? '상품 수정' : '상품 등록' }}</h2>
-        <button @click="showModal = false"><span class="material-symbols-outlined">close</span></button>
+        <button :disabled="submitting" @click="showModal = false"><span class="material-symbols-outlined">close</span></button>
       </header>
       <form class="modal__form" @submit.prevent="submitProduct">
             <div class="modal__row" style="grid-template-columns: 100px 1fr 1fr;">
@@ -267,7 +267,7 @@
             </p>
             <p v-if="errorMsg" class="modal__error">{{ errorMsg }}</p>
             <div class="modal__actions">
-              <button type="button" class="modal__btn modal__btn--ghost" @click="showModal = false">취소</button>
+              <button type="button" class="modal__btn modal__btn--ghost" :disabled="submitting" @click="showModal = false">취소</button>
               <button type="submit" class="modal__btn modal__btn--fill" :disabled="submitting">
                 {{ submitting ? '처리 중...' : (isEdit ? '수정 완료' : '등록 완료') }}
               </button>
@@ -383,7 +383,10 @@ async function loadProducts() {
   try { products.value = await api.get('/products') || []; } catch { products.value = []; }
 }
 
+// 저장 중엔 다른 상품으로 바꿔 열지 못하게 막음 — 안 그러면 저장 완료 시 showModal을
+// 그냥 false로 닫아버려서, 방금 새로 연 다른 상품의 입력 중이던 내용이 날아감
 function openAdd() {
+  if (submitting.value) return;
   isEdit.value = false;
   editId.value = null;
   form.value = { id: null, name: '', description: '', category: '', brand: '', size: '', gender: '', price: 0, stock: 0, originalPrice: null, discountRate: null, thumbnailUrl: '', curatorImageUrl: '', colorName: '', colorHex: '#1a1a1a', features: '', composition: '', sizeStocks: [{ size: '', stock: 0 }], isNew: false, isBest: false, isRecommend: false };
@@ -396,6 +399,7 @@ function openAdd() {
 }
 
 async function openEdit(p) {
+  if (submitting.value) return;
   isEdit.value = true;
   editId.value = p.id;
   errorMsg.value = '';
