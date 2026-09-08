@@ -422,6 +422,10 @@ async function openEdit(p) {
     composition: Array.isArray(detail.compositionList) ? detail.compositionList.join('\n') : (Array.isArray(detail.composition) ? detail.composition.join('\n') : (detail.composition || '')),
     sizeStocks: detail.sizeStocks?.length ? detail.sizeStocks.map(s => ({ size: s.size, stock: s.stock })) : [{ size: detail.size || '', stock: detail.stock || 0 }],
     isNew: detail.isNew || false, isBest: detail.isBest || false, isRecommend: detail.isRecommend || false,
+    // 지금 이 폼을 채운 시점의 updatedAt을 그대로 들고 있다가 저장 시 함께 보낸다 — 이 폼이
+    // 열려있는 동안 실제 주문/취소로 이 상품이 이미 바뀌었으면(사이즈별 재고 포함), 저장이
+    // 그 사이의 변경을 오래된 값으로 덮어쓰지 않고 서버가 거부하게 하기 위함.
+    expectedUpdatedAt: detail.updatedAt || null,
   };
   selectedFiles.value = [];
 
@@ -594,6 +598,12 @@ async function submitProduct() {
       isNew: form.value.isNew,
       isBest: form.value.isBest,
     };
+
+    // 수정 요청에서만 의미 있는 필드 — 신규 등록(Create) DTO에는 이 필드가 없어서, 항상
+    // 넣으면 Jackson이 모르는 필드로 걸려 등록 요청 자체가 400으로 실패한다.
+    if (isEdit.value) {
+      dto.expectedUpdatedAt = form.value.expectedUpdatedAt || null;
+    }
 
     // 이미지 URL 처리
     if (imgTab.value === 'server' && serverSelected.value.length > 0) {
