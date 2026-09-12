@@ -76,26 +76,35 @@ export const useCartStore = defineStore("cart", () => {
     }
   }
 
-  // 장바구니 삭제 (DB 연동) — 서버 삭제가 성공했을 때만 화면에서도 지운다
-  // (실패해도 지워버리면 화면엔 없는데 서버엔 남아있는 상태로 어긋날 수 있었음)
+  // 장바구니 삭제 — 로그인 상태면 서버 삭제가 성공했을 때만 화면에서도 지운다(실패해도
+  // 지워버리면 화면엔 없는데 서버엔 남아있는 상태로 어긋날 수 있었음). 비로그인이면
+  // addItem/clearCart와 동일하게 로컬 장바구니만 다룬다 — itemId가 서버 cart id가 아니라
+  // 로컬에서 Date.now()로 만든 값이라, 이 분기 없이 항상 API를 호출하면(예전 코드) 매번
+  // 실패해서 비로그인 사용자는 담기만 되고 삭제/수량변경은 계속 실패했었음.
   async function removeItem(itemId) {
-    try {
-      await api.delete(`/cart/${itemId}`);
-    } catch {
-      alert('삭제에 실패했습니다. 다시 시도해주세요.');
-      return;
+    const user = getUser();
+    if (user?.id) {
+      try {
+        await api.delete(`/cart/${itemId}`);
+      } catch {
+        alert('삭제에 실패했습니다. 다시 시도해주세요.');
+        return;
+      }
     }
     items.value = items.value.filter((item) => item.id !== itemId);
   }
 
-  // 수량 변경 (DB 연동) — 서버 반영이 성공했을 때만 화면 수량도 바꾼다
+  // 수량 변경 — removeItem과 동일한 이유로 로그인 여부에 따라 분기
   async function updateQuantity(itemId, quantity) {
     if (quantity < 1) return;
-    try {
-      await api.patch(`/cart/${itemId}`, { quantity });
-    } catch {
-      alert('수량 변경에 실패했습니다. 다시 시도해주세요.');
-      return;
+    const user = getUser();
+    if (user?.id) {
+      try {
+        await api.patch(`/cart/${itemId}`, { quantity });
+      } catch {
+        alert('수량 변경에 실패했습니다. 다시 시도해주세요.');
+        return;
+      }
     }
     const item = items.value.find((item) => item.id === itemId);
     if (item) item.quantity = quantity;
