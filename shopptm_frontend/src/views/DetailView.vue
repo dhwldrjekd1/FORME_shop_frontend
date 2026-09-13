@@ -280,7 +280,7 @@
                 </div>
               </div>
               <textarea v-model="newTxt" placeholder="리뷰를 남겨주세요..." rows="3" />
-              <button class="dp-rv-write__submit" @click="submitReview">등록</button>
+              <button class="dp-rv-write__submit" :disabled="submittingReview" @click="submitReview">{{ submittingReview ? '등록 중...' : '등록' }}</button>
             </div>
 
             <!-- 리뷰 목록 -->
@@ -293,18 +293,18 @@
                   <strong>{{ r.author }}</strong>
                   <span class="dp-rv__date">{{ r.date }}</span>
                   <template v-if="r.memberId === authStore.user?.id">
-                    <button v-if="editingRvId !== r.id" class="dp-rv__edit-btn" @click="startEditRv(r)">수정</button>
-                    <button class="dp-rv__edit-btn dp-rv__edit-btn--del" @click="deleteRv(r.id)">삭제</button>
+                    <button v-if="editingRvId !== r.id" class="dp-rv__edit-btn" :disabled="reviewPending.size > 0" @click="startEditRv(r)">수정</button>
+                    <button class="dp-rv__edit-btn dp-rv__edit-btn--del" :disabled="reviewPending.has(r.id)" @click="deleteRv(r.id)">삭제</button>
                   </template>
                 </div>
                 <div v-if="editingRvId === r.id" class="dp-rv__editing">
                   <div class="dp-rv-write__stars" style="margin-bottom:0.5rem">
-                    <button v-for="n in 5" :key="n" class="dp-rv-write__star" :class="{ 'dp-rv-write__star--on': n <= editRvRating }" @click="editRvRating = n">★</button>
+                    <button v-for="n in 5" :key="n" class="dp-rv-write__star" :class="{ 'dp-rv-write__star--on': n <= editRvRating }" :disabled="reviewPending.has(r.id)" @click="editRvRating = n">★</button>
                   </div>
-                  <textarea v-model="editRvText" rows="3"></textarea>
+                  <textarea v-model="editRvText" rows="3" :disabled="reviewPending.has(r.id)"></textarea>
                   <div class="dp-rv__editing-actions">
-                    <button class="dp-rv__edit-btn" @click="editingRvId = null">취소</button>
-                    <button class="dp-rv__edit-btn" @click="updateRv(r.id)">저장</button>
+                    <button class="dp-rv__edit-btn" :disabled="reviewPending.has(r.id)" @click="editingRvId = null">취소</button>
+                    <button class="dp-rv__edit-btn" :disabled="reviewPending.has(r.id)" @click="updateRv(r.id)">{{ reviewPending.has(r.id) ? '저장 중...' : '저장' }}</button>
                   </div>
                 </div>
                 <p v-else class="dp-rv__text">{{ r.text }}</p>
@@ -323,7 +323,7 @@
               <textarea v-model="newQnaContent" placeholder="상품에 대해 궁금한 점을 남겨주세요..." rows="3"></textarea>
               <div class="dp-qna-write__bottom">
                 <label class="dp-qna-write__secret"><input v-model="newQnaSecret" type="checkbox" /> 비밀글</label>
-                <button class="dp-qna-write__submit" @click="submitQna">문의 등록</button>
+                <button class="dp-qna-write__submit" :disabled="submittingQna" @click="submitQna">{{ submittingQna ? '등록 중...' : '문의 등록' }}</button>
               </div>
             </div>
             <p v-else class="dp-qna-login">문의를 작성하려면 <RouterLink to="/login">로그인</RouterLink>하세요.</p>
@@ -639,30 +639,49 @@ async function loadReviews() {
   } catch { reviews.value = []; }
 }
 
+// 리뷰 수정/삭제 진행중인 id — 마이페이지(MyPageView.vue)의 reviewPending과 동일한 이유로
+// 둔다. 응답 오기 전에 같은(또는 다른) 리뷰를 또 조작하면 두 요청이 겹치거나, 진행중인
+// 리뷰의 수정 모드가 다른 리뷰로 바뀌어 엉뚱한 리뷰에 저장될 수 있어 막는다 — 마이페이지의
+// 리뷰 수정 흐름에는 이미 이 가드가 있었는데, 상품 상세 페이지의 인라인 리뷰 수정에는
+// 빠져 있었음.
+const reviewPending = reactive(new Set());
 function startEditRv(r) {
+  if (reviewPending.size) return;
   editingRvId.value = r.id;
   editRvText.value = r.text;
   editRvRating.value = r.rating;
 }
 async function updateRv(id) {
+  if (reviewPending.has(id)) return;
   if (!editRvText.value.trim()) return;
+  reviewPending.add(id);
   try {
     await api.put(`/reviews/${id}`, { rating: editRvRating.value, content: editRvText.value.trim() });
     editingRvId.value = null;
     await loadReviews();
   } catch (e) { alert(e?.message || '수정 실패'); }
+  finally { reviewPending.delete(id); }
 }
 async function deleteRv(id) {
+  if (reviewPending.has(id)) return;
   if (!confirm('리뷰를 삭제하시겠습니까?')) return;
+  reviewPending.add(id);
   try { await api.delete(`/reviews/${id}`); await loadReviews(); }
   catch (e) { alert(e?.message || '삭제 실패'); }
+  finally { reviewPending.delete(id); }
 }
 
+// 리뷰 등록 진행중 — 응답 오기 전에 등록 버튼을 연타하면 같은 리뷰가 중복 등록 요청될
+// 수 있어 막는다(리뷰는 상품당 1개만 허용되는 제약이 있어 중복 요청 자체가 실패로
+// 끝나긴 하지만, 그 실패가 "이미 리뷰를 작성했습니다" 같은 혼란스러운 메시지로 뜸).
+const submittingReview = ref(false);
 async function submitReview() {
+  if (submittingReview.value) return;
   if (!newR.value) { alert('별점을 선택해주세요.'); return; }
   if (!newTxt.value.trim()) { alert('리뷰 내용을 입력해주세요.'); return; }
   const memberId = authStore.user?.id;
   if (!memberId) { alert('로그인이 필요합니다.'); return; }
+  submittingReview.value = true;
   try {
     await api.post(`/members/${memberId}/reviews`, {
       productId: product.value.id,
@@ -674,6 +693,8 @@ async function submitReview() {
     await loadReviews();
   } catch (e) {
     alert(e.data?.message || e.message || '리뷰 등록에 실패했습니다.');
+  } finally {
+    submittingReview.value = false;
   }
 }
 
@@ -694,10 +715,16 @@ async function loadProductQna() {
   catch { productQna.value = []; }
 }
 
+// 문의 등록 진행중 — 마이페이지 쪽 문의 수정과 달리 이 상품 상세의 문의 작성 흐름에는
+// 서버 쪽에도 중복 방지 장치가 전혀 없어서(QnaService.createQna, 별도 제약 없음), 연타하면
+// 정말로 똑같은 문의가 그대로 여러 건 등록됐음.
+const submittingQna = ref(false);
 async function submitQna() {
+  if (submittingQna.value) return;
   if (!newQnaTitle.value.trim() || !newQnaContent.value.trim()) { alert('제목과 내용을 모두 입력해주세요.'); return; }
   const memberId = authStore.user?.id;
   if (!memberId) { alert('로그인이 필요합니다.'); return; }
+  submittingQna.value = true;
   try {
     await api.post(`/members/${memberId}/qna`, {
       productId: product.value.id, title: newQnaTitle.value.trim(),
@@ -706,6 +733,7 @@ async function submitQna() {
     newQnaTitle.value = ''; newQnaContent.value = ''; newQnaSecret.value = false;
     await loadProductQna();
   } catch (e) { alert(e?.data?.message || e?.message || '문의 등록 실패'); }
+  finally { submittingQna.value = false; }
 }
 
 // ── 최근 본 상품 (현재 상품 제외) ──
