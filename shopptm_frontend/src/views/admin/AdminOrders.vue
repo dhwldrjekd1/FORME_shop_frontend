@@ -28,7 +28,7 @@
                 <td class="t-items">{{ o.orderItems?.length || 0 }}건</td>
                 <td class="t-r">₩{{ o.totalPrice?.toLocaleString() }}</td>
                 <td>
-                  <select class="ao-sel" :value="o.status" :disabled="statusPending.has(o.id)" @change="changeStatus(o.id, $event.target.value)">
+                  <select class="ao-sel" :value="o.status" :disabled="statusPending.has(o.id)" @change="changeStatus(o, $event)">
                     <option v-for="s in statuses" :key="s.key" :value="s.key">{{ s.label }}</option>
                   </select>
                 </td>
@@ -148,15 +148,30 @@ onMounted(async () => {
 // 나중에 도착한 응답이 아니라 먼저 보낸 요청 순서대로 화면이 어긋날 수 있어 막는다
 const statusPending = reactive(new Set());
 
-async function changeStatus(id, status) {
-  if (statusPending.has(id)) return;
+// select가 v-model이 아니라 :value 바인딩이라(여러 행의 select를 순번 없이 다루다 보니
+// v-model 배열/객체 매핑이 번거로워 이렇게 해왔음), 실패해도 o.status를 안 바꾸면 브라우저는
+// 이미 사용자가 고른 새 값을 화면에 그대로 보여준다 — Vue의 :value는 바인딩된 값(o.status)이
+// "바뀔 때"만 DOM에 반영하므로, 실패해서 o.status가 그대로면 DOM을 옛 값으로 되돌리지 않는다.
+// AdminMembers.vue의 등급 select(changeGrade)가 이미 이 문제를 event.target.value를 직접
+// 되돌리는 방식으로 막고 있었는데, 이 주문 상태 select에는 같은 처리가 빠져 있었음.
+async function changeStatus(o, event) {
+  const id = o.id, oldStatus = o.status;
+  const status = event.target.value;
+  if (statusPending.has(id) || status === oldStatus) { event.target.value = oldStatus; return; }
   statusPending.add(id);
   try {
     await api.patch(`/admin/orders/${id}/status`, { status });
-    const o = orders.value.find(x => x.id === id);
-    if (o) o.status = status;
-  } catch (e) { alert(e.message); }
-  finally { statusPending.delete(id); }
+    // AdminMembers.vue의 changeGrade와 동일하게, 응답이 오기 전에 목록 자체가 다시
+    // 불러와져 orders.value가 통째로 새 배열로 바뀌었을 수 있으니(지금은 그런 재조회
+    // 기능이 없지만, 나중에 생기면) 캡처해둔 o가 아니라 현재 배열에서 다시 찾아 반영한다.
+    const cur = orders.value.find(x => x.id === id);
+    if (cur) cur.status = status;
+  } catch (e) {
+    alert(e.message);
+    event.target.value = oldStatus;
+  } finally {
+    statusPending.delete(id);
+  }
 }
 
 async function toggleDetail(id) {
