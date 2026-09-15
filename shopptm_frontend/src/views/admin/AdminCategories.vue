@@ -30,7 +30,7 @@
               <td class="t-date">{{ c.createdAt?.slice(0, 10) }}</td>
               <td class="t-actions">
                 <button class="t-link" :disabled="saving" @click="openEdit(c)">수정</button>
-                <button class="t-link t-link--del" @click="deleteCategory(c.id)">삭제</button>
+                <button class="t-link t-link--del" :disabled="saving" @click="deleteCategory(c.id)">삭제</button>
               </td>
             </tr>
             <tr v-if="!categories.length"><td colspan="7" class="t-empty">카테고리 없음</td></tr>
@@ -85,11 +85,12 @@
 import { ref, onMounted } from "vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
 import api from "@/api";
+import { useSubmitLock } from "@/composables/useSubmitLock";
 
 const categories = ref([]);
 const showModal = ref(false);
 const editId = ref(null);
-const saving = ref(false);
+const { submitting: saving, run: runLocked } = useSubmitLock();
 const formError = ref('');
 const form = ref({ name: '', description: '', sortOrder: 0, isActive: true });
 
@@ -118,25 +119,30 @@ function openEdit(c) {
 }
 
 async function submitCategory() {
-  if (saving.value) return;
   if (!form.value.name.trim()) { formError.value = '카테고리명을 입력해주세요.'; return; }
-  saving.value = true; formError.value = '';
-  try {
-    if (editId.value) {
-      await api.put(`/admin/categories/${editId.value}`, form.value);
-    } else {
-      await api.post('/admin/categories', { name: form.value.name.trim(), description: form.value.description.trim(), sortOrder: form.value.sortOrder });
-    }
-    showModal.value = false;
-    await loadCategories();
-  } catch (e) { formError.value = e?.data?.message || e?.message || '처리 실패'; }
-  finally { saving.value = false; }
+  formError.value = '';
+  await runLocked(async () => {
+    try {
+      if (editId.value) {
+        await api.put(`/admin/categories/${editId.value}`, form.value);
+      } else {
+        await api.post('/admin/categories', { name: form.value.name.trim(), description: form.value.description.trim(), sortOrder: form.value.sortOrder });
+      }
+      showModal.value = false;
+      await loadCategories();
+    } catch (e) { formError.value = e?.data?.message || e?.message || '처리 실패'; }
+  });
 }
 
+// saving을 openCreate/openEdit/submitCategory와 공유 — 삭제 응답이 오기 전에 같은(또는 다른)
+// 카테고리를 수정 모달로 열거나 다시 삭제를 누르면, 이미 삭제된 카테고리에 수정 요청을
+// 보내거나 삭제가 두 번 나가는 등 어긋날 수 있어 막는다.
 async function deleteCategory(id) {
   if (!confirm('카테고리를 삭제하시겠습니까?')) return;
-  try { await api.delete(`/admin/categories/${id}`); await loadCategories(); }
-  catch (e) { alert(e?.message || '삭제 실패'); }
+  await runLocked(async () => {
+    try { await api.delete(`/admin/categories/${id}`); await loadCategories(); }
+    catch (e) { alert(e?.message || '삭제 실패'); }
+  });
 }
 </script>
 

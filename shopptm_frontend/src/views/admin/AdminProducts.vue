@@ -4,8 +4,8 @@
       <div class="ap-head">
         <div><p class="ap-head__code">[ 01 / PRODUCTS ]</p><h1 class="ap-head__title">상품 관리</h1></div>
         <div class="ap-head__actions">
-          <button class="ap-btn ap-btn--ghost" @click="resetRecommend">추천 초기화</button>
-          <button class="ap-btn" @click="openAdd">+ 상품 등록</button>
+          <button class="ap-btn ap-btn--ghost" :disabled="submitting" @click="resetRecommend">추천 초기화</button>
+          <button class="ap-btn" :disabled="submitting" @click="openAdd">+ 상품 등록</button>
         </div>
       </div>
       <div class="ap-brands">
@@ -44,9 +44,9 @@
               </td>
               <td><span class="tag" :class="p.isActive !== false ? 'tag--on' : 'tag--off'">{{ p.isActive !== false ? '판매중' : '숨김' }}</span></td>
               <td class="t-actions">
-                <button class="t-id-btn" @click="changeId(p.id)">ID변경</button>
-                <button class="t-edit" @click="openEdit(p)">수정</button>
-                <button class="t-del" @click="del(p.id)">삭제</button>
+                <button class="t-id-btn" :disabled="submitting" @click="changeId(p.id)">ID변경</button>
+                <button class="t-edit" :disabled="submitting" @click="openEdit(p)">수정</button>
+                <button class="t-del" :disabled="submitting" @click="del(p.id)">삭제</button>
               </td>
             </tr>
             <tr v-if="!filtered.length"><td colspan="12" class="t-empty">상품 없음</td></tr>
@@ -282,6 +282,7 @@ import { ref, computed, onMounted } from "vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
 import BaseModal from "@/components/BaseModal.vue";
 import api from "@/api";
+import { useSubmitLock } from "@/composables/useSubmitLock";
 
 const products = ref([]);
 const categories = ref([]);
@@ -297,7 +298,7 @@ const brandList = [
 const showModal = ref(false);
 const isEdit = ref(false);
 const editId = ref(null);
-const submitting = ref(false);
+const { submitting, run: runLocked } = useSubmitLock();
 const errorMsg = ref('');
 const selectedFiles = ref([]);
 const previewUrls = ref([]);
@@ -521,11 +522,13 @@ function setThumbnail(url) {
 
 async function resetRecommend() {
   if (!confirm('모든 상품의 추천(큐레이터) 설정을 초기화하시겠습니까?')) return;
-  try {
-    await api.delete('/admin/products/recommend/reset');
-    alert('추천이 초기화되었습니다. 원하는 상품만 다시 추천 체크해주세요.');
-    await loadProducts();
-  } catch (e) { alert(e?.message || '초기화 실패'); }
+  await runLocked(async () => {
+    try {
+      await api.delete('/admin/products/recommend/reset');
+      alert('추천이 초기화되었습니다. 원하는 상품만 다시 추천 체크해주세요.');
+      await loadProducts();
+    } catch (e) { alert(e?.message || '초기화 실패'); }
+  });
 }
 
 // blob: URL은 null로, 빈 문자열도 null로
@@ -570,9 +573,8 @@ async function submitProduct() {
   if (form.value.stock == null || form.value.stock < 0) { errorMsg.value = '재고를 올바르게 입력해주세요. (0 이상)'; return; }
   if (form.value.discountRate && (form.value.discountRate < 0 || form.value.discountRate > 100)) { errorMsg.value = '할인율은 0~100% 사이로 입력해주세요.'; return; }
   if (!isEdit.value && selectedFiles.value.length === 0 && serverSelected.value.length === 0) { errorMsg.value = '이미지를 최소 1장 등록하거나 서버 이미지를 선택해주세요.'; return; }
-  submitting.value = true;
   errorMsg.value = '';
-
+  await runLocked(async () => {
   try {
     const formData = new FormData();
 
@@ -650,7 +652,6 @@ async function submitProduct() {
       } else {
         errorMsg.value = errBody?.message || errBody?.error || `요청 실패 (${res.status}): ${JSON.stringify(errBody)}`;
       }
-      submitting.value = false;
       return;
     }
 
@@ -673,9 +674,8 @@ async function submitProduct() {
     await loadProducts();
   } catch (e) {
     errorMsg.value = e.message || '등록/수정에 실패했습니다.';
-  } finally {
-    submitting.value = false;
   }
+  });
 }
 
 function autoFillSizes() {
@@ -690,41 +690,51 @@ function autoFillSizes() {
   alert(`✅ ${sizes.length}개 사이즈 생성 (${sizeCountryLabel.value})\n${sizes.join(', ')}`);
 }
 
+// changeId/del 둘 다 submitting을 함께 쓴다(모달 저장과 같은 플래그) — 이 두 액션은 서로 다른
+// 상품 행에 대한 것이어도, 응답이 오기 전에 같은 행이나 다른 행의 삭제/수정을 또 누르면
+// 요청이 겹치거나(예: 삭제 중인 상품을 그 사이 수정 모달로 열기) 삭제 완료 직후 존재하지
+// 않는 상품에 수정 요청을 보내는 등 어긋날 수 있어 막는다. FAQ/Q&A/리뷰답글 관리 화면들이
+// 이미 테이블 전체를 하나의 submitting으로 잠그는 방식을 쓰고 있는데, 이 화면만 모달 저장에만
+// submitting을 쓰고 행 단위 액션(changeId/del)에는 전혀 반영하지 않고 있었음.
 async function changeId(oldId) {
   const newId = prompt(`상품 ID 변경\n\n현재 ID: ${oldId}\n\n새 ID를 입력하세요:`);
   if (!newId) return;
   const num = Number(newId);
   if (!num || num <= 0 || !Number.isInteger(num)) { alert('올바른 숫자를 입력해주세요.'); return; }
   if (num === oldId) { alert('동일한 ID입니다.'); return; }
-  try {
-    const res = await api.patch(`/admin/products/${oldId}/change-id?newId=${num}`);
-    if (res.success) {
-      alert(`✅ ${res.message}`);
-      await loadProducts();
-    } else {
-      alert(`❌ ${res.message}`);
+  await runLocked(async () => {
+    try {
+      const res = await api.patch(`/admin/products/${oldId}/change-id?newId=${num}`);
+      if (res.success) {
+        alert(`✅ ${res.message}`);
+        await loadProducts();
+      } else {
+        alert(`❌ ${res.message}`);
+      }
+    } catch (e) {
+      if (e.status === 401) { alert('인증이 만료되었습니다. 다시 로그인해주세요.'); return; }
+      alert(`❌ ${e.data?.message || e.message || 'ID 변경 실패'}`);
     }
-  } catch (e) {
-    if (e.status === 401) { alert('인증이 만료되었습니다. 다시 로그인해주세요.'); return; }
-    alert(`❌ ${e.data?.message || e.message || 'ID 변경 실패'}`);
-  }
+  });
 }
 
 async function del(id) {
   if (!confirm('정말 삭제하시겠습니까?')) return;
-  try {
-    await api.delete(`/admin/products/${id}`);
-    products.value = products.value.filter(p => p.id !== id);
-  } catch (e) {
-    if (e.status === 401) {
-      alert('인증이 만료되었습니다. 관리자 계정으로 다시 로그인해주세요.');
-      window.location.href = '/login';
-    } else if (e.status === 403) {
-      alert('관리자 권한이 필요합니다.');
-    } else {
-      alert(e.message || '삭제에 실패했습니다.');
+  await runLocked(async () => {
+    try {
+      await api.delete(`/admin/products/${id}`);
+      products.value = products.value.filter(p => p.id !== id);
+    } catch (e) {
+      if (e.status === 401) {
+        alert('인증이 만료되었습니다. 관리자 계정으로 다시 로그인해주세요.');
+        window.location.href = '/login';
+      } else if (e.status === 403) {
+        alert('관리자 권한이 필요합니다.');
+      } else {
+        alert(e.message || '삭제에 실패했습니다.');
+      }
     }
-  }
+  });
 }
 </script>
 
