@@ -150,7 +150,7 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import { usePanelStore } from "@/stores/panelStore";
 import { useCartStore } from "@/stores/cartStore";
@@ -170,13 +170,27 @@ const wishItems = computed(() => wishlistStore.items);
 const wishCount = computed(() => wishlistStore.count);
 const isLoggedIn = computed(() => authStore.isLoggedIn);
 
-// 등급별 할인율
+// 등급별 할인율 — authStore.user.grade는 localStorage에서 복원된 값이라 위조되거나
+// (다른 세션에서 등급이 바뀐 경우처럼) 오래된 값일 수 있음(PaymentView.vue와 동일한 이유).
+// 실제 결제 금액은 결제 화면에서 서버가 다시 확인한 값으로 계산되므로 이 패널의 "결제 예정
+// 금액"이 잠깐 틀려도 실제로 잘못된 금액이 청구되지는 않지만, 새로고침 직후 바로 패널을 열면
+// main.js가 부팅 시 던져둔 verifySession() 응답이 아직 안 와서 화면과 실제 결제 화면의
+// 금액이 서로 다르게 보일 수 있었음.
 const GRADE_DISCOUNT = { BRONZE: 0, SILVER: 5, GOLD: 8, VIP: 12 };
 const userGrade = computed(() => (authStore.user?.grade || 'BRONZE').toUpperCase());
 const gradeName = computed(() => ({ BRONZE: 'Bronze', SILVER: 'Silver', GOLD: 'Gold', VIP: 'VIP' }[userGrade.value] || 'Bronze'));
 const gradeDiscount = computed(() => GRADE_DISCOUNT[userGrade.value] || 0);
 const gradeDiscountAmount = computed(() => Math.round(cartTotal.value * gradeDiscount.value / 100));
 const finalTotal = computed(() => cartTotal.value - gradeDiscountAmount.value);
+
+// 이 컴포넌트는 App.vue에 조건 없이 항상 떠있어서(v-if로 매번 새로 마운트되는 게 아님)
+// onMounted는 앱이 처음 뜰 때 딱 한 번뿐이라, "새로고침 후 한참 있다가 패널을 여는" 경우까지
+// 다루려면 컴포넌트가 뜬 시점이 아니라 패널이 실제로 열리는 시점(isOpen이 true로 바뀔 때)에
+// 확인해야 한다.
+watch(
+  () => panelStore.isOpen,
+  (open) => { if (open) authStore.verifySession(); },
+);
 
 async function doLogout() {
   await authStore.logout();
