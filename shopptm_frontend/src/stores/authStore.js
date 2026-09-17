@@ -104,6 +104,14 @@ export const useAuthStore = defineStore("auth", () => {
   // "가장 나중에 보낸 요청"만 반영한다.
   let verifySeq = 0;
 
+  // 서버가 세션을 더 이상 인정하지 않을 때(401/403) 로컬 상태를 정리하는 공통 로직.
+  // verifySession과 router.beforeEach(requiresAdmin) 양쪽에서 동일하게 써서,
+  // 저장 키(USER_KEY)나 정리 범위가 두 곳에서 따로 관리되다 어긋나는 것을 막는다.
+  function clearSession() {
+    user.value = null;
+    localStorage.removeItem(USER_KEY);
+  }
+
   async function verifySession() {
     if (!user.value?.id) return;
     const seq = ++verifySeq;
@@ -115,8 +123,7 @@ export const useAuthStore = defineStore("auth", () => {
     } catch (e) {
       if (seq !== verifySeq) return;
       if (e.status === 401 || e.status === 403) {
-        user.value = null;
-        localStorage.removeItem(USER_KEY);
+        clearSession();
       }
       // 그 외(네트워크 오류 등)는 세션 만료와 구분할 수 없으므로 로컬 상태를 유지
     }
@@ -131,6 +138,7 @@ export const useAuthStore = defineStore("auth", () => {
     register,
     logout,
     verifySession,
+    clearSession,
   };
 });
 

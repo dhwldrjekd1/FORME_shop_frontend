@@ -171,12 +171,21 @@ router.beforeEach(async (to) => {
       return { name: "Login", query: { redirect: to.fullPath } };
     }
     try {
-      const me = await api.get(`/members/${authStore.user.id}`);
+      // skipAuthRedirect: 전역 401 처리기가 여기서 동시에 하드 리다이렉트를 걸면
+      // 아래 라우터 이동(return)과 경쟁이 붙어 화면이 두 번 튀는 문제가 생긴다.
+      // 세션 만료 여부는 이 가드가 직접 판단해서 라우터로만 이동시킨다.
+      const me = await api.get(`/members/${authStore.user.id}`, {
+        skipAuthRedirect: true,
+      });
       if (me.role !== "ROLE_ADMIN") {
         alert("관리자 권한이 필요합니다.");
         return { name: "Home" };
       }
-    } catch {
+    } catch (e) {
+      if (e.status === 401 || e.status === 403) {
+        authStore.clearSession();
+        return { name: "Login", query: { redirect: to.fullPath } };
+      }
       alert("관리자 권한이 필요합니다.");
       return { name: "Home" };
     }
