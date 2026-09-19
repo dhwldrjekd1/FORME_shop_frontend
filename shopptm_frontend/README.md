@@ -322,6 +322,11 @@ src/
 - **해결**: 가드의 `api.get` 호출에 `skipAuthRedirect: true`를 추가해 전역 인터셉터의 개입을 막고, 가드가 직접 응답을 판단하도록 정리. `catch`에서 401/403은 세션 만료로 보아 로그인 페이지로(`{ name: "Login", query: { redirect: to.fullPath } }`), 그 외(정상 로그인 상태에서 관리자가 아닌 경우)만 기존대로 "관리자 권한이 필요합니다" 안내 후 홈으로 이동하도록 분리. 세션을 정리하는 로직(`user` 초기화 + `localStorage` 삭제)은 `authStore.js`의 `verifySession()`에 이미 있던 것과 동일해, `authStore.clearSession()`으로 뽑아 양쪽이 공유하도록 함.
 - **교차검증에서 확인한 것**: 첫 수정에서는 가드가 직접 `authStore.user = null; localStorage.removeItem("user")`를 인라인으로 처리했는데, 이는 `authStore.verifySession()`의 세션 정리 로직과 완전히 동일한 코드가 두 곳에 따로 존재하게 되는 것이라는 지적을 받음 — 저장 키가 바뀌거나 정리 범위가 넓어질 때 한쪽만 갱신되면 조용히 어긋날 수 있어, `authStore`에 `clearSession()`을 공용 함수로 추출해 두 호출부가 같은 로직을 쓰도록 정리.
 - **검증**: 개발 서버(5173)에서 Playwright로 두 시나리오를 확인. (1) 일반 회원으로 로그인한 상태로 관리자 화면(`/admin/products`) 직접 진입 → "관리자 권한이 필요합니다" 알림과 함께 홈으로 이동. (2) 로그인 후 쿠키를 지워 세션이 무효화된 상태에서 관리자 화면 진입 → 오인 알림 없이 `/login?redirect=/admin/products`로 한 번만 깔끔하게 이동하고 `localStorage`의 `user`도 정리된 것을 확인. 테스트로 만든 회원 계정은 삭제. 배포 후 실제 라이브 사이트 정상 동작(HTTP 200) 확인.
+
+### 토스 결제 successUrl에 파라미터를 직접 채워 넣어 결제 승인이 깨질 수 있었음 (2026.09.20)
+- **문제**: `PaymentView.vue`의 `processTossPayment()`가 `successUrl`을 `/payment?paymentKey=PAYMENT_KEY&orderId=...&amount=...`처럼 리터럴 플레이스홀더(`PAYMENT_KEY`)와 값을 직접 채워서 만들고 있었음. 토스 결제위젯은 결제 성공 시 `successUrl`에 자신의 실제 `paymentKey`/`orderId`/`amount`를 **치환이 아니라 뒤에 추가**로 붙이는데, 이미 같은 이름의 파라미터가 있으면 URL에 같은 키가 두 번 들어가게 됨. `URLSearchParams.get()`은 첫 번째 값을 반환하므로, 리다이렉트 후 `onMounted`가 읽는 `paymentKey`는 토스가 실제로 발급한 값이 아니라 코드에 적어둔 리터럴 문자열 `"PAYMENT_KEY"`가 될 수 있었음 — 이 경우 `/payment/confirm`이 잘못된 `paymentKey`로 토스 승인 API를 호출해 실패하고, 카드 결제는 이미 끝났는데 주문은 생성되지 않는 상태가 됨.
+- **해결**: `successUrl`을 `window.location.origin + '/payment'`로 단순화 — 아무 쿼리 파라미터도 미리 채우지 않고, 토스가 붙이는 값을 그대로 신뢰해서 읽도록 함.
+- **검증**: 개발 서버(5173)에서 Playwright로 (1) `URLSearchParams`가 중복된 키에서 실제로 첫 번째 값을 반환하는 것(이번 버그가 의존했던 정확한 메커니즘)을 직접 확인, (2) 토스가 리다이렉트로 만들어줄 최종 URL을 재현(`/payment?paymentKey=<실제키>&orderId=<실제값>&amount=<실제값>`, 사전에 채워둔 값과 충돌 없음)해 그 URL로 바로 진입시킨 뒤 `/api/payment/confirm` 요청 바디를 가로채 캡처 → `paymentKey`/`orderId`/`amount` 모두 URL에 있던 실제 값 그대로, 중복이나 손상 없이 정확히 전달되는 것을 확인. 실제 토스 결제위젯을 통한 카드결제 자체는 테스트 환경에서 실행할 수 없어(위젯이 진짜 결제 절차를 요구), 대신 위 방식으로 successUrl 구성 로직과 리다이렉트 후 파라미터 처리 로직을 재현해 검증함 — 실 결제로 100% 재현 확인은 아니므로 필요시 라이브에서 소액 결제로 추가 확인 가능. 테스트로 만든 회원 계정은 삭제. 배포 후 실제 라이브 사이트 정상 동작(HTTP 200) 확인.
 ---
 
 ## 빌드 및 배포
