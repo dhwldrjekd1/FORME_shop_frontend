@@ -227,7 +227,12 @@ async function processTossPayment() {
       orderId,
       orderName: `FORME 주문 (${cartItems.value.length}건)`,
       customerName: form.value.name || authStore.user?.name || '고객',
-      successUrl: window.location.origin + `/payment?paymentKey=PAYMENT_KEY&orderId=${orderId}&amount=${finalTotal.value}`,
+      // 토스는 결제 성공 시 successUrl에 paymentKey/orderId/amount를 자기가 직접
+      // 쿼리 파라미터로 붙여서 리다이렉트한다(치환이 아니라 추가) — 여기서 미리
+      // 같은 이름의 파라미터를 넣어두면 URL에 값이 두 번 들어가고,
+      // URLSearchParams.get은 첫 번째 값을 반환하므로 실제 paymentKey가 아니라
+      // 여기 적어둔 값을 읽어버려 결제 승인(confirm)이 항상 실패한다.
+      successUrl: window.location.origin + '/payment',
       failUrl: window.location.origin + '/payment?fail=true',
     });
   } else {
