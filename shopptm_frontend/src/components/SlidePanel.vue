@@ -48,11 +48,11 @@
                 </div>
                 <div class="sp-item__actions">
                   <div class="sp-item__qty">
-                    <button @click="cartStore.updateQuantity(item.id, item.quantity - 1)" :disabled="item.quantity <= 1">−</button>
+                    <button @click="cartStore.updateQuantity(item.id, item.quantity - 1)" :disabled="item.quantity <= 1 || cartStore.isPending(item.id)">−</button>
                     <span>{{ item.quantity }}</span>
-                    <button @click="cartStore.updateQuantity(item.id, item.quantity + 1)">+</button>
+                    <button @click="cartStore.updateQuantity(item.id, item.quantity + 1)" :disabled="cartStore.isPending(item.id)">+</button>
                   </div>
-                  <button class="sp-item__del" @click="cartStore.removeItem(item.id)">
+                  <button class="sp-item__del" :disabled="cartStore.isPending(item.id)" @click="cartStore.removeItem(item.id)">
                     <span class="material-symbols-outlined">delete_outline</span>
                   </button>
                 </div>

@@ -1,9 +1,19 @@
 import { defineStore } from "pinia";
-import { ref, computed } from "vue";
+import { ref, reactive, computed } from "vue";
 import api from "@/api";
 
 export const useCartStore = defineStore("cart", () => {
   const items = ref([]);
+
+  // 응답이 오기 전에 같은 항목의 수량 변경/삭제를 연타하면(예: 장바구니 화면과 슬라이드
+  // 패널 양쪽에서 같은 패턴이 각자 따로 구현돼 있었음), 매번 아직 안 바뀐 quantity를
+  // 기준으로 요청을 보내 하나가 유실될 수 있어 진행중인 itemId는 무시한다.
+  // wishlistStore.pendingIds/isPending과 동일한 이유로 가드를 스토어 안에 두고,
+  // 화면(CartView/SlidePanel)은 각자 복사해 만들지 않고 이걸 그대로 쓴다.
+  const pendingIds = reactive(new Set());
+  function isPending(itemId) {
+    return pendingIds.has(itemId);
+  }
 
   // localStorage의 user 값이 손상돼 있어도(수동 편집, 쓰기 중단 등) JSON.parse가
   // 던지지 않고 조용히 비로그인으로 처리되도록 함
@@ -82,32 +92,43 @@ export const useCartStore = defineStore("cart", () => {
   // 로컬에서 Date.now()로 만든 값이라, 이 분기 없이 항상 API를 호출하면(예전 코드) 매번
   // 실패해서 비로그인 사용자는 담기만 되고 삭제/수량변경은 계속 실패했었음.
   async function removeItem(itemId) {
-    const user = getUser();
-    if (user?.id) {
-      try {
-        await api.delete(`/cart/${itemId}`);
-      } catch {
-        alert('삭제에 실패했습니다. 다시 시도해주세요.');
-        return;
+    if (pendingIds.has(itemId)) return;
+    pendingIds.add(itemId);
+    try {
+      const user = getUser();
+      if (user?.id) {
+        try {
+          await api.delete(`/cart/${itemId}`);
+        } catch {
+          alert('삭제에 실패했습니다. 다시 시도해주세요.');
+          return;
+        }
       }
+      items.value = items.value.filter((item) => item.id !== itemId);
+    } finally {
+      pendingIds.delete(itemId);
     }
-    items.value = items.value.filter((item) => item.id !== itemId);
   }
 
   // 수량 변경 — removeItem과 동일한 이유로 로그인 여부에 따라 분기
   async function updateQuantity(itemId, quantity) {
-    if (quantity < 1) return;
-    const user = getUser();
-    if (user?.id) {
-      try {
-        await api.patch(`/cart/${itemId}`, { quantity });
-      } catch {
-        alert('수량 변경에 실패했습니다. 다시 시도해주세요.');
-        return;
+    if (quantity < 1 || pendingIds.has(itemId)) return;
+    pendingIds.add(itemId);
+    try {
+      const user = getUser();
+      if (user?.id) {
+        try {
+          await api.patch(`/cart/${itemId}`, { quantity });
+        } catch {
+          alert('수량 변경에 실패했습니다. 다시 시도해주세요.');
+          return;
+        }
       }
+      const item = items.value.find((item) => item.id === itemId);
+      if (item) item.quantity = quantity;
+    } finally {
+      pendingIds.delete(itemId);
     }
-    const item = items.value.find((item) => item.id === itemId);
-    if (item) item.quantity = quantity;
   }
 
   // 장바구니 비우기 (DB 연동 - 서버에 저장된 장바구니 자체를 삭제)
@@ -122,14 +143,18 @@ export const useCartStore = defineStore("cart", () => {
   }
 
   // 로그아웃 시 화면 상태만 초기화 (서버의 장바구니 데이터는 그대로 유지 - 다음 로그인 때 다시 보여야 함)
+  // pendingIds도 같이 비움 — wishlistStore.resetLocal과 동일한 이유(로그아웃 시점에 아직
+  // 응답 안 온 요청의 itemId가 남아있다가, 곧바로 로그인한 다른 계정의 같은 id가 무시되는 것 방지)
   function resetLocal() {
     items.value = [];
+    pendingIds.clear();
   }
 
   return {
     items,
     totalCount,
     totalPrice,
+    isPending,
     fetchCart,
     addItem,
     removeItem,
