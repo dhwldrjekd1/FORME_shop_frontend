@@ -38,9 +38,9 @@
           </button>
         </section>
 
-        <button class="as-save" @click="saveHeroSlides">
+        <button class="as-save" @click="saveHeroSlides" :disabled="heroLock.submitting.value">
           <span class="material-symbols-outlined">save</span>
-          히어로 설정 저장
+          {{ heroLock.submitting.value ? '저장 중...' : '히어로 설정 저장' }}
         </button>
         <p v-if="heroSaveMsg" class="as-save-msg">{{ heroSaveMsg }}</p>
       </div>
@@ -71,8 +71,8 @@
               </div>
             </div>
           </div>
-          <button class="as-save" @click="saveMagazine">
-            <span class="material-symbols-outlined">save</span>매거진 저장
+          <button class="as-save" @click="saveMagazine" :disabled="magLock.submitting.value">
+            <span class="material-symbols-outlined">save</span>{{ magLock.submitting.value ? '저장 중...' : '매거진 저장' }}
           </button>
           <p v-if="magSaveMsg" class="as-save-msg">{{ magSaveMsg }}</p>
         </section>
@@ -100,8 +100,8 @@
               </div>
             </div>
           </div>
-          <button class="as-save" @click="saveStories">
-            <span class="material-symbols-outlined">save</span>스토리 저장
+          <button class="as-save" @click="saveStories" :disabled="storyLock.submitting.value">
+            <span class="material-symbols-outlined">save</span>{{ storyLock.submitting.value ? '저장 중...' : '스토리 저장' }}
           </button>
           <p v-if="storySaveMsg" class="as-save-msg">{{ storySaveMsg }}</p>
         </section>
@@ -127,9 +127,9 @@
             </span>
           </div>
         </section>
-        <button class="as-save" @click="saveStoreInfo">
+        <button class="as-save" @click="saveStoreInfo" :disabled="storeLock.submitting.value">
           <span class="material-symbols-outlined">save</span>
-          스토어 정보 저장
+          {{ storeLock.submitting.value ? '저장 중...' : '스토어 정보 저장' }}
         </button>
         <p v-if="storeSaveMsg" class="as-save-msg">{{ storeSaveMsg }}</p>
       </div>
@@ -206,9 +206,9 @@
           </div>
         </div>
 
-        <button class="as-save" @click="saveBrandSettings">
+        <button class="as-save" @click="saveBrandSettings" :disabled="brandLock.submitting.value">
           <span class="material-symbols-outlined">save</span>
-          브랜드 설정 저장
+          {{ brandLock.submitting.value ? '저장 중...' : '브랜드 설정 저장' }}
         </button>
         <p v-if="saveMsg" class="as-save-msg">{{ saveMsg }}</p>
       </div>
@@ -259,6 +259,16 @@
 import { ref, computed, onMounted } from "vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
 import api from "@/api";
+import { useSubmitLock } from "@/composables/useSubmitLock";
+
+// 저장 버튼 5개(히어로/매거진/스토리/스토어정보/브랜드)가 각자 독립된 설정 키를
+// 저장하므로, 하나로 묶지 않고 버튼별로 따로 잠근다 — 한 버튼 처리 중에 다른
+// 섹션 저장까지 막을 이유는 없고, 같은 버튼 연타만 막으면 됨.
+const heroLock = useSubmitLock();
+const magLock = useSubmitLock();
+const storyLock = useSubmitLock();
+const storeLock = useSubmitLock();
+const brandLock = useSubmitLock();
 
 const tab = ref('hero');
 const tossKey = ref('');
@@ -283,11 +293,13 @@ const defaultStoreInfo = { name: 'FORME', ceo: '김보경', bizNo: '000-00-00000
 const storeInfo = ref({ ...defaultStoreInfo });
 
 async function saveStoreInfo() {
-  try {
-    await dbSave('store_info', storeInfo.value);
-    storeSaveMsg.value = '✅ 저장되었습니다!';
-  } catch { storeSaveMsg.value = '❌ 저장 실패'; }
-  setTimeout(() => { storeSaveMsg.value = ''; }, 2000);
+  await storeLock.run(async () => {
+    try {
+      await dbSave('store_info', storeInfo.value);
+      storeSaveMsg.value = '✅ 저장되었습니다!';
+    } catch { storeSaveMsg.value = '❌ 저장 실패'; }
+    setTimeout(() => { storeSaveMsg.value = ''; }, 2000);
+  });
 }
 
 // ── 히어로 슬라이드 ──
@@ -339,19 +351,25 @@ const magazineData = ref([...defaultMagazine]);
 const storiesData = ref([...defaultStories]);
 
 async function saveMagazine() {
-  try { await dbSave('magazine', magazineData.value); magSaveMsg.value = '✅ 매거진 저장 완료!'; }
-  catch { magSaveMsg.value = '❌ 저장 실패'; }
-  setTimeout(() => { magSaveMsg.value = ''; }, 2000);
+  await magLock.run(async () => {
+    try { await dbSave('magazine', magazineData.value); magSaveMsg.value = '✅ 매거진 저장 완료!'; }
+    catch { magSaveMsg.value = '❌ 저장 실패'; }
+    setTimeout(() => { magSaveMsg.value = ''; }, 2000);
+  });
 }
 async function saveStories() {
-  try { await dbSave('stories', storiesData.value); storySaveMsg.value = '✅ 스토리 저장 완료!'; }
-  catch { storySaveMsg.value = '❌ 저장 실패'; }
-  setTimeout(() => { storySaveMsg.value = ''; }, 2000);
+  await storyLock.run(async () => {
+    try { await dbSave('stories', storiesData.value); storySaveMsg.value = '✅ 스토리 저장 완료!'; }
+    catch { storySaveMsg.value = '❌ 저장 실패'; }
+    setTimeout(() => { storySaveMsg.value = ''; }, 2000);
+  });
 }
 async function saveHeroSlides() {
-  try { await dbSave('hero_slides', heroSlides.value); heroSaveMsg.value = '✅ 저장되었습니다!'; }
-  catch { heroSaveMsg.value = '❌ 저장 실패'; }
-  setTimeout(() => { heroSaveMsg.value = ''; }, 2000);
+  await heroLock.run(async () => {
+    try { await dbSave('hero_slides', heroSlides.value); heroSaveMsg.value = '✅ 저장되었습니다!'; }
+    catch { heroSaveMsg.value = '❌ 저장 실패'; }
+    setTimeout(() => { heroSaveMsg.value = ''; }, 2000);
+  });
 }
 
 // ── 브랜드 설정 ──
@@ -372,9 +390,11 @@ const defaultSettings = [
 const brandSettings = ref(defaultSettings.map(s => ({ ...s })));
 
 async function saveBrandSettings() {
-  try { await dbSave('brand_settings', brandSettings.value); saveMsg.value = '✅ 저장되었습니다!'; }
-  catch { saveMsg.value = '❌ 저장 실패'; }
-  setTimeout(() => { saveMsg.value = ''; }, 2000);
+  await brandLock.run(async () => {
+    try { await dbSave('brand_settings', brandSettings.value); saveMsg.value = '✅ 저장되었습니다!'; }
+    catch { saveMsg.value = '❌ 저장 실패'; }
+    setTimeout(() => { saveMsg.value = ''; }, 2000);
+  });
 }
 
 // ── 이미지 선택 모달 ──
