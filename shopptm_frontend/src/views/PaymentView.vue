@@ -178,7 +178,18 @@ onMounted(async () => {
         window.history.replaceState(null, '', window.location.pathname);
       }
     } catch (e) {
-      alert('결제 승인 오류: ' + e.message);
+      // /payment/confirm 자체가 401/403으로 실패하면(세션 만료 등) 서버가 토스 쪽 확정
+      // 처리(confirm)를 아예 호출하지 못한 것이다 — 카드가 실제로 결제된 게 아니라
+      // 미확정 상태로 남고, 토스가 일정 시간 뒤 자동으로 취소한다. "결제는 끝났는데
+      // 세션이 없어 주문만 안 만들어진" 상태와 혼동하지 않도록 다르게 안내한다.
+      if (e.status === 401 || e.status === 403) {
+        alert(
+          '로그인 세션이 만료되어 결제 승인을 완료하지 못했습니다.\n' +
+          '카드는 결제되지 않았으니 다시 로그인 후 진행해주세요.',
+        );
+      } else {
+        alert('결제 승인 오류: ' + e.message);
+      }
       // 주문 생성까지 실패한 경우도 동일하게, 재생 방지를 위해 결제 관련 쿼리를 지움
       window.history.replaceState(null, '', window.location.pathname);
     }
@@ -241,25 +252,57 @@ async function processTossPayment() {
   }
 }
 
+// 결제(토스 confirm)는 이미 성공했는데 그 이후 주문 생성 쪽에서 실패한 모든 경우가
+// 공유하는 안내 — 카드는 결제됐다는 걸 명확히 하고, 고객센터에서 찾을 수 있도록
+// paymentKey를 보여준 뒤 재생 방지를 위해 주소창의 결제 관련 쿼리를 지운다.
+function reportPaidButOrderFailed(paymentKey, reason) {
+  if (!paymentKey) return;
+  alert(
+    `결제는 완료되었지만 ${reason} 주문을 생성하지 못했습니다.\n` +
+    '아래 결제번호를 고객센터에 알려주시면 주문 처리를 도와드립니다.\n\n결제번호: ' + paymentKey,
+  );
+  window.history.replaceState(null, '', window.location.pathname);
+}
+
 async function createOrder(paidAmount, paymentKey) {
   const memberId = authStore.user?.id;
-  if (!memberId) return;
-  // paidAmount가 있으면 토스 결제가 이미 확정된 뒤이므로, 여기서 401이 나도 강제 이동시키지 않고
-  // 아래 handleSubmit의 catch에서 안내 메시지를 보여주도록 함 (장바구니도 실패 시엔 그대로 유지됨)
-  const order = await api.post(`/members/${memberId}/orders`, {
-    receiverName: form.value.name || authStore.user?.name || '고객',
-    receiverPhone: form.value.phone || '',
-    address: (form.value.address + ' ' + form.value.address2).trim() || '서울시',
-    items: cartItems.value.map(i => ({
-      productId: i.productId,
-      quantity: i.quantity,
-      size: i.size || null,
-    })),
-    // 토스 결제를 거친 주문만 채워짐 — 서버가 이 값과 실제 주문 금액이 일치하는지 검증 후 PAID 처리
-    paidAmount: paidAmount ?? null,
-    // 있으면 서버가 주문 생성 실패 시 이 결제를 자동으로 취소(환불)하는 데 사용
-    paymentKey: paymentKey ?? null,
-  }, { skipAuthRedirect: true });
+  if (!memberId) {
+    // paymentKey가 있다는 건 바로 위 /payment/confirm 호출이 이미 성공했다는 뜻(그 시점엔
+    // 세션이 유효했음) — 카드 결제는 실제로 확정된 뒤, 이 함수를 부르는 사이의 아주 짧은
+    // 틈에 세션이 사라지는 드문 경우(같은 탭에서 로그아웃 등)에만 여기로 온다.
+    reportPaidButOrderFailed(paymentKey, '로그인 세션이 만료되어');
+    if (!paymentKey) alert('로그인 정보를 확인할 수 없습니다. 다시 로그인 후 시도해주세요.');
+    return;
+  }
+
+  let order;
+  try {
+    order = await api.post(`/members/${memberId}/orders`, {
+      receiverName: form.value.name || authStore.user?.name || '고객',
+      receiverPhone: form.value.phone || '',
+      address: (form.value.address + ' ' + form.value.address2).trim() || '서울시',
+      items: cartItems.value.map(i => ({
+        productId: i.productId,
+        quantity: i.quantity,
+        size: i.size || null,
+      })),
+      // 토스 결제를 거친 주문만 채워짐 — 서버가 이 값과 실제 주문 금액이 일치하는지 검증 후 PAID 처리
+      paidAmount: paidAmount ?? null,
+      // 있으면 서버가 주문 생성 실패 시 이 결제를 자동으로 취소(환불)하는 데 사용
+      paymentKey: paymentKey ?? null,
+    }, { skipAuthRedirect: true });
+  } catch (e) {
+    if (paymentKey) {
+      // confirm은 이미 성공해 결제가 확정된 뒤, 그 직후 주문 생성 요청만 따로 실패한
+      // 경우(세션 만료·네트워크 오류 등 사유 불문). 여기서 밖으로 다시 던지면 이 함수를
+      // 부른 onMounted의 바깥 catch가 "confirm 자체가 실패해 카드가 결제되지 않았다"는
+      // 잘못된 메시지로 덮어써버리므로, 여기서 끝까지 처리하고 던지지 않는다.
+      reportPaidButOrderFailed(paymentKey, '주문 생성 중 오류가 발생해');
+      return;
+    }
+    // 결제 없는 데모 경로(paymentKey 없음)는 기존처럼 handleSubmit의 catch가 안내하도록 던진다.
+    throw e;
+  }
   localStorage.setItem('forme_last_order', JSON.stringify({
     orderId: order?.id ?? null,
     items: cartItems.value.map(i => ({ name: i.name, image: i.image, size: i.size, quantity: i.quantity, price: i.price })),
