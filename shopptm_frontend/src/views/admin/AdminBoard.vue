@@ -22,8 +22,8 @@
                 <td class="t-views">{{ b.views }}</td>
                 <td class="t-date">{{ b.createdAt?.slice(0, 10) }}</td>
                 <td class="t-actions">
-                  <button class="t-link" @click="toggleDetail(b.id)">{{ openId === b.id ? '닫기' : '상세' }}</button>
-                  <button class="t-link t-link--del" @click="deleteBoard(b.id)">삭제</button>
+                  <button class="t-link" :disabled="submitting" @click="toggleDetail(b.id)">{{ openId === b.id ? '닫기' : '상세' }}</button>
+                  <button class="t-link t-link--del" :disabled="submitting" @click="deleteBoard(b.id)">삭제</button>
                 </td>
               </tr>
               <tr v-if="openId === b.id" class="ab-detail-row">
@@ -37,7 +37,7 @@
                         <div class="ab-comment__head">
                           <strong>{{ c.memberName }}</strong>
                           <span>{{ c.createdAt?.slice(0, 10) }}</span>
-                          <button class="t-link t-link--del" @click="deleteComment(c.id)">삭제</button>
+                          <button class="t-link t-link--del" :disabled="submitting" @click="deleteComment(c.id)">삭제</button>
                         </div>
                         <p>{{ c.content }}</p>
                       </div>
@@ -59,37 +59,60 @@
 import { ref, onMounted } from "vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
 import api from "@/api";
+import { useSubmitLock } from "@/composables/useSubmitLock";
 
 const boards = ref([]);
 const openId = ref(null);
 const boardComments = ref([]);
+const { submitting, run } = useSubmitLock();
 
 onMounted(async () => {
   try { boards.value = await api.get('/boards') || []; } catch { boards.value = []; }
 });
 
+// 응답이 도착한 순서가 아니라 "가장 나중에 보낸 요청"만 반영 — 게시글 A를 열어 댓글을
+// 불러오는 중에 바로 B로 옮기면(느린 A 응답이 나중에 도착), A의 댓글이 B가 열린 화면에
+// 잘못 채워질 수 있어 다른 화면들의 fetchCart/fetchWishlist와 동일한 방식으로 막는다.
+let commentsSeq = 0;
+
 async function toggleDetail(id) {
+  // 삭제가 진행중일 때 다른 행을 열거나 현재 행을 닫아버리면, 방금 지운 댓글/게시글
+  // 기준이 흔들려 화면이 어긋날 수 있어 삭제 중에는 상세 열기/닫기 자체를 막는다
+  // (상세/삭제 버튼에 준 :disabled와 같은 잠금 범위를 이 함수 안에서도 지킴).
+  if (submitting.value) return;
   if (openId.value === id) { openId.value = null; return; }
   openId.value = id;
-  try { boardComments.value = await api.get(`/boards/${id}/comments`) || []; }
-  catch { boardComments.value = []; }
+  boardComments.value = []; // 이전에 열려있던 다른 게시글의 댓글이 전환 중 잠깐 그대로 보이지 않도록 즉시 비움
+  const seq = ++commentsSeq;
+  try {
+    const data = await api.get(`/boards/${id}/comments`) || [];
+    if (seq !== commentsSeq) return; // 더 최신 요청이 이미 나가있으면 이 응답은 버림
+    boardComments.value = data;
+  } catch {
+    if (seq !== commentsSeq) return;
+    boardComments.value = [];
+  }
 }
 
 async function deleteBoard(id) {
   if (!confirm('게시글을 삭제하시겠습니까?')) return;
-  try {
-    await api.delete(`/admin/boards/${id}`);
-    boards.value = boards.value.filter(b => b.id !== id);
-    if (openId.value === id) openId.value = null;
-  } catch (e) { alert(e?.message || '삭제 실패'); }
+  await run(async () => {
+    try {
+      await api.delete(`/admin/boards/${id}`);
+      boards.value = boards.value.filter(b => b.id !== id);
+      if (openId.value === id) openId.value = null;
+    } catch (e) { alert(e?.message || '삭제 실패'); }
+  });
 }
 
 async function deleteComment(id) {
   if (!confirm('댓글을 삭제하시겠습니까?')) return;
-  try {
-    await api.delete(`/admin/comments/${id}`);
-    boardComments.value = boardComments.value.filter(c => c.id !== id);
-  } catch (e) { alert(e?.message || '삭제 실패'); }
+  await run(async () => {
+    try {
+      await api.delete(`/admin/comments/${id}`);
+      boardComments.value = boardComments.value.filter(c => c.id !== id);
+    } catch (e) { alert(e?.message || '삭제 실패'); }
+  });
 }
 </script>
 
