@@ -120,6 +120,8 @@
               </div>
             </div>
 
+            <p v-if="errorMsg" class="su-error">{{ errorMsg }}</p>
+
             <button type="button" class="su-next" @click="goStep2">
               다음 단계
               <span class="material-symbols-outlined">arrow_forward</span>
@@ -171,7 +173,7 @@
             <p v-if="errorMsg" class="su-error">{{ errorMsg }}</p>
 
             <div class="su-actions">
-              <button type="button" class="su-back-btn" @click="step = 1">
+              <button type="button" class="su-back-btn" @click="errorMsg = ''; step = 1">
                 <span class="material-symbols-outlined">arrow_back</span>
                 이전
               </button>
