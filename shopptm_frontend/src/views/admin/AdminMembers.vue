@@ -71,10 +71,28 @@ const showBanModal = ref(false);
 const banPassword = ref('');
 const banTargetId = ref(null);
 onMounted(async () => { await loadMembers(); });
-async function loadMembers() { try { members.value = await api.get('/admin/members') || []; } catch {} }
+
+// 응답이 도착한 순서가 아니라 "가장 나중에 보낸 요청"만 반영 — 빠르게 타이핑하면(예:
+// "kim" 입력 후 바로 지워서 "ki"로 검색) 앞서 보낸 "kim" 검색의 응답이 나중에 도착해
+// "ki" 검색 결과를 덮어쓸 수 있어, 다른 화면들(fetchCart/fetchWishlist/verifySession)과
+// 동일한 방식으로 막는다.
+let searchSeq = 0;
+async function loadMembers() {
+  const seq = ++searchSeq;
+  try {
+    const data = await api.get('/admin/members') || [];
+    if (seq !== searchSeq) return;
+    members.value = data;
+  } catch {}
+}
 async function doSearch() {
   if (!search.value.trim()) { await loadMembers(); return; }
-  try { members.value = await api.get(`/admin/members/search?keyword=${encodeURIComponent(search.value)}`) || []; } catch {}
+  const seq = ++searchSeq;
+  try {
+    const data = await api.get(`/admin/members/search?keyword=${encodeURIComponent(search.value)}`) || [];
+    if (seq !== searchSeq) return;
+    members.value = data;
+  } catch {}
 }
 // select가 v-model이 아니라 :value 바인딩이라, 취소/실패로 grade를 안 바꾸면
 // Vue가 값이 그대로라고 보고 DOM을 되돌려주지 않는다 — 드롭다운엔 방금 고른(반영 안 된)
