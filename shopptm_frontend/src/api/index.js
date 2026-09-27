@@ -81,10 +81,16 @@ async function request(
 
     return data;
   } catch (err) {
+    if (err instanceof ApiError) throw err;
     if (err.name === "AbortError") {
       throw new ApiError("요청 시간이 초과되었습니다.", 0, null);
     }
-    throw err;
+    // fetch 자체가 실패한 경우(오프라인, DNS 실패, CORS 차단 등)는 status/data가 없는
+    // 순수 TypeError가 그대로 던져져서, e.status로 분기하는 호출부(예: authStore.
+    // verifySession의 401/403 판정)가 항상 ApiError만 받는다고 가정하면 어긋난다.
+    // 지금은 그런 곳들이 우연히 else 분기로 안전하게 빠지지만, 앞으로 e.data나
+    // instanceof ApiError를 믿는 코드가 추가되면 깨질 수 있어 여기서 통일해둔다.
+    throw new ApiError("네트워크 연결을 확인해주세요.", 0, null);
   } finally {
     clearTimeout(timer);
   }
