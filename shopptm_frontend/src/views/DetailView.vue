@@ -123,16 +123,16 @@
               <div class="dp-qty">
                 <button @click="qty > 1 && qty--" :disabled="qty <= 1">−</button>
                 <span>{{ qty }}</span>
-                <button @click="qty++">+</button>
+                <button @click="qty < maxQty && qty++" :disabled="qty >= maxQty">+</button>
               </div>
             </div>
 
             <!-- 액션 버튼 -->
             <div class="dp-actions">
-              <button class="dp-actions__cart" :disabled="cartActionPending" @click="addToCart">
+              <button class="dp-actions__cart" :disabled="cartActionPending || maxQty <= 0" @click="addToCart">
                 {{ cartActionPending ? '담는 중...' : `장바구니 담기 — ₩${(salePrice * qty).toLocaleString()}` }}
               </button>
-              <button class="dp-actions__buy" :disabled="cartActionPending" @click="buyNow">바로 구매</button>
+              <button class="dp-actions__buy" :disabled="cartActionPending || maxQty <= 0" @click="buyNow">바로 구매</button>
               <button class="dp-actions__wish" @click="toggleWish">
                 <span
                   class="material-symbols-outlined"
@@ -493,6 +493,30 @@ const availableSizes = computed(() => {
   return [];
 });
 
+// 수량 스테퍼의 상한 — 실제 결제 가능 수량은 어차피 백엔드(OrderItemDto의 @Min/@Max,
+// ProductRepository/ProductSizeRepository의 재고 확인)가 최종적으로 막아주지만, 여기서
+// 상한 없이 무제한으로 누를 수 있게 놔두면 재고보다 훨씬 많은 수량을 담아 장바구니/결제
+// 화면까지 갔다가 뒤늦게 거부당하는 어색한 흐름이 됨. 사이즈가 있는 상품은 선택된
+// 사이즈의 재고, 없는 상품은 전체 재고를 기준으로 하고, 백엔드의 @Max(999)와도 맞춘다.
+const maxQty = computed(() => {
+  if (!product.value) return 999;
+  let stock;
+  if (availableSizes.value.length) {
+    const sel = availableSizes.value.find(s => s.size === selSize.value);
+    stock = sel ? sel.stock : 0;
+  } else {
+    stock = product.value.stock ?? 999;
+  }
+  return Math.max(0, Math.min(stock, 999));
+});
+
+// 사이즈를 바꿨는데 이미 골라둔 수량이 새 사이즈의 재고보다 많으면(예: 재고 10개인
+// 사이즈에서 수량 8을 고른 뒤, 재고 3개인 다른 사이즈로 바꾼 경우) 그대로 두지 않고
+// 새 상한에 맞춰 줄인다.
+watch(maxQty, (max) => {
+  if (qty.value > max) qty.value = max;
+});
+
 // ── 탭 ──
 const tabs = [
   { key: 'desc', label: '상품 상세' },
@@ -805,6 +829,10 @@ const cartActionPending = ref(false);
 async function addToCartAndGo(destPath) {
   if (!product.value || cartActionPending.value) return;
   if (!selSize.value) { alert('사이즈를 선택해주세요.'); return; }
+  // 사이즈 선택이 재고 있는 것만 가능하도록 막혀있지 않은 경우(예: 전 사이즈 품절이라
+  // 첫 사이즈가 그대로 선택된 상태)까지 대비 — maxQty가 0이면 담을 수 있는 수량이
+  // 없다는 뜻이라 여기서도 한 번 더 막는다.
+  if (maxQty.value <= 0) { alert('품절된 상품입니다.'); return; }
   cartActionPending.value = true;
   try {
     await cartStore.addItem({ productId: product.value.id, name: product.value.name, price: salePrice.value, image: currentImage.value, size: selSize.value, quantity: qty.value });
