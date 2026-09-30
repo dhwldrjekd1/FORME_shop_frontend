@@ -178,8 +178,8 @@
             <input v-model="profile.name" type="text" :disabled="!isEditing || savingProfile" />
           </div>
           <div class="mp-form__field">
-            <label>이메일</label>
-            <input v-model="profile.email" type="email" :disabled="!isEditing || savingProfile" />
+            <label>이메일 (변경 불가)</label>
+            <input v-model="profile.email" type="email" disabled />
           </div>
           <div class="mp-form__field">
             <label>연락처</label>
@@ -303,6 +303,9 @@ async function saveProfile() {
   if (!memberId) { alert('로그인 정보가 없습니다.'); return; }
   savingProfile.value = true;
   try {
+    // email은 여기서 보내지 않는다 — MemberService.update()가 애초에 이메일 변경을 지원하지
+    // 않아서(로그인 식별자이자 JWT subject라 값을 바꾸려면 중복 확인·재인증 등 훨씬 큰 작업이
+    // 필요함) 보내봐야 무시됨. 이메일 input도 이 사실에 맞춰 항상 읽기 전용으로 고정해뒀다.
     await api.put(`/members/${memberId}`, {
       name: profile.value.name,
       phone: profile.value.phone,
