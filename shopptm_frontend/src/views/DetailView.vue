@@ -773,6 +773,12 @@ async function loadProduct(id) {
   if (product.value) {
     // 자동 사이즈 추천 (로그인 시 회원 정보 기반)
     recommendedSize.value = '';
+    // 추천 사이즈가 매칭되면 true — 매칭됐을 때 아래 "추천 실패 시" 폴백으로
+    // 다시 덮어쓰지 않기 위한 플래그. 예전엔 매칭되면 그 자리에서 바로 return해서
+    // 사이즈 선택은 맞게 됐지만, qty/썸네일/탭 초기화, 리뷰·Q&A 로딩, 스크롤까지
+    // 전부 같이 건너뛰어버렸음 — 추천 사이즈가 있는 상품 상세에 들어갈 때마다
+    // 이전 상품에서 보던 리뷰/탭 상태가 그대로 남는 등 조용히 깨져 있었음.
+    let recommendedSizeMatched = false;
     const user = authStore.user;
     if (user?.height && user?.weight) {
       try {
@@ -789,22 +795,27 @@ async function loadProduct(id) {
           if (recAvail) {
             recommendedSize.value = recAvail.size; // 실제 매칭된 사이즈로 표시
             selSize.value = recAvail.size;
-            return;
+            recommendedSizeMatched = true;
+          } else {
+            // 매칭 안 되면 원래 추천 사이즈 표시
+            recommendedSize.value = res.recommendedSize;
           }
-          // 매칭 안 되면 원래 추천 사이즈 표시
-          recommendedSize.value = res.recommendedSize;
         }
       } catch {}
     }
 
-    // 추천 실패 시 첫 번째 재고 있는 사이즈 선택
-    const ss = product.value.sizeStocks?.length ? product.value.sizeStocks : null;
-    if (ss) {
-      const inStock = ss.find(s => s.stock > 0);
-      selSize.value = inStock ? inStock.size : (ss[0]?.size ?? '');
-    } else {
-      selSize.value = product.value.sizes?.[0] ?? '';
+    // 추천 사이즈가 매칭되지 않았을 때만(미로그인 포함) 첫 번째 재고 있는 사이즈를 고른다
+    if (!recommendedSizeMatched) {
+      const ss = product.value.sizeStocks?.length ? product.value.sizeStocks : null;
+      if (ss) {
+        const inStock = ss.find(s => s.stock > 0);
+        selSize.value = inStock ? inStock.size : (ss[0]?.size ?? '');
+      } else {
+        selSize.value = product.value.sizes?.[0] ?? '';
+      }
     }
+
+    // 사이즈 선택 경로와 무관하게 항상 실행돼야 하는 초기화
     qty.value = 1;
     thumbIdx.value = 0;
     activeTab.value = 'desc';
