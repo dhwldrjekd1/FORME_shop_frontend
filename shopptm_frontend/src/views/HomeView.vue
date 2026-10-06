@@ -115,21 +115,54 @@ function getBrandItemCount(brandName) {
 
 // 브랜드별 평균 평점
 const brandRatings = ref({});
+// 최대 동시 실행 개수를 제한하며 작업을 돌리는 간단한 워커 풀 — 브랜드 4개 x 상품 최대
+// 10개(최대 40건)를 전부 한 번에 Promise.all로 쏘면, 브라우저의 출처당 동시 연결 수
+// 제한(HTTP/1.1 기준 보통 6개) 때문에 뒤쪽 요청들이 실제로는 아직 네트워크에 나가지도
+// 못한 채 대기열에 머무는데, api/index.js의 타임아웃은 "요청을 건 시점"부터 10초를
+// 재므로 느린 환경에서는 대기 중에 타임아웃으로 끊겨 평점이 불필요하게 0.0으로 빠질 수
+// 있다. 그렇다고 기존처럼 완전히 하나씩 순서대로 기다리면 다시 느려지므로, 적당한
+// 동시 개수로만 묶어서 돈다.
+async function runWithConcurrency(items, limit, worker) {
+  const results = new Array(items.length);
+  let next = 0;
+  async function runOne() {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await worker(items[i], i);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, runOne));
+  return results;
+}
+
 async function loadBrandRatings() {
   const brandNames = ['BEANPOLE', 'CARHARTT', "LEVI'S", 'DICKIES'];
+  // 상품 단위 작업을 브랜드 구분 없이 하나의 목록으로 합쳐서 동시 개수를 전체 기준으로
+  // 제한한다 — 브랜드별로 따로 풀을 두면 4개 브랜드가 각자 한도를 채워 결국 다시
+  // 4배수로 터질 수 있다.
+  const tasks = [];
   for (const brand of brandNames) {
+    const brandProducts = products.value.filter(p => p.brand === brand).slice(0, 10);
+    for (const p of brandProducts) tasks.push({ brand, productId: p.id });
+  }
+
+  const sums = Object.fromEntries(brandNames.map(b => [b, { totalRating: 0, totalCount: 0 }]));
+  await runWithConcurrency(tasks, 6, async (task) => {
+    // 리뷰 응답이 예상과 다른 형태로 와도(reduce가 던지는 경우 등) 이 작업 하나만 건너뛰고
+    // 넘어가야 한다 — 여기서 그대로 던지면 Promise.all을 쓰는 runWithConcurrency 전체가
+    // 중단돼, 멀쩡히 끝난 다른 브랜드들의 평점까지 전부 못 구하게 된다.
     try {
-      const brandProducts = products.value.filter(p => p.brand === brand);
-      let totalRating = 0, totalCount = 0;
-      for (const p of brandProducts.slice(0, 10)) {
-        const reviews = await api.get(`/products/${p.id}/reviews`).catch(() => []);
-        if (reviews?.length) {
-          totalRating += reviews.reduce((s, r) => s + r.rating, 0);
-          totalCount += reviews.length;
-        }
+      const reviews = await api.get(`/products/${task.productId}/reviews`).catch(() => []);
+      if (reviews?.length) {
+        sums[task.brand].totalRating += reviews.reduce((s, r) => s + r.rating, 0);
+        sums[task.brand].totalCount += reviews.length;
       }
-      brandRatings.value[brand] = totalCount > 0 ? (totalRating / totalCount).toFixed(1) : '0.0';
-    } catch { brandRatings.value[brand] = '0.0'; }
+    } catch {}
+  });
+
+  for (const brand of brandNames) {
+    const { totalRating, totalCount } = sums[brand];
+    brandRatings.value[brand] = totalCount > 0 ? (totalRating / totalCount).toFixed(1) : '0.0';
   }
 }
 function getBrandRating(brandName) {
