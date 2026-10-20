@@ -167,6 +167,18 @@ onMounted(async () => {
         amount: Number(params.get('amount')),
       }, { skipAuthRedirect: true });
       if (confirmRes?.success) {
+        // 결제 승인이 확정된 직후 바로 지운다 — 아래 createOrder가 끝까지 성공하면
+        // router.push로 이동해 문제가 없지만, createOrder가 중간에 실패해도(세션 만료 등)
+        // 카드 결제 자체는 이미 끝난 상태라, 주소창에 이 paymentKey가 남아있으면 새로고침/
+        // 뒤로가기 시 이미 소비된 결제를 또 승인 시도하게 된다(실패 분기·catch 분기엔 이미
+        // 있던 처리인데 성공 분기에만 빠져있었음 — 교차검증에서 발견). 이걸 raw
+        // window.history.replaceState로 하면 안 된다 — vue-router는 각 히스토리 엔트리에
+        // 자기 나름의 URL/상태를 따로 기억해두고 뒤로가기(popstate) 시 "이 위치엔 이 URL이어야
+        // 한다"며 그 기억을 그대로 복원해버려서, raw replaceState로 주소창만 지워도 뒤로가기를
+        // 누르면 vue-router가 지워지기 전의 paymentKey 쿼리를 되살려 그대로 confirm을 재호출하는
+        // 것까지 실제로 재현됨(Playwright로 직접 확인). router.replace를 써야 vue-router
+        // 자신의 기억도 함께 갱신돼 뒤로가기에도 반영된다.
+        await router.replace({ path: window.location.pathname });
         // 토스가 실제로 승인한 금액(서버가 검증해서 돌려준 값)을 그대로 주문 생성에 넘긴다.
         // URL의 amount 파라미터는 사용자가 손댈 수 있으므로 신뢰하지 않는다.
         // paymentKey도 함께 넘겨서, 이후 주문 생성이 실패했을 때 서버가 이 결제를
@@ -175,7 +187,7 @@ onMounted(async () => {
       } else {
         alert('결제 승인 실패: ' + (confirmRes?.message || ''));
         // 주소창에 paymentKey가 남아있으면 새로고침/뒤로가기 시 결제 승인이 그대로 재생되므로 제거
-        window.history.replaceState(null, '', window.location.pathname);
+        await router.replace({ path: window.location.pathname });
       }
     } catch (e) {
       // /payment/confirm 자체가 401/403으로 실패하면(세션 만료 등) 서버가 토스 쪽 확정
@@ -191,11 +203,16 @@ onMounted(async () => {
         alert('결제 승인 오류: ' + e.message);
       }
       // 주문 생성까지 실패한 경우도 동일하게, 재생 방지를 위해 결제 관련 쿼리를 지움
-      window.history.replaceState(null, '', window.location.pathname);
+      await router.replace({ path: window.location.pathname });
     }
   }
   if (params.get('fail')) {
     alert('결제가 취소되었습니다.');
+    // 위 paymentKey 분기들과 동일한 이유로 재생 방지(교차검증에서 발견 — 이 분기만 빠져있었음).
+    // fail 자체는 다시 봐도 위험하지 않지만(주문·결제를 만들지 않음), 뒤로가기/새로고침마다
+    // 이미 끝난 일에 대해 "결제가 취소되었습니다" 알림이 계속 다시 뜨는 것은 사용자에게
+    // 혼란스럽다.
+    await router.replace({ path: window.location.pathname });
   }
 });
 
@@ -255,13 +272,13 @@ async function processTossPayment() {
 // 결제(토스 confirm)는 이미 성공했는데 그 이후 주문 생성 쪽에서 실패한 모든 경우가
 // 공유하는 안내 — 카드는 결제됐다는 걸 명확히 하고, 고객센터에서 찾을 수 있도록
 // paymentKey를 보여준 뒤 재생 방지를 위해 주소창의 결제 관련 쿼리를 지운다.
-function reportPaidButOrderFailed(paymentKey, reason) {
+async function reportPaidButOrderFailed(paymentKey, reason) {
   if (!paymentKey) return;
   alert(
     `결제는 완료되었지만 ${reason} 주문을 생성하지 못했습니다.\n` +
     '아래 결제번호를 고객센터에 알려주시면 주문 처리를 도와드립니다.\n\n결제번호: ' + paymentKey,
   );
-  window.history.replaceState(null, '', window.location.pathname);
+  await router.replace({ path: window.location.pathname });
 }
 
 async function createOrder(paidAmount, paymentKey) {
@@ -270,7 +287,7 @@ async function createOrder(paidAmount, paymentKey) {
     // paymentKey가 있다는 건 바로 위 /payment/confirm 호출이 이미 성공했다는 뜻(그 시점엔
     // 세션이 유효했음) — 카드 결제는 실제로 확정된 뒤, 이 함수를 부르는 사이의 아주 짧은
     // 틈에 세션이 사라지는 드문 경우(같은 탭에서 로그아웃 등)에만 여기로 온다.
-    reportPaidButOrderFailed(paymentKey, '로그인 세션이 만료되어');
+    await reportPaidButOrderFailed(paymentKey, '로그인 세션이 만료되어');
     if (!paymentKey) alert('로그인 정보를 확인할 수 없습니다. 다시 로그인 후 시도해주세요.');
     return;
   }
@@ -297,7 +314,7 @@ async function createOrder(paidAmount, paymentKey) {
       // 경우(세션 만료·네트워크 오류 등 사유 불문). 여기서 밖으로 다시 던지면 이 함수를
       // 부른 onMounted의 바깥 catch가 "confirm 자체가 실패해 카드가 결제되지 않았다"는
       // 잘못된 메시지로 덮어써버리므로, 여기서 끝까지 처리하고 던지지 않는다.
-      reportPaidButOrderFailed(paymentKey, '주문 생성 중 오류가 발생해');
+      await reportPaidButOrderFailed(paymentKey, '주문 생성 중 오류가 발생해');
       return;
     }
     // 결제 없는 데모 경로(paymentKey 없음)는 기존처럼 handleSubmit의 catch가 안내하도록 던진다.

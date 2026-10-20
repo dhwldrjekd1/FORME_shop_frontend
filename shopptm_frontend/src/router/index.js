@@ -145,7 +145,12 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
-  scrollBehavior() {
+  scrollBehavior(to, from) {
+    // 경로(path)가 그대로인 네비게이션(쿼리만 바뀌는 router.replace 등)은 스크롤을 건드리지
+    // 않는다 — 예를 들어 PaymentView가 결제 승인 완료 직후 주소창의 paymentKey 쿼리만
+    // 지우려고 router.replace를 쓰는데, 이걸 "새 페이지 이동"으로 취급해 스크롤을 맨 위로
+    // 올려버리면 결제 처리 중이던 화면이 갑자기 스크롤되는 것처럼 보인다(교차검증에서 발견).
+    if (to.path === from.path) return false;
     return { top: 0 };
   },
 });
