@@ -107,9 +107,22 @@ export const useAuthStore = defineStore("auth", () => {
   // 서버가 세션을 더 이상 인정하지 않을 때(401/403) 로컬 상태를 정리하는 공통 로직.
   // verifySession과 router.beforeEach(requiresAdmin) 양쪽에서 동일하게 써서,
   // 저장 키(USER_KEY)나 정리 범위가 두 곳에서 따로 관리되다 어긋나는 것을 막는다.
-  function clearSession() {
+  // logout()과 동일하게 장바구니/찜도 함께 정리한다 — 원래 이 함수는 로그인 정보만
+  // 지우고 장바구니/찜은 그대로 둬서, 세션이 서버에서 이미 끊긴 뒤에도(비밀번호 변경,
+  // 강제 로그아웃, 쿠키 만료 등) 화면엔 이전 사용자의 장바구니/찜이 계속 남아있고, 그
+  // 상태에서 수량 변경/삭제를 하면 이미 user가 지워진 뒤라 비로그인으로 판단돼 로컬
+  // 배열만 조작되고 서버엔 반영 안 되는("조작이 된 것처럼 보이지만 실제론 안 됨")
+  // 상태가 될 수 있었다(교차검증에서 발견).
+  async function clearSession() {
     user.value = null;
     localStorage.removeItem(USER_KEY);
+
+    try {
+      const { useCartStore } = await import("@/stores/cartStore");
+      const { useWishlistStore } = await import("@/stores/wishlistStore");
+      useCartStore().resetLocal();
+      useWishlistStore().resetLocal();
+    } catch {}
   }
 
   async function verifySession() {
@@ -123,7 +136,7 @@ export const useAuthStore = defineStore("auth", () => {
     } catch (e) {
       if (seq !== verifySeq) return;
       if (e.status === 401 || e.status === 403) {
-        clearSession();
+        await clearSession();
       }
       // 그 외(네트워크 오류 등)는 세션 만료와 구분할 수 없으므로 로컬 상태를 유지
     }

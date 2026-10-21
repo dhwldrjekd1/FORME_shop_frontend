@@ -188,7 +188,7 @@ router.beforeEach(async (to) => {
       }
     } catch (e) {
       if (e.status === 401 || e.status === 403) {
-        authStore.clearSession();
+        await authStore.clearSession();
         return { name: "Login", query: { redirect: to.fullPath } };
       }
       alert("관리자 권한이 필요합니다.");
