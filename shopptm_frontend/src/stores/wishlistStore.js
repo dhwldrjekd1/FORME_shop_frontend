@@ -101,9 +101,12 @@ export const useWishlistStore = defineStore("wishlist", () => {
   // 로그아웃 시 화면 상태만 초기화 (서버의 찜 목록은 그대로 유지 - 다음 로그인 때 다시 보여야 함)
   // pendingIds도 같이 비움 — 안 그러면 로그아웃 시점에 아직 응답 안 온 요청의 productId가
   // 남아있다가, 곧바로 로그인한 다른 계정이 같은 상품을 클릭해도 무시돼버릴 수 있음
+  // fetchSeq도 함께 올려서, 이 비우기 전에 이미 나가있던(아직 응답 안 온) fetchWishlist
+  // 요청을 "낡은 요청"으로 만든다 — cartStore.resetLocal과 동일한 이유(교차검증에서 발견).
   function resetLocal() {
     items.value = [];
     pendingIds.clear();
+    fetchSeq++;
   }
 
   return { items, count, isWished, isPending, fetchWishlist, toggle, remove, resetLocal };

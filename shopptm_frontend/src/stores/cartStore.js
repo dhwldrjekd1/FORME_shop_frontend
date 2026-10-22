@@ -145,9 +145,14 @@ export const useCartStore = defineStore("cart", () => {
   // 로그아웃 시 화면 상태만 초기화 (서버의 장바구니 데이터는 그대로 유지 - 다음 로그인 때 다시 보여야 함)
   // pendingIds도 같이 비움 — wishlistStore.resetLocal과 동일한 이유(로그아웃 시점에 아직
   // 응답 안 온 요청의 itemId가 남아있다가, 곧바로 로그인한 다른 계정의 같은 id가 무시되는 것 방지)
+  // fetchSeq도 함께 올려서, 이 비우기 전에 이미 나가있던(아직 응답 안 온) fetchCart 요청을
+  // "낡은 요청"으로 만든다 — 안 그러면 로그아웃/다른 탭 로그아웃 직후 그 느린 응답이 뒤늦게
+  // 도착해서 방금 비운 장바구니를 이전 계정 것으로 도로 채워버릴 수 있다(교차검증에서 발견
+  // — 다른 탭 로그인/로그아웃 동기화를 추가하며 드러난, 원래부터 있던 레이스).
   function resetLocal() {
     items.value = [];
     pendingIds.clear();
+    fetchSeq++;
   }
 
   return {

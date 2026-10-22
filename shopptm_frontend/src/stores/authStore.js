@@ -47,11 +47,7 @@ export const useAuthStore = defineStore("auth", () => {
     // 로그인 직후 바로 이동하는 화면(장바구니 등)이 반영 전 상태를 보여줄 수 있고,
     // 빠르게 로그아웃 후 재로그인하는 경우 이전 호출의 응답이 나중에 와서
     // 새 계정 상태를 덮어쓸 위험도 있어 완료를 기다린다
-    try {
-      const { useCartStore } = await import("@/stores/cartStore");
-      const { useWishlistStore } = await import("@/stores/wishlistStore");
-      await Promise.all([useCartStore().fetchCart(), useWishlistStore().fetchWishlist()]);
-    } catch {}
+    await refetchCartAndWishlist();
   }
 
   // 회원가입 — Spring Boot POST /api/register
@@ -73,6 +69,27 @@ export const useAuthStore = defineStore("auth", () => {
     return member;
   }
 
+  // 장바구니/찜 스토어를 동적 import하는 패턴이 로그아웃/세션정리/다른탭 동기화 등
+  // 여러 곳에서 반복돼, 매번 복사해서 쓰면 그중 하나를 빠뜨리는 실수가 나기 쉽다
+  // (이번에 고친 버그들이 정확히 그런 식으로 생겼었다 — 교차검증에서 지적). 두 스토어에
+  // 공통으로 할 일(비우기/다시 불러오기)을 여기 한 곳에만 모아 전부 이걸 쓰게 한다.
+  async function resetCartAndWishlist() {
+    try {
+      const { useCartStore } = await import("@/stores/cartStore");
+      const { useWishlistStore } = await import("@/stores/wishlistStore");
+      useCartStore().resetLocal();
+      useWishlistStore().resetLocal();
+    } catch {}
+  }
+
+  async function refetchCartAndWishlist() {
+    try {
+      const { useCartStore } = await import("@/stores/cartStore");
+      const { useWishlistStore } = await import("@/stores/wishlistStore");
+      await Promise.all([useCartStore().fetchCart(), useWishlistStore().fetchWishlist()]);
+    } catch {}
+  }
+
   // 로그아웃: 서버에 토큰 폐기 + 쿠키 삭제 요청 후 화면 표시용 유저 정보도 제거
   // 서버 요청이 실패(네트워크 오류 등)하더라도 클라이언트 쪽 로그인 상태는 항상 정리한다
   async function logout() {
@@ -84,12 +101,7 @@ export const useAuthStore = defineStore("auth", () => {
 
     // 장바구니/찜 화면 상태도 함께 정리 - 안 하면 같은 브라우저에서 다음 사람이
     // 로그인하기 전까지(또는 비로그인 상태에서도) 이전 사용자의 목록이 그대로 보임
-    try {
-      const { useCartStore } = await import("@/stores/cartStore");
-      const { useWishlistStore } = await import("@/stores/wishlistStore");
-      useCartStore().resetLocal();
-      useWishlistStore().resetLocal();
-    } catch {}
+    await resetCartAndWishlist();
   }
 
   // 새로고침 시 localStorage에 복원된 로그인 상태를 그대로 믿지 않고, 서버 세션이
@@ -116,13 +128,7 @@ export const useAuthStore = defineStore("auth", () => {
   async function clearSession() {
     user.value = null;
     localStorage.removeItem(USER_KEY);
-
-    try {
-      const { useCartStore } = await import("@/stores/cartStore");
-      const { useWishlistStore } = await import("@/stores/wishlistStore");
-      useCartStore().resetLocal();
-      useWishlistStore().resetLocal();
-    } catch {}
+    await resetCartAndWishlist();
   }
 
   async function verifySession() {
@@ -141,6 +147,57 @@ export const useAuthStore = defineStore("auth", () => {
       // 그 외(네트워크 오류 등)는 세션 만료와 구분할 수 없으므로 로컬 상태를 유지
     }
   }
+
+  // 같은 브라우저의 다른 탭에서 로그인/로그아웃하면 이 탭의 상태도 맞춰준다. 지금까지는
+  // 이런 동기화 장치가 전혀 없어서, 탭 A에서 로그아웃해도 탭 B는 계속 로그인된 것처럼
+  // 보이고, 탭 B에서 그 상태로 장바구니에 담으면 authStore.user는 아직 있지만 서버 쪽
+  // 세션은 이미 끊겨있어 다음 API 호출에서야 뒤늦게 꼬이는 문제가 있었다(교차검증에서
+  // 발견). `storage` 이벤트는 "이 변경을 일으킨 그 탭 자신"에는 안 뜨고 다른 탭에서만
+  // 뜨므로, 로그인/로그아웃을 실행한 탭 자신의 동작과 겹쳐 중복 처리될 걱정은 없다.
+  //
+  // storageSeq: 로그아웃 직후 곧바로 다른 계정으로 로그인하는 것처럼 두 이벤트가 거의
+  // 동시에 연달아 오면, 먼저 온 로그아웃 이벤트의 "비우기"가 비동기(동적 import)로 늦게
+  // 끝나면서 나중에 온 로그인 이벤트가 이미 받아온 새 계정의 장바구니/찜을 도로 지워버릴
+  // 수 있다 — cartStore.fetchCart의 fetchSeq와 동일한 이유로, 그 사이 더 최신 이벤트가
+  // 왔으면 자신의 "비우기"를 적용하지 않고 조용히 포기한다(교차검증에서 발견).
+  let storageSeq = 0;
+  window.addEventListener("storage", (e) => {
+    // localStorage.clear()(지금 코드베이스 어디서도 안 쓰지만 브라우저 확장 등 외부에서
+    // 호출될 수 있음)는 key가 null로 오는데, USER_KEY만 걸러내면 이 경우를 놓쳐 로그아웃
+    // 처리가 안 된다 — null도 "user 포함 전체가 지워진 경우"로 같이 처리한다.
+    if (e.key !== USER_KEY && e.key !== null) return;
+
+    const seq = ++storageSeq;
+
+    if (!e.newValue) {
+      // 다른 탭에서 로그아웃(또는 세션 무효화로 clearSession, 혹은 localStorage.clear())됨
+      // — 이 탭도 동일하게 정리. 이미 비로그인 상태면 중복 정리를 피하려고 다시 부르지 않는다.
+      if (!user.value) return;
+      user.value = null;
+      // resetCartAndWishlist()를 그대로 쓰지 않는 이유: 그 함수는 동적 import가 끝나는
+      // 즉시 resetLocal()을 호출해버려서, "끝난 뒤에" seq를 확인해도 이미 지운 뒤라
+      // 늦다 — import가 끝나는 바로 그 지점에서, 실제로 지우기 전에 먼저 확인해야 한다.
+      Promise.all([
+        import("@/stores/cartStore"),
+        import("@/stores/wishlistStore"),
+      ]).then(([{ useCartStore }, { useWishlistStore }]) => {
+        if (seq !== storageSeq) return; // 그 사이 더 최신 이벤트가 왔으면 이 비우기는 포기
+        useCartStore().resetLocal();
+        useWishlistStore().resetLocal();
+      }).catch(() => {});
+      return;
+    }
+
+    let incoming;
+    try { incoming = JSON.parse(e.newValue); } catch { return; }
+
+    // 다른 탭에서 새로 로그인했거나 계정이 바뀐 경우에만 장바구니/찜을 새로 불러온다 —
+    // verifySession()이 등급 등 세부정보만 갱신해 localStorage를 다시 쓰는 경우(같은
+    // 계정)까지 매번 다시 불러오면 낭비이므로, 회원 id가 실제로 달라졌을 때만 다시 불러온다.
+    const accountChanged = user.value?.id !== incoming?.id;
+    user.value = incoming;
+    if (accountChanged) refetchCartAndWishlist();
+  });
 
   return {
     user,
