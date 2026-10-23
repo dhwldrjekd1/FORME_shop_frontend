@@ -166,6 +166,19 @@ router.beforeEach(async (to) => {
     }
   }
 
+  // 주문완료 화면은 결제 흐름(PaymentView)이 끝나면서 localStorage에 남겨둔 주문 정보를
+  // 보여주는 용도라, 그 정보 없이 이 주소를 직접 치고 들어오면("주문이 완료되었습니다!" +
+  // 주문번호 "확인 중" + 빈 상품 목록) 실제로는 아무 주문도 안 했는데 뭔가 된 것처럼 보여
+  // 혼란을 줄 수 있다(교차검증에서 발견). 주문 정보가 없으면 그냥 홈으로 보낸다.
+  if (to.name === "OrderComplete") {
+    let hasOrder = false;
+    try {
+      const raw = localStorage.getItem("forme_last_order");
+      hasOrder = !!raw && JSON.parse(raw)?.orderId != null;
+    } catch {}
+    if (!hasOrder) return { name: "Home" };
+  }
+
   // 관리자 전용 페이지
   // authStore.user는 localStorage에 저장된 값이라 자바스크립트로 얼마든지 조작 가능하므로,
   // role 판단은 여기서 신뢰하지 않고 매번 서버(본인 정보 조회)로 재확인한다.
