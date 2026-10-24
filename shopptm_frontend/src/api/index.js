@@ -5,7 +5,7 @@
 // 운영 빌드: Spring Boot가 같은 origin으로 프론트+API를 함께 서빙 → 상대 경로
 // 개발(npm run dev): Vite dev 서버는 5173, 백엔드는 8302라서 절대 URL 필요
 //   (백엔드 WebConfig.java 에 5173 CORS 허용이 이미 설정됨)
-const BASE_URL =
+export const BASE_URL =
   import.meta.env.VITE_API_URL ||
   (import.meta.env.DEV ? "http://localhost:8302/api" : "/api");
 const TIMEOUT = 10000; // 10초
