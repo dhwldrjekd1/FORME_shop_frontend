@@ -97,6 +97,7 @@
           </tbody>
         </table>
       </div>
+      <AdminPagination :page="page" :total-pages="totalPages" @change="goToPage" />
     </div>
   </AdminLayout>
 </template>
@@ -104,6 +105,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from "vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
+import AdminPagination from "@/components/AdminPagination.vue";
 import api from "@/api";
 
 const orders = ref([]);
@@ -112,6 +114,8 @@ const deliveries = ref({});
 const newDelivery = ref({ carrier: '', trackingNumber: '' });
 const filterStatus = ref('');
 const filterDelivery = ref('');
+const page = ref(0);
+const totalPages = ref(0);
 
 const filteredOrders = computed(() => {
   let list = orders.value;
@@ -140,9 +144,20 @@ const statuses = [
   { key: 'CANCELLED', label: '취소' },
 ];
 
-onMounted(async () => {
-  try { orders.value = await api.get('/admin/orders') || []; } catch {}
-});
+async function loadOrders() {
+  try {
+    const data = await api.get(`/admin/orders?page=${page.value}&size=20`);
+    orders.value = data?.content || [];
+    totalPages.value = data?.totalPages || 0;
+  } catch {}
+}
+function goToPage(p) {
+  if (p < 0 || p >= totalPages.value) return;
+  page.value = p;
+  loadOrders();
+}
+
+onMounted(loadOrders);
 
 // 상태변경 진행중인 주문 id — 응답 오기 전에 같은 select를 또 바꾸면 두 요청이 겹쳐
 // 나중에 도착한 응답이 아니라 먼저 보낸 요청 순서대로 화면이 어긋날 수 있어 막는다

@@ -6,7 +6,7 @@
       </div>
       <div class="am-filter">
         <input v-model="search" type="text" placeholder="이름 또는 이메일 검색..." class="am-input" @input="doSearch" />
-        <span class="am-count">{{ members.length }}명</span>
+        <span class="am-count">{{ totalElements }}명</span>
       </div>
       <div class="am-wrap">
         <table class="am-table">
@@ -32,6 +32,7 @@
           </tbody>
         </table>
       </div>
+      <AdminPagination :page="page" :total-pages="totalPages" @change="goToPage" />
     </div>
 
     <!-- 본인 계정 정지 확인용 현재 비밀번호 입력 모달 -->
@@ -58,10 +59,14 @@
 import { ref, reactive, onMounted } from "vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
 import BaseModal from "@/components/BaseModal.vue";
+import AdminPagination from "@/components/AdminPagination.vue";
 import api from "@/api";
 import { useAuthStore } from "@/stores/authStore";
 const authStore = useAuthStore();
 const members = ref([]); const search = ref('');
+const page = ref(0);
+const totalPages = ref(0);
+const totalElements = ref(0);
 const grades = ['BRONZE','SILVER','GOLD','VIP'];
 // 등급변경/정지 진행중인 회원 id — 응답 오기 전에 같은 회원을 또 조작하면 두 요청이 겹쳐
 // 나중에 도착한 응답이 아니라 먼저 보낸 요청 순서대로 화면이 어긋날 수 있어 막는다
@@ -77,22 +82,37 @@ onMounted(async () => { await loadMembers(); });
 // "ki" 검색 결과를 덮어쓸 수 있어, 다른 화면들(fetchCart/fetchWishlist/verifySession)과
 // 동일한 방식으로 막는다.
 let searchSeq = 0;
+function applyPage(data) {
+  members.value = data?.content || [];
+  totalPages.value = data?.totalPages || 0;
+  totalElements.value = data?.totalElements || 0;
+}
 async function loadMembers() {
   const seq = ++searchSeq;
   try {
-    const data = await api.get('/admin/members') || [];
+    const data = await api.get(`/admin/members?page=${page.value}&size=20`);
     if (seq !== searchSeq) return;
-    members.value = data;
+    applyPage(data);
   } catch {}
 }
-async function doSearch() {
+async function fetchCurrentPage() {
   if (!search.value.trim()) { await loadMembers(); return; }
   const seq = ++searchSeq;
   try {
-    const data = await api.get(`/admin/members/search?keyword=${encodeURIComponent(search.value)}`) || [];
+    const data = await api.get(`/admin/members/search?keyword=${encodeURIComponent(search.value)}&page=${page.value}&size=20`);
     if (seq !== searchSeq) return;
-    members.value = data;
+    applyPage(data);
   } catch {}
+}
+// 검색어가 바뀌면 이전 검색 결과의 페이지 번호가 더 이상 유효하지 않을 수 있어 1페이지로 되돌린다
+async function doSearch() {
+  page.value = 0;
+  await fetchCurrentPage();
+}
+function goToPage(p) {
+  if (p < 0 || p >= totalPages.value) return;
+  page.value = p;
+  fetchCurrentPage();
 }
 // select가 v-model이 아니라 :value 바인딩이라, 취소/실패로 grade를 안 바꾸면
 // Vue가 값이 그대로라고 보고 DOM을 되돌려주지 않는다 — 드롭다운엔 방금 고른(반영 안 된)
