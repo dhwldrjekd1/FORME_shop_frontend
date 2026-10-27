@@ -441,6 +441,12 @@ src/
 - **검증**: 백엔드가 바뀐 응답 모양을 내려주는 상태로 `npm run build` 성공 확인. 운영 DB엔 현재 회원·주문이 각 3건뿐이라(1페이지 안에 다 들어감) 실제 여러 페이지 전환 동작까지는 라이브에서 직접 보지 못했고, 백엔드 쪽 리포지토리 테스트(임시로 추가했다가 자동 롤백되는 테스트)로 여러 페이지에 걸친 조회 자체는 확인함 — 데이터가 더 쌓인 뒤 실제 페이지네이션 UI 동작도 한 번 더 확인이 필요함을 투명하게 남겨둠. `AdminOrders.vue`의 상태/배송 필터(`filteredOrders`)는 여전히 클라이언트 쪽에서만 걸러서, 페이지네이션 도입 이후로는 "현재 불러온 한 페이지(최대 20건) 안에서만" 필터링된다는 제약이 새로 생겼음(전체 주문 중 필터링이 아님) — 별도 이슈로 남김.
 ---
 
+### Vue 전역 에러처리(errorHandler/unhandledrejection)가 전혀 없었음 (2026.10.27)
+- **문제**: 컴포넌트 렌더링/라이프사이클 중 예외가 나거나 처리 안 된 Promise rejection이 발생해도 이를 잡아주는 전역 핸들러가 전혀 없어서, 사용자에게 아무 안내 없이 화면이 그냥 멈춰버릴 수 있었음(`app.config.errorHandler`, `window.addEventListener('unhandledrejection', ...)` 둘 다 코드베이스 어디에도 없었음).
+- **해결**: `src/utils/globalError.js`에 전역 에러 상태(`globalErrorState`)와 `reportGlobalError()`를 추가. `main.js`에서 `app.config.errorHandler`와 `unhandledrejection` 리스너를 둘 다 등록해서 콘솔에 로그를 남기고, `App.vue`에 "문제가 발생했습니다 / 새로고침해주세요" 안내와 새로고침 버튼이 있는 전역 오버레이를 추가(최상위 `RouterView` 옆에 둬서, 아래 라우트 트리가 깨진 상태라도 항상 뜰 수 있게 함).
+- **교차검증에서 확인한 것**: (1) 1차 구현은 `unhandledrejection`으로 들어오는 모든 reject를 똑같이 로그했는데, 이 코드베이스 여러 화면(`SlidePanel`, `MyPageView`, `LoginView` 등)이 `router.push()`를 `.catch()` 없이 호출하고 있어서, 빠르게 두 번 누르는 등으로 이전 네비게이션이 취소될 때 vue-router가 정상적으로 reject하는 것까지 "에러"로 로그에 섞여버린다는 지적을 받음 — `vue-router`의 `isNavigationFailure`로 취소/중복 네비게이션은 걸러내고 로그 자체를 안 남기도록 수정. (2) `errorHandler`도 처음엔 Vue가 잡은 모든 예외를 똑같이 전체화면 오버레이로 막아버렸는데, 이벤트 핸들러/watcher 콜백처럼 화면 자체는 멀쩡하게 남는 경우까지 새로고침을 강제하는 건 과하다는 지적을 받아, `info`가 `"render function"`/`"setup function"`/`"component update"`(컴포넌트 트리 자체가 깨졌을 수 있는 경우)일 때만 오버레이를 띄우고 나머지는 콘솔 로그만 남기도록 좁힘.
+- **검증**: 개발 서버(Vite, 5180)에서 Playwright로 네 가지 확인. (1) `errorHandler`에 `info="render function"`으로 강제 예외를 흘려보내면 오버레이가 뜸. (2) `info="native event handler"`로 흘려보내면 오버레이는 안 뜨고 콘솔에만 로그가 남음. (3) 일반 `Promise.reject()`(처리 안 된 rejection)도 오버레이 없이 로그만. (4) `router.push()`를 연속으로 걸어 실제 네비게이션 취소를 재현 → 오버레이도 안 뜨고 콘솔 로그도 전혀 안 남음(취소된 네비게이션이 잡음으로 로그되지 않음을 확인). 빌드 후 백엔드 저장소의 정적 리소스에 반영, 배포 후 실제 라이브 사이트 정상 동작(HTTP 200) 확인.
+
 ## 빌드 및 배포
 
 ```bash
