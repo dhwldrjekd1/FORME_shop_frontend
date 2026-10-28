@@ -37,7 +37,10 @@ import { filterByBrandAndGender, searchProducts } from "@/utils/productFilters";
 
 const route = useRoute();
 const productStore = useProductStore();
-const { products, isLoading } = storeToRefs(productStore);
+// 정렬 안 된 products 대신 filteredProducts(최신순 정렬)를 기준으로 삼는다 — Forme32Layout의
+// 헤더 검색은 이미 filteredProducts를 쓰는데, 이 화면만 raw products를 그대로 써서 API가
+// 돌려주는(ORDER BY 없이 DB가 임의로 정한) 순서 그대로 노출되고 있었음(교차검증에서 발견).
+const { filteredProducts, isLoading } = storeToRefs(productStore);
 onMounted(() => { productStore.fetchProducts(); });
 
 const activeBrand = ref('all');
@@ -58,7 +61,7 @@ const searchQuery = computed(() => {
 watch(searchQuery, () => { activeBrand.value = 'all'; activeGender.value = 'all'; });
 
 const searched = computed(() =>
-  searchQuery.value ? searchProducts(products.value, searchQuery.value) : products.value
+  searchQuery.value ? searchProducts(filteredProducts.value, searchQuery.value) : filteredProducts.value
 );
 const filtered = computed(() => filterByBrandAndGender(searched.value, activeBrand.value, activeGender.value));
 </script>

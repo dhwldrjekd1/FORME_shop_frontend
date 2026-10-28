@@ -446,6 +446,12 @@ src/
 - **해결**: `src/utils/globalError.js`에 전역 에러 상태(`globalErrorState`)와 `reportGlobalError()`를 추가. `main.js`에서 `app.config.errorHandler`와 `unhandledrejection` 리스너를 둘 다 등록해서 콘솔에 로그를 남기고, `App.vue`에 "문제가 발생했습니다 / 새로고침해주세요" 안내와 새로고침 버튼이 있는 전역 오버레이를 추가(최상위 `RouterView` 옆에 둬서, 아래 라우트 트리가 깨진 상태라도 항상 뜰 수 있게 함).
 - **교차검증에서 확인한 것**: (1) 1차 구현은 `unhandledrejection`으로 들어오는 모든 reject를 똑같이 로그했는데, 이 코드베이스 여러 화면(`SlidePanel`, `MyPageView`, `LoginView` 등)이 `router.push()`를 `.catch()` 없이 호출하고 있어서, 빠르게 두 번 누르는 등으로 이전 네비게이션이 취소될 때 vue-router가 정상적으로 reject하는 것까지 "에러"로 로그에 섞여버린다는 지적을 받음 — `vue-router`의 `isNavigationFailure`로 취소/중복 네비게이션은 걸러내고 로그 자체를 안 남기도록 수정. (2) `errorHandler`도 처음엔 Vue가 잡은 모든 예외를 똑같이 전체화면 오버레이로 막아버렸는데, 이벤트 핸들러/watcher 콜백처럼 화면 자체는 멀쩡하게 남는 경우까지 새로고침을 강제하는 건 과하다는 지적을 받아, `info`가 `"render function"`/`"setup function"`/`"component update"`(컴포넌트 트리 자체가 깨졌을 수 있는 경우)일 때만 오버레이를 띄우고 나머지는 콘솔 로그만 남기도록 좁힘.
 - **검증**: 개발 서버(Vite, 5180)에서 Playwright로 네 가지 확인. (1) `errorHandler`에 `info="render function"`으로 강제 예외를 흘려보내면 오버레이가 뜸. (2) `info="native event handler"`로 흘려보내면 오버레이는 안 뜨고 콘솔에만 로그가 남음. (3) 일반 `Promise.reject()`(처리 안 된 rejection)도 오버레이 없이 로그만. (4) `router.push()`를 연속으로 걸어 실제 네비게이션 취소를 재현 → 오버레이도 안 뜨고 콘솔 로그도 전혀 안 남음(취소된 네비게이션이 잡음으로 로그되지 않음을 확인). 빌드 후 백엔드 저장소의 정적 리소스에 반영, 배포 후 실제 라이브 사이트 정상 동작(HTTP 200) 확인.
+---
+
+### ProductsView.vue가 정렬 안 된 raw products를 그대로 쓰고 있었음 (2026.10.28)
+- **문제**: `productStore.js`에 이미 최신순(id DESC) 정렬된 `filteredProducts`가 있고(헤더 검색을 담당하는 `Forme32Layout.vue`는 이걸 쓰고 있음), `ProductsView.vue`(상품 목록/검색 결과 화면)만 정렬 안 된 raw `products`를 그대로 썼음. 백엔드 API 자체에도 `ORDER BY`가 없어서(백엔드 저장소 트러블슈팅 참고), 이 화면은 DB가 반환하는 순서에 그대로 노출돼 새로고침마다 상품 순서가 흔들릴 수 있었음.
+- **해결**: `ProductsView.vue`가 `products` 대신 `filteredProducts`를 쓰도록 변경(`searched`/`filtered` computed 체인의 시작점만 교체). 백엔드도 같은 라운드에서 세 조회 쿼리 모두 `ORDER BY id DESC`를 명시해, 이제 API 응답 자체가 정렬돼 있어 프론트가 재정렬을 안 해도 되는 다른 화면들(브랜드 랜딩 페이지 등 `products`를 직접 쓰는 화면 다수)도 함께 안정됨.
+- **검증**: 백엔드가 정렬된 응답을 내려주는 상태로 `npm run build` 성공 확인. 코드 리뷰로 `filteredProducts`가 순수 정렬(필터링 아님)이라 `searchProducts`/`filterByBrandAndGender`와 순서 무관하게 안전히 합성됨을 확인. 배포 후 운영 환경(`https://forme.dyy.kr/api/products`)에서 두 번 연속 호출해도 id 순서가 동일(`id DESC`)함을 확인.
 
 ## 빌드 및 배포
 
