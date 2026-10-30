@@ -4,6 +4,11 @@ import api from "@/api";
 
 export const useCartStore = defineStore("cart", () => {
   const items = ref([]);
+  // fetchCart 실패를 조용히 삼키고 로컬(이 시점엔 보통 빈 배열)을 그대로 두면, 실제로는
+  // 서버 장바구니에 아이템이 있는데도 화면엔 "장바구니가 비어있습니다"로 보여서 사용자가
+  // 재시도할 방법도 모른 채 자기 장바구니가 실제로 비었다고 오해하게 됨(교차검증에서 발견).
+  // CartView.vue가 이 값으로 그 둘을 구분해서 보여준다.
+  const loadError = ref(false);
 
   // 응답이 오기 전에 같은 항목의 수량 변경/삭제를 연타하면(예: 장바구니 화면과 슬라이드
   // 패널 양쪽에서 같은 패턴이 각자 따로 구현돼 있었음), 매번 아직 안 바뀐 quantity를
@@ -41,6 +46,7 @@ export const useCartStore = defineStore("cart", () => {
     const user = getUser();
     if (!user?.id) return;
     const seq = ++fetchSeq;
+    loadError.value = false;
     try {
       const data = await api.get(`/members/${user.id}/cart`);
       if (seq !== fetchSeq) return; // 더 최신 요청이 이미 나가있으면 이 응답은 버림
@@ -55,7 +61,9 @@ export const useCartStore = defineStore("cart", () => {
         quantity: c.quantity || 1,
       }));
     } catch {
-      // API 실패 시 로컬 유지
+      // API 실패 시 로컬(화면에 남아있던 이전 상태)은 그대로 유지하되, CartView.vue가
+      // "비어있음"과 "불러오기 실패"를 구분해 보여줄 수 있도록 표시만 남긴다.
+      if (seq === fetchSeq) loadError.value = true;
     }
   }
 
@@ -153,6 +161,7 @@ export const useCartStore = defineStore("cart", () => {
     items.value = [];
     pendingIds.clear();
     fetchSeq++;
+    loadError.value = false;
   }
 
   return {
@@ -160,6 +169,7 @@ export const useCartStore = defineStore("cart", () => {
     totalCount,
     totalPrice,
     isPending,
+    loadError,
     fetchCart,
     addItem,
     removeItem,

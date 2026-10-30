@@ -13,6 +13,17 @@
 
     <div v-if="isLoading" class="pv-loading"><span class="material-symbols-outlined">hourglass_top</span></div>
 
+    <!-- API 실패를 "등록된 상품이 없습니다"와 똑같이 보여주면 재시도할 방법도 모른 채
+         사용자가 "정말 없나보다"로 오해하게 돼서(교차검증에서 발견), 실패일 때만 따로
+         재시도 안내를 보여준다. -->
+    <section v-else-if="loadError" class="pv-products">
+      <p class="pv-empty">
+        <span class="material-symbols-outlined">error_outline</span>
+        상품을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.
+        <button class="pv-retry" @click="productStore.fetchProducts()">다시 시도</button>
+      </p>
+    </section>
+
     <section v-else class="pv-products">
       <div class="pv-grid">
         <ProductCard v-for="p in filtered" :key="p.id" :product="p" />
@@ -40,7 +51,7 @@ const productStore = useProductStore();
 // 정렬 안 된 products 대신 filteredProducts(최신순 정렬)를 기준으로 삼는다 — Forme32Layout의
 // 헤더 검색은 이미 filteredProducts를 쓰는데, 이 화면만 raw products를 그대로 써서 API가
 // 돌려주는(ORDER BY 없이 DB가 임의로 정한) 순서 그대로 노출되고 있었음(교차검증에서 발견).
-const { filteredProducts, isLoading } = storeToRefs(productStore);
+const { filteredProducts, isLoading, loadError } = storeToRefs(productStore);
 onMounted(() => { productStore.fetchProducts(); });
 
 const activeBrand = ref('all');
@@ -78,4 +89,5 @@ const filtered = computed(() => filterByBrandAndGender(searched.value, activeBra
 @media (min-width: 1200px) { .pv-grid { grid-template-columns: repeat(4, 1fr); } }
 .pv-empty { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; padding: 5rem; color: #ccc; }
 .pv-empty .material-symbols-outlined { font-size: 2.5rem; font-variation-settings: "wght" 200; }
+.pv-retry { margin-top: 0.5rem; padding: 0.5rem 1.25rem; background: #111; color: #fff; font-size: 0.75rem; font-weight: 700; border-radius: 0.25rem; cursor: pointer; }
 </style>

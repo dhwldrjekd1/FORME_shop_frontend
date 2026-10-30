@@ -7,8 +7,17 @@
         <p class="ct-head__count">{{ items.length }}개 상품</p>
       </div>
 
+      <!-- 불러오기 실패 — 서버 장바구니에 실제로 아이템이 있어도 조회가 실패하면 로컬엔
+           빈 배열만 남아있어, "비어있습니다"와 똑같이 보이면 사용자가 자기 장바구니가 진짜
+           비었다고 오해하게 됨(교차검증에서 발견, cartStore.fetchCart 참고). -->
+      <div v-if="loadError && items.length === 0" class="ct-empty">
+        <span class="material-symbols-outlined ct-empty__icon">error_outline</span>
+        <p class="ct-empty__msg">장바구니를 불러오지 못했습니다</p>
+        <button class="ct-empty__btn" @click="cartStore.fetchCart()">다시 시도</button>
+      </div>
+
       <!-- 비어있을 때 -->
-      <div v-if="items.length === 0" class="ct-empty">
+      <div v-else-if="items.length === 0" class="ct-empty">
         <span class="material-symbols-outlined ct-empty__icon">shopping_bag</span>
         <p class="ct-empty__msg">장바구니가 비어있습니다</p>
         <RouterLink to="/products" class="ct-empty__btn">쇼핑 계속하기</RouterLink>
@@ -102,7 +111,7 @@ const cartStore = useCartStore();
 const authStore = useAuthStore();
 const productStore = useProductStore();
 const { products } = storeToRefs(productStore);
-const { items, totalPrice } = storeToRefs(cartStore);
+const { items, totalPrice, loadError } = storeToRefs(cartStore);
 
 // 등급별 할인 — authStore.user.grade는 localStorage에서 복원한 값이라 위조되거나
 // 오래됐을 수 있음(PaymentView.vue와 동일한 이유). 여기서 보여주는 할인은 실제 결제
@@ -154,6 +163,7 @@ function getBrandName(productId) {
   padding: 0.875rem 2.5rem; background: #111; color: #fff;
   font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
   text-decoration: none; transition: opacity 0.2s;
+  border: none; cursor: pointer; font-family: inherit; display: inline-block;
 }
 .ct-empty__btn:hover { opacity: 0.8; }
 

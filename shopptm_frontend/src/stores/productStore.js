@@ -40,6 +40,11 @@ export const useProductStore = defineStore("product", () => {
   const products = ref([]);
   const currentProduct = ref(null);
   const isLoading = ref(false);
+  // 목록/상세 조회가 실패했을 때, 화면이 "상품이 없습니다"/"상품을 찾을 수 없습니다"처럼
+  // 정상적으로 비어있는 상태와 똑같이 보여주던 문제(교차검증에서 발견 — API 실패를 조용히
+  // 삼켜서 사용자는 재시도할 방법도 모른 채 "정말 없나보다"로 오해하게 됨). ProductsView.vue/
+  // DetailView.vue가 이 값으로 구분해서 재시도 안내를 보여준다.
+  const loadError = ref(false);
 
   // 최신순(id 내림차순) 정렬된 전체 상품 목록. ProductsView.vue/Forme32Layout.vue(헤더 검색)가
   // 사용하며, 브랜드/성별 필터는 각 화면에서 filterByBrandAndGender()로 별도 적용한다.
@@ -55,12 +60,14 @@ export const useProductStore = defineStore("product", () => {
   async function fetchProducts() {
     if (fetchPromise) return fetchPromise;
     isLoading.value = true;
+    loadError.value = false;
     fetchPromise = (async () => {
       try {
         const data = await api.get("/products");
         products.value = Array.isArray(data) ? data.map(adaptProduct) : [];
       } catch {
         products.value = [];
+        loadError.value = true;
       } finally {
         isLoading.value = false;
         fetchPromise = null;
@@ -71,11 +78,16 @@ export const useProductStore = defineStore("product", () => {
 
   async function fetchProductById(id) {
     isLoading.value = true;
+    loadError.value = false;
     try {
       const data = await api.get(`/products/${id}`);
       currentProduct.value = adaptProduct(data);
-    } catch {
+    } catch (err) {
       currentProduct.value = null;
+      // 404 성격의 응답(ProductService.getProduct이 "존재하지 않는 상품"/"삭제된 상품"일 때
+      // 던지는 400)은 정상적인 "그런 상품이 없다"는 결과라 재시도 안내를 띄울 이유가 없다 —
+      // 네트워크 끊김/서버 오류처럼 진짜 실패했을 때만 loadError를 켠다.
+      if (err?.status !== 400) loadError.value = true;
     } finally {
       isLoading.value = false;
     }
@@ -85,6 +97,7 @@ export const useProductStore = defineStore("product", () => {
     products,
     currentProduct,
     isLoading,
+    loadError,
     filteredProducts,
     fetchProducts,
     fetchProductById,

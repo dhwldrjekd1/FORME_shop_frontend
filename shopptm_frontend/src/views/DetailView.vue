@@ -6,6 +6,15 @@
       <p>Loading...</p>
     </div>
 
+    <!-- 조회 실패(네트워크/서버 오류) — "상품을 찾을 수 없습니다"와 똑같이 보여주면 재시도할
+         방법도 모른 채 사용자가 "정말 없는 상품이구나"로 오해하게 되므로(교차검증에서 발견,
+         productStore.fetchProductById 참고) 따로 구분해서 보여준다. -->
+    <div v-else-if="loadError" class="dp-state">
+      <span class="material-symbols-outlined dp-state__icon">error_outline</span>
+      <p>상품 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</p>
+      <button class="dp-state__link" @click="loadProduct(props.id ?? route.params.id)">다시 시도</button>
+    </div>
+
     <!-- 상품 없음 -->
     <div v-else-if="!product" class="dp-state">
       <span class="material-symbols-outlined dp-state__icon">search_off</span>
@@ -411,7 +420,7 @@ const wishlistStore = useWishlistStore();
 
 const recentStore = useRecentStore();
 const authStore = useAuthStore();
-const { currentProduct: product, isLoading } = storeToRefs(productStore);
+const { currentProduct: product, isLoading, loadError } = storeToRefs(productStore);
 
 // ── 브랜드 ──
 const BRAND_COLORS = { BEANPOLE: '#103728', CARHARTT: '#9C4F18', "LEVI'S": '#8E1C28', DICKIES: '#1A1A1A' };
@@ -871,6 +880,7 @@ function buyNow() { return addToCartAndGo('/payment'); }
 .dp-state__icon { font-size: 2.5rem; }
 .dp-state__link {
   font-size: 0.75rem; color: #111; text-decoration: underline; text-underline-offset: 3px;
+  background: none; border: none; padding: 0; font-family: inherit; cursor: pointer;
 }
 
 .dp { max-width: 1600px; margin: 0 auto; }
