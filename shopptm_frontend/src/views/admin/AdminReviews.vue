@@ -27,6 +27,7 @@
           </tbody>
         </table>
       </div>
+      <AdminPagination :page="page" :total-pages="totalPages" @change="goToPage" />
 
       <!-- 답글 모달 -->
       <BaseModal :show="showModal" max-width="520px" z-index="9999" no-padding :close-on-backdrop="false">
@@ -55,9 +56,12 @@
 import { ref, onMounted } from "vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
 import BaseModal from "@/components/BaseModal.vue";
+import AdminPagination from "@/components/AdminPagination.vue";
 import api from "@/api";
 
 const reviews = ref([]);
+const page = ref(0);
+const totalPages = ref(0);
 const showModal = ref(false);
 const currentReview = ref(null);
 const replyText = ref('');
@@ -65,8 +69,20 @@ const submitting = ref(false);
 
 onMounted(async () => { await loadReviews(); });
 
+// 백엔드가 전체 목록을 한 번에 반환하던 걸 Page 응답(content/totalElements/totalPages)으로
+// 바꾼 것에 맞춰, AdminMembers.vue/AdminOrders.vue와 동일하게 content만 반영한다
+// (교차검증에서 발견 — 이 화면만 그 변경에 맞춰 갱신이 안 돼 있었음).
 async function loadReviews() {
-  try { reviews.value = await api.get('/admin/reviews') || []; } catch {}
+  try {
+    const data = await api.get(`/admin/reviews?page=${page.value}&size=20`);
+    reviews.value = data?.content || [];
+    totalPages.value = data?.totalPages || 0;
+  } catch {}
+}
+function goToPage(p) {
+  if (p < 0 || p >= totalPages.value) return;
+  page.value = p;
+  loadReviews();
 }
 
 // 저장 중엔 다른 리뷰로 바꿔 열지 못하게 막음 — 안 그러면 저장 완료 시 showModal을
@@ -103,8 +119,19 @@ async function del(id) {
   if (submitting.value) return;
   if (!confirm('리뷰를 삭제하시겠습니까?')) return;
   submitting.value = true;
-  try { await api.delete(`/admin/reviews/${id}`); reviews.value = reviews.value.filter(r => r.id !== id); }
-  catch (e) { alert(e.message); }
+  try {
+    await api.delete(`/admin/reviews/${id}`);
+    // 로컬 배열만 지우면 totalPages가 삭제 전 값 그대로 남아 페이지네이션이 서버 상태와
+    // 어긋날 수 있어서(교차검증에서 발견 — 마지막 페이지의 마지막 한 건을 지우면 그 페이지는
+    // 비는데 totalPages는 그대로라 "이전" 버튼으로도 못 돌아가는 상태가 됨), 현재 페이지를
+    // 서버에서 다시 불러온다. 그 페이지가 방금 그 삭제로 비어버렸으면(그 페이지의 마지막
+    // 항목이었던 경우) 한 페이지 앞으로 돌아간다.
+    await loadReviews();
+    if (!reviews.value.length && page.value > 0) {
+      page.value -= 1;
+      await loadReviews();
+    }
+  } catch (e) { alert(e.message); }
   finally { submitting.value = false; }
 }
 </script>
