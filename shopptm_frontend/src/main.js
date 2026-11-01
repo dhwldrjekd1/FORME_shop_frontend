@@ -27,7 +27,7 @@ app.config.errorHandler = (err, instance, info) => {
   reportGlobalError(err, `vue: ${info}`, { blocking: RENDER_BREAKING_INFO.includes(info) });
 };
 window.addEventListener("unhandledrejection", (event) => {
-  // router.push()를 .catch() 없이 호출하는 곳이 이 코드베이스에 여럭 있는데(SlidePanel,
+  // router.push()를 .catch() 없이 호출하는 곳이 이 코드베이스에 여럿 있는데(SlidePanel,
   // MyPageView, LoginView 등), 빠르게 두 번 누르는 등으로 이전 네비게이션이 취소되면
   // vue-router가 그 네비게이션의 Promise를 정상적으로 reject한다 — 이건 버그가 아니라
   // vue-router의 정상 동작이라, 진짜 에러처럼 로그에 남기면 잡음만 늘어난다(교차검증에서 발견).
