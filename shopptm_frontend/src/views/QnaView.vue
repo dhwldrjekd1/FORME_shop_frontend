@@ -76,6 +76,8 @@
       </article>
     </div>
 
+    <Pagination v-if="!isLoading" :page="page" :total-pages="totalPages" @change="goToPage" />
+
     <!-- ═══ 작성 모달 ═══ -->
     <Teleport to="body">
       <div v-if="showWriteModal" class="qa-modal" @click.self="closeWrite">
@@ -118,6 +120,7 @@ import { useRouter } from 'vue-router';
 import api from '@/api';
 import { useAuthStore } from '@/stores/authStore';
 import Forme32Layout from '@/layouts/Forme32Layout.vue';
+import Pagination from '@/components/Pagination.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -127,6 +130,8 @@ const filterStatus = ref('전체');
 const searchQuery = ref('');
 const items = ref([]);
 const isLoading = ref(false);
+const page = ref(0);
+const totalPages = ref(0);
 
 function adaptQna(dto) {
   return {
@@ -140,13 +145,32 @@ function adaptQna(dto) {
 }
 function maskName(n) { if (!n) return 'unknown'; if (n.length <= 2) return n[0] + '*'; return n[0] + '*'.repeat(n.length - 2) + n[n.length - 1]; }
 
+// 백엔드가 전체 목록을 한 번에 반환하던 걸 Page 응답(content/totalPages)으로 바꾼 것에
+// 맞춰 content만 반영한다(관리자 화면들과 동일한 패턴 — 이 화면은 관리자 화면과 같은
+// 엔드포인트를 공유해서 함께 바뀜). 카테고리/상태/검색 필터는 여전히 클라이언트에서
+// 걸러서, 페이지네이션 도입 이후로는 "현재 불러온 한 페이지(최대 20건) 안에서만"
+// 필터링된다는 제약이 생겼음(AdminOrders.vue의 상태/배송 필터와 동일한 제약). 페이지
+// 전환을 빠르게 연타하면 응답이 보낸 순서와 다르게 도착할 수 있어(교차검증에서 발견 —
+// AdminMembers.vue의 searchSeq와 동일한 이유) 가장 나중에 보낸 요청만 반영한다.
+let loadSeq = 0;
 async function loadQna() {
+  const seq = ++loadSeq;
   isLoading.value = true;
-  try { const d = await api.get('/qna'); items.value = (Array.isArray(d) ? d.map(adaptQna) : []).sort((a, b) => b.id - a.id); }
-  catch { items.value = []; }
-  finally { isLoading.value = false; }
+  try {
+    const data = await api.get(`/qna?page=${page.value}&size=20`);
+    if (seq !== loadSeq) return;
+    items.value = (data?.content || []).map(adaptQna).sort((a, b) => b.id - a.id);
+    totalPages.value = data?.totalPages || 0;
+  }
+  catch { if (seq === loadSeq) items.value = []; }
+  finally { if (seq === loadSeq) isLoading.value = false; }
 }
 onMounted(() => { loadQna(); });
+function goToPage(p) {
+  if (p < 0 || p >= totalPages.value) return;
+  page.value = p;
+  loadQna();
+}
 
 const filteredItems = computed(() => items.value.filter(i => {
   return (filterCategory.value === '전체' || i.category === filterCategory.value)

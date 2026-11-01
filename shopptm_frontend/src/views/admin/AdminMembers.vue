@@ -32,7 +32,7 @@
           </tbody>
         </table>
       </div>
-      <AdminPagination :page="page" :total-pages="totalPages" @change="goToPage" />
+      <Pagination :page="page" :total-pages="totalPages" @change="goToPage" />
     </div>
 
     <!-- 본인 계정 정지 확인용 현재 비밀번호 입력 모달 -->
@@ -59,7 +59,7 @@
 import { ref, reactive, onMounted } from "vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
 import BaseModal from "@/components/BaseModal.vue";
-import AdminPagination from "@/components/AdminPagination.vue";
+import Pagination from "@/components/Pagination.vue";
 import api from "@/api";
 import { useAuthStore } from "@/stores/authStore";
 const authStore = useAuthStore();

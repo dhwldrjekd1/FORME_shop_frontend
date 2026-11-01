@@ -21,6 +21,7 @@
           </tbody>
         </table>
       </div>
+      <Pagination :page="page" :total-pages="totalPages" :disabled="submitting" @change="goToPage" />
 
       <!-- 답변 모달 -->
       <BaseModal :show="showModal" max-width="520px" :locked="submitting" @close="showModal = false">
@@ -40,10 +41,31 @@
 import { ref, onMounted } from "vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
 import BaseModal from "@/components/BaseModal.vue";
+import Pagination from "@/components/Pagination.vue";
 import api from "@/api";
 const items = ref([]); const showModal = ref(false); const currentQ = ref(null); const answerText = ref('');
 const submitting = ref(false);
-onMounted(async () => { try { items.value = await api.get('/qna') || []; } catch {} });
+const page = ref(0); const totalPages = ref(0);
+// 백엔드가 전체 목록을 한 번에 반환하던 걸 Page 응답(content/totalPages)으로 바꾼 것에 맞춰
+// content만 반영한다(AdminMembers.vue/AdminOrders.vue/AdminReviews.vue/AdminBoard.vue와 동일한 패턴).
+// 페이지 전환을 빠르게 연타하면 응답이 보낸 순서와 다르게 도착할 수 있어(교차검증에서
+// 발견 — 다른 화면들의 fetchSeq/searchSeq와 동일한 이유), 가장 나중에 보낸 요청만 반영.
+let loadSeq = 0;
+async function loadQna() {
+  const seq = ++loadSeq;
+  try {
+    const data = await api.get(`/qna?page=${page.value}&size=20`);
+    if (seq !== loadSeq) return;
+    items.value = data?.content || [];
+    totalPages.value = data?.totalPages || 0;
+  } catch {}
+}
+function goToPage(p) {
+  if (p < 0 || p >= totalPages.value) return;
+  page.value = p;
+  loadQna();
+}
+onMounted(loadQna);
 // 저장 중엔 다른 문의로 바꿔 열지 못하게 막음 — 안 그러면 저장 요청이 끝난 뒤
 // currentQ가 이미 다른 문의를 가리키고 있어서 그 문의에 엉뚱하게 답변이 붙을 수 있음
 function openAnswer(q) { if (submitting.value) return; currentQ.value = q; answerText.value = q.answer || ''; showModal.value = true; }
@@ -60,7 +82,20 @@ async function del(id) {
   if (submitting.value) return;
   if (!confirm('삭제하시겠습니까?')) return;
   submitting.value = true;
-  try { await api.delete(`/admin/qna/${id}`); items.value = items.value.filter(q => q.id !== id); }
+  try {
+    await api.delete(`/admin/qna/${id}`);
+    // 재조회가 실패하면(네트워크 일시 오류 등) 이미 지워진 항목이 화면에 계속 남는데 에러도
+    // 안 뜰 수 있어(교차검증에서 발견) 먼저 로컬에서도 지운다. 로컬 필터만으로 끝내지 않는
+    // 이유는 AdminReviews.vue/AdminBoard.vue와 동일(totalPages가 삭제 전 값 그대로 남아
+    // 페이지네이션이 서버 상태와 어긋날 수 있음) — 그래서 재조회도 한다. 그 페이지가 방금
+    // 삭제로 비어버렸으면 한 페이지 앞으로 돌아간다.
+    items.value = items.value.filter(q => q.id !== id);
+    await loadQna();
+    if (!items.value.length && page.value > 0) {
+      page.value -= 1;
+      await loadQna();
+    }
+  }
   catch (e) { alert(e.message); }
   finally { submitting.value = false; }
 }

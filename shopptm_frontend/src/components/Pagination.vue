@@ -1,14 +1,19 @@
 <template>
   <div v-if="totalPages > 1" class="ap">
-    <button class="ap-btn" :disabled="page <= 0" @click="$emit('change', page - 1)">이전</button>
+    <button class="ap-btn" :disabled="disabled || page <= 0" @click="$emit('change', page - 1)">이전</button>
     <span class="ap-info">{{ page + 1 }} / {{ totalPages }}</span>
-    <button class="ap-btn" :disabled="page >= totalPages - 1" @click="$emit('change', page + 1)">다음</button>
+    <button class="ap-btn" :disabled="disabled || page >= totalPages - 1" @click="$emit('change', page + 1)">다음</button>
   </div>
 </template>
 <script setup>
+// disabled: 목록 항목 삭제처럼 "삭제 후 현재 페이지를 다시 불러오고, 비었으면 한 페이지
+// 앞으로" 하는 처리가 진행 중일 때 페이지 전환까지 같이 눌리면, 그 전환 요청이 삭제의
+// 재조회보다 늦게 혹은 먼저 끝나는 순서에 따라 엉뚱한 페이지로 섞일 수 있다(교차검증에서
+// 발견). 그 작업이 진행 중인 동안은 호출부가 이 값을 true로 넘겨 버튼을 막아야 한다.
 defineProps({
   page: { type: Number, required: true },
   totalPages: { type: Number, required: true },
+  disabled: { type: Boolean, default: false },
 });
 defineEmits(['change']);
 </script>

@@ -27,7 +27,7 @@
           </tbody>
         </table>
       </div>
-      <AdminPagination :page="page" :total-pages="totalPages" @change="goToPage" />
+      <Pagination :page="page" :total-pages="totalPages" :disabled="submitting" @change="goToPage" />
 
       <!-- 답글 모달 -->
       <BaseModal :show="showModal" max-width="520px" z-index="9999" no-padding :close-on-backdrop="false">
@@ -56,7 +56,7 @@
 import { ref, onMounted } from "vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
 import BaseModal from "@/components/BaseModal.vue";
-import AdminPagination from "@/components/AdminPagination.vue";
+import Pagination from "@/components/Pagination.vue";
 import api from "@/api";
 
 const reviews = ref([]);
@@ -72,9 +72,15 @@ onMounted(async () => { await loadReviews(); });
 // 백엔드가 전체 목록을 한 번에 반환하던 걸 Page 응답(content/totalElements/totalPages)으로
 // 바꾼 것에 맞춰, AdminMembers.vue/AdminOrders.vue와 동일하게 content만 반영한다
 // (교차검증에서 발견 — 이 화면만 그 변경에 맞춰 갱신이 안 돼 있었음).
+// 페이지 전환을 빠르게 연타하면 응답이 보낸 순서와 다르게 도착할 수 있어(다른 화면들의
+// fetchSeq/searchSeq와 동일한 이유, 교차검증에서 발견 — 이 라운드에서 새로 추가된 모든
+// 페이지네이션 화면에 이 가드가 빠져있었음), 가장 나중에 보낸 요청만 반영한다.
+let loadSeq = 0;
 async function loadReviews() {
+  const seq = ++loadSeq;
   try {
     const data = await api.get(`/admin/reviews?page=${page.value}&size=20`);
+    if (seq !== loadSeq) return;
     reviews.value = data?.content || [];
     totalPages.value = data?.totalPages || 0;
   } catch {}
@@ -121,11 +127,14 @@ async function del(id) {
   submitting.value = true;
   try {
     await api.delete(`/admin/reviews/${id}`);
-    // 로컬 배열만 지우면 totalPages가 삭제 전 값 그대로 남아 페이지네이션이 서버 상태와
-    // 어긋날 수 있어서(교차검증에서 발견 — 마지막 페이지의 마지막 한 건을 지우면 그 페이지는
-    // 비는데 totalPages는 그대로라 "이전" 버튼으로도 못 돌아가는 상태가 됨), 현재 페이지를
-    // 서버에서 다시 불러온다. 그 페이지가 방금 그 삭제로 비어버렸으면(그 페이지의 마지막
-    // 항목이었던 경우) 한 페이지 앞으로 돌아간다.
+    // 삭제가 성공한 뒤 재조회가 실패하면(네트워크 일시 오류 등) loadReviews()가 아무것도
+    // 안 바꾸고 조용히 끝나서, 이미 서버에서 지워진 리뷰가 화면엔 계속 남아있는데 에러도
+    // 안 뜨는 상태가 될 수 있었음(교차검증에서 발견) — 재조회 전에 먼저 로컬에서도 지워
+    // 최소한 "삭제됨"이 바로 반영되게 하고, 그 다음 재조회로 totalPages까지 정확히 맞춘다.
+    // 로컬 배열만 지우고 끝내지 않는 이유: totalPages가 삭제 전 값 그대로 남아 페이지네이션이
+    // 서버 상태와 어긋날 수 있어서(마지막 페이지의 마지막 한 건을 지우면 그 페이지는 비는데
+    // totalPages는 그대로라 "이전" 버튼으로도 못 돌아가는 상태가 됨) — 그래서 재조회도 한다.
+    reviews.value = reviews.value.filter(r => r.id !== id);
     await loadReviews();
     if (!reviews.value.length && page.value > 0) {
       page.value -= 1;

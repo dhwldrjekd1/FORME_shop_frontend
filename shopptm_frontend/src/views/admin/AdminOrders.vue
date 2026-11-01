@@ -97,7 +97,7 @@
           </tbody>
         </table>
       </div>
-      <AdminPagination :page="page" :total-pages="totalPages" @change="goToPage" />
+      <Pagination :page="page" :total-pages="totalPages" @change="goToPage" />
     </div>
   </AdminLayout>
 </template>
@@ -105,7 +105,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from "vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
-import AdminPagination from "@/components/AdminPagination.vue";
+import Pagination from "@/components/Pagination.vue";
 import api from "@/api";
 
 const orders = ref([]);
@@ -144,9 +144,14 @@ const statuses = [
   { key: 'CANCELLED', label: '취소' },
 ];
 
+// 페이지 전환을 빠르게 연타하면 응답이 보낸 순서와 다르게 도착할 수 있어(교차검증에서
+// 발견 — AdminMembers.vue의 searchSeq와 동일한 이유), 가장 나중에 보낸 요청만 반영.
+let loadSeq = 0;
 async function loadOrders() {
+  const seq = ++loadSeq;
   try {
     const data = await api.get(`/admin/orders?page=${page.value}&size=20`);
+    if (seq !== loadSeq) return;
     orders.value = data?.content || [];
     totalPages.value = data?.totalPages || 0;
   } catch {}

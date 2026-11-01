@@ -62,6 +62,8 @@
           <div class="bd-card__bottom"><span>{{ b.memberName }}</span></div>
         </article>
       </div>
+
+      <Pagination v-if="!isLoading" :page="page" :total-pages="totalPages" :disabled="submitting" @change="goToPage" />
     </template>
 
     <!-- ═══ 상세 모드 ═══ -->
@@ -155,6 +157,7 @@ import { useRouter } from 'vue-router';
 import api from '@/api';
 import { useAuthStore } from '@/stores/authStore';
 import Forme32Layout from '@/layouts/Forme32Layout.vue';
+import Pagination from '@/components/Pagination.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -163,6 +166,8 @@ const mode = ref('list');
 const boards = ref([]);
 const isLoading = ref(false);
 const searchQuery = ref('');
+const page = ref(0);
+const totalPages = ref(0);
 
 // 상세
 const currentPost = ref(null);
@@ -191,23 +196,45 @@ function renderContent(text) {
 }
 
 // ─── 목록 ───
+// 백엔드가 전체 목록을 한 번에 반환하던 걸 Page 응답(content/totalPages)으로 바꾼 것에 맞춰
+// content만 반영한다(관리자 화면들과 동일한 패턴 — 이 화면은 관리자 화면과 같은 엔드포인트를
+// 공유해서 함께 바뀜). 페이지 전환/검색을 빠르게 연타하면 응답이 보낸 순서와 다르게 도착할
+// 수 있어(교차검증에서 발견 — AdminMembers.vue의 searchSeq와 동일한 이유) loadBoards()와
+// fetchCurrentPage() 둘 다에 걸리는 공용 순번으로 가장 나중에 보낸 요청만 반영한다.
+let loadSeq = 0;
 async function loadBoards() {
+  const seq = ++loadSeq;
   isLoading.value = true;
   try {
-    const data = await api.get('/boards');
-    boards.value = Array.isArray(data) ? data : [];
-  } catch { boards.value = []; }
-  finally { isLoading.value = false; }
+    const data = await api.get(`/boards?page=${page.value}&size=20`);
+    if (seq !== loadSeq) return;
+    boards.value = data?.content || [];
+    totalPages.value = data?.totalPages || 0;
+  } catch { if (seq === loadSeq) boards.value = []; }
+  finally { if (seq === loadSeq) isLoading.value = false; }
 }
 
-async function searchBoards() {
-  if (!searchQuery.value.trim()) { loadBoards(); return; }
+async function fetchCurrentPage() {
+  if (!searchQuery.value.trim()) { await loadBoards(); return; }
+  const seq = ++loadSeq;
   isLoading.value = true;
   try {
-    const data = await api.get(`/boards/search?keyword=${encodeURIComponent(searchQuery.value.trim())}`);
-    boards.value = Array.isArray(data) ? data : [];
-  } catch { boards.value = []; }
-  finally { isLoading.value = false; }
+    const data = await api.get(`/boards/search?keyword=${encodeURIComponent(searchQuery.value.trim())}&page=${page.value}&size=20`);
+    if (seq !== loadSeq) return;
+    boards.value = data?.content || [];
+    totalPages.value = data?.totalPages || 0;
+  } catch { if (seq === loadSeq) boards.value = []; }
+  finally { if (seq === loadSeq) isLoading.value = false; }
+}
+// 검색어가 바뀌면 이전 검색 결과의 페이지 번호가 더 이상 유효하지 않을 수 있어 1페이지로 되돌림
+async function searchBoards() {
+  page.value = 0;
+  await fetchCurrentPage();
+}
+function goToPage(p) {
+  if (p < 0 || p >= totalPages.value) return;
+  page.value = p;
+  fetchCurrentPage();
 }
 
 // ─── 상세 ───
@@ -227,10 +254,10 @@ async function loadComments(boardId) {
   } catch { comments.value = []; }
 }
 
-function goList() {
+async function goList() {
   mode.value = 'list';
   currentPost.value = null;
-  loadBoards();
+  await loadBoards();
 }
 
 // ─── 글 작성/수정 ───
@@ -272,10 +299,22 @@ async function submitWrite() {
 
 async function deletePost() {
   if (!confirm('게시글을 삭제하시겠습니까?')) return;
+  if (submitting.value) return;
+  submitting.value = true;
   try {
     await api.delete(`/boards/${currentPost.value.id}`);
-    goList();
+    // goList()가 이제 await 가능해서(위 참고) 목록 전환+재조회 로직을 거기서 그대로
+    // 재사용한다 — 똑같은 로직을 여기 또 베껴두면 나중에 한쪽만 고치고 다른 쪽을
+    // 놓치는 식으로 어긋날 수 있다(교차검증에서 발견). 재조회가 끝난 뒤, 방금 삭제한 글이
+    // 그 페이지의 마지막 글이었으면(페이지가 비어버림) totalPages는 줄어드는데 page는
+    // 그대로라 어긋날 수 있어(AdminBoard.vue의 deleteBoard와 동일한 이유) 한 페이지 앞으로.
+    await goList();
+    if (!boards.value.length && page.value > 0) {
+      page.value -= 1;
+      await loadBoards();
+    }
   } catch (e) { alert(e?.message || '삭제 실패'); }
+  finally { submitting.value = false; }
 }
 
 // ─── 댓글 ───

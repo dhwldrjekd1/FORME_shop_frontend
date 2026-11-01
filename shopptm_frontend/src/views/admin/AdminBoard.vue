@@ -51,6 +51,7 @@
           </tbody>
         </table>
       </div>
+      <Pagination :page="page" :total-pages="totalPages" :disabled="submitting" @change="goToPage" />
     </div>
   </AdminLayout>
 </template>
@@ -58,17 +59,41 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
+import Pagination from "@/components/Pagination.vue";
 import api from "@/api";
 import { useSubmitLock } from "@/composables/useSubmitLock";
 
 const boards = ref([]);
+const page = ref(0);
+const totalPages = ref(0);
 const openId = ref(null);
 const boardComments = ref([]);
 const { submitting, run } = useSubmitLock();
 
-onMounted(async () => {
-  try { boards.value = await api.get('/boards') || []; } catch { boards.value = []; }
-});
+onMounted(async () => { await loadBoards(); });
+
+// 백엔드가 전체 목록을 한 번에 반환하던 걸 Page 응답(content/totalPages)으로 바꾼 것에 맞춰
+// content만 반영한다(AdminMembers.vue/AdminOrders.vue/AdminReviews.vue와 동일한 패턴).
+// 페이지 전환을 빠르게 연타하면 응답이 보낸 순서와 다르게 도착할 수 있어(교차검증에서
+// 발견 — 다른 화면들의 fetchSeq/searchSeq와 동일한 이유), 가장 나중에 보낸 요청만 반영.
+// 실패 시엔(deleteBoard가 재조회를 실패해도 삭제 직후의 로컬 반영은 유지돼야 함) 화면을
+// 비우지 않고 이전 상태를 그대로 둔다 — 초기 진입 실패는 boards의 기본값([])이 그대로
+// 비어있음 화면을 보여주므로 별도 처리가 필요 없다.
+let loadSeq = 0;
+async function loadBoards() {
+  const seq = ++loadSeq;
+  try {
+    const data = await api.get(`/boards?page=${page.value}&size=20`);
+    if (seq !== loadSeq) return;
+    boards.value = data?.content || [];
+    totalPages.value = data?.totalPages || 0;
+  } catch {}
+}
+function goToPage(p) {
+  if (p < 0 || p >= totalPages.value) return;
+  page.value = p;
+  loadBoards();
+}
 
 // 응답이 도착한 순서가 아니라 "가장 나중에 보낸 요청"만 반영 — 게시글 A를 열어 댓글을
 // 불러오는 중에 바로 B로 옮기면(느린 A 응답이 나중에 도착), A의 댓글이 B가 열린 화면에
@@ -99,8 +124,18 @@ async function deleteBoard(id) {
   await run(async () => {
     try {
       await api.delete(`/admin/boards/${id}`);
-      boards.value = boards.value.filter(b => b.id !== id);
       if (openId.value === id) openId.value = null;
+      // 재조회가 실패하면(네트워크 일시 오류 등) 이미 지워진 게시글이 화면에 계속 남는데
+      // 에러도 안 뜰 수 있어(교차검증에서 발견) 먼저 로컬에서도 지운다. 로컬 필터만으로
+      // 끝내지 않는 이유는 AdminReviews.vue의 del()과 동일(totalPages가 삭제 전 값 그대로
+      // 남아 페이지네이션이 서버 상태와 어긋날 수 있음) — 그래서 재조회도 한다. 그 페이지가
+      // 방금 삭제로 비어버렸으면 한 페이지 앞으로 돌아간다.
+      boards.value = boards.value.filter(b => b.id !== id);
+      await loadBoards();
+      if (!boards.value.length && page.value > 0) {
+        page.value -= 1;
+        await loadBoards();
+      }
     } catch (e) { alert(e?.message || '삭제 실패'); }
   });
 }
