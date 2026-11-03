@@ -188,11 +188,11 @@
           <div class="mp-form__row">
             <div class="mp-form__field">
               <label>키 (cm)</label>
-              <input v-model.number="profile.height" type="number" :disabled="!isEditing || savingProfile" placeholder="170" />
+              <input v-model.number="profile.height" type="number" :disabled="!isEditing || savingProfile" placeholder="170" min="100" max="250" />
             </div>
             <div class="mp-form__field">
               <label>몸무게 (kg)</label>
-              <input v-model.number="profile.weight" type="number" :disabled="!isEditing || savingProfile" placeholder="70" />
+              <input v-model.number="profile.weight" type="number" :disabled="!isEditing || savingProfile" placeholder="70" min="30" max="200" />
             </div>
           </div>
           <div class="mp-form__field">
@@ -301,6 +301,24 @@ async function saveProfile() {
   if (savingProfile.value) return;
   const memberId = authStore.user?.id;
   if (!memberId) { alert('로그인 정보가 없습니다.'); return; }
+  // SignupView.vue와 동일한 범위 — 여긴 입력을 안 바꿔도 되는(선택) 필드라 값이 있을 때만
+  // 범위를 확인한다. 이 확인이 없으면 음수·비현실적인 값이 그대로 서버로 가서 백엔드
+  // @DecimalMin/@Max(이번에 같이 추가)에 막히긴 하지만, 사용자에게는 일반적인
+  // "입력값이 올바르지 않습니다" 경고만 뜨고 어느 값이 문제인지 안 보였다(다른 방향에서
+  // 버그를 찾다가 발견 — 가입 화면은 이미 이런 안내가 있었는데 마이페이지만 빠져있었음).
+  // "값이 있을 때만"을 자바스크립트 truthy(&&)로 판단하면 0이 falsy라 "입력 안 함"과
+  // 똑같이 취급돼 이 확인을 건너뛰어버린다(교차검증에서 발견) — null/빈 문자열만 "입력 안 함"으로
+  // 본다.
+  if (profile.value.height != null && profile.value.height !== '' &&
+      (profile.value.height < 100 || profile.value.height > 250)) {
+    alert('키를 올바르게 입력해주세요. (100~250cm)');
+    return;
+  }
+  if (profile.value.weight != null && profile.value.weight !== '' &&
+      (profile.value.weight < 30 || profile.value.weight > 200)) {
+    alert('몸무게를 올바르게 입력해주세요. (30~200kg)');
+    return;
+  }
   savingProfile.value = true;
   try {
     // email은 여기서 보내지 않는다 — MemberService.update()가 애초에 이메일 변경을 지원하지
