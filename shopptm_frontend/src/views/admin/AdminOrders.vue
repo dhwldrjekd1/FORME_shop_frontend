@@ -238,6 +238,16 @@ async function updateDelivery(orderId) {
       carrier: del.carrier, trackingNumber: del.trackingNumber, status: del.status,
     });
     deliveries.value[orderId] = { ...d };
+    // 배송 상태가 바뀌면 백엔드가 주문 상태도 같이 맞춰주고(DeliveryService.updateDelivery의
+    // 동기화 참고) 그 최신 값을 응답의 orderStatus에 그대로 실어준다 — 이 화면에도 반영해야
+    // 주문 목록의 상태 칸이 새로고침 전까지 옛 값(예: 결제완료)으로 남아있지 않는다(다른
+    // 방향에서 버그를 찾다가 발견). 처음엔 프론트가 직접 "상태가 바뀌었는지"를 비교해서
+    // 바뀌었을 때만 추가로 주문을 재조회하려 했는데, 비교 대상(del.status)이 <select
+    // v-model>로 이미 새 값으로 바뀌어 있는 바로 그 객체라 비교 자체가 항상 거짓이 되는
+    // 문제가 있었다(교차검증에서 발견) — 서버가 최신 값을 그대로 응답에 실어주면 그런
+    // 비교나 추가 요청이 애초에 필요 없다.
+    const cur = orders.value.find(o => o.id === orderId);
+    if (cur && d?.orderStatus) cur.status = d.orderStatus;
     alert('배송 정보가 수정되었습니다.');
   } catch (e) { alert(e?.data?.message || e?.message || '수정 실패'); }
   finally { deliveryPending.delete(orderId); }
