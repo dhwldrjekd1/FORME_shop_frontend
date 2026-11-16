@@ -184,9 +184,9 @@
 
               <!-- 파일 업로드 -->
               <div v-if="imgTab === 'upload'" class="modal__upload" @click="$refs.fileInput.click()" @dragover.prevent @drop.prevent="onDrop">
-                <div v-if="previewUrls.length" class="modal__previews">
-                  <div v-for="(url, i) in previewUrls" :key="i" class="modal__preview-item">
-                    <img :src="url" />
+                <div v-if="previewItems.length" class="modal__previews">
+                  <div v-for="(item, i) in previewItems" :key="i" class="modal__preview-item">
+                    <img :src="item.url" />
                     <button type="button" class="modal__preview-del" @click.stop="removeFile(i)">×</button>
                     <span v-if="i === 0" class="modal__preview-main">대표</span>
                   </div>
@@ -300,8 +300,14 @@ const isEdit = ref(false);
 const editId = ref(null);
 const { submitting, run: runLocked } = useSubmitLock();
 const errorMsg = ref('');
-const selectedFiles = ref([]);
-const previewUrls = ref([]);
+// 기존 이미지(서버 URL)와 새로 올리는 파일을 하나의 배열로 같이 관리한다 — 각 항목은
+// { url, file }, 기존 이미지는 file이 null, 새로 추가한 파일은 file에 그 File 객체가 들어있다.
+// previewUrls(미리보기 URL)/selectedFiles(새 파일) 두 개의 병렬 배열로 따로 관리했을 때는,
+// 삭제/드래그 재정렬이 둘을 서로 다른 기준의 인덱스로 건드리면서(기존 이미지는 앞쪽에,
+// 새 파일은 항상 뒤쪽에 있다고 가정했는데 드래그로 그 순서가 섞일 수 있었음) 엉뚱한 파일이
+// 지워지거나 순서가 뒤틀리는 문제가 있었다(다른 방향에서 버그를 찾다가 발견). 하나의 배열로
+// 합쳐두면 인덱스를 서로 변환할 필요 자체가 없어진다.
+const previewItems = ref([]);
 const imgTab = ref('upload');
 const serverImages = ref([]);
 const serverSelected = ref([]);
@@ -317,7 +323,7 @@ const serverGroups = computed(() => {
 const allImageUrls = computed(() => {
   if (imgTab.value === 'server') return serverSelected.value;
   // 업로드 모드: 기존 서버 URL + 새 파일 미리보기
-  return previewUrls.value;
+  return previewItems.value.map(item => item.url);
 });
 
 const filteredServerImages = computed(() => {
@@ -391,8 +397,7 @@ function openAdd() {
   isEdit.value = false;
   editId.value = null;
   form.value = { id: null, name: '', description: '', category: '', brand: '', size: '', gender: '', price: 0, stock: 0, originalPrice: null, discountRate: null, thumbnailUrl: '', curatorImageUrl: '', colorName: '', colorHex: '#1a1a1a', features: '', composition: '', sizeStocks: [{ size: '', stock: 0 }], isNew: false, isBest: false, isRecommend: false };
-  selectedFiles.value = [];
-  previewUrls.value = [];
+  previewItems.value = [];
   imgTab.value = 'upload';
   serverSelected.value = [];
   errorMsg.value = '';
@@ -428,11 +433,9 @@ async function openEdit(p) {
     // 그 사이의 변경을 오래된 값으로 덮어쓰지 않고 서버가 거부하게 하기 위함.
     expectedUpdatedAt: detail.updatedAt || null,
   };
-  selectedFiles.value = [];
-
   // 전체 이미지 로드
   const imgs = detail.images?.length ? [...detail.images] : (detail.imageUrl ? [detail.imageUrl] : []);
-  previewUrls.value = imgs;
+  previewItems.value = imgs.map(url => ({ url, file: null }));
   imgTab.value = imgs.length ? 'upload' : 'server';
   serverSelected.value = [...imgs];
   showModal.value = true;
@@ -442,8 +445,7 @@ function onFileChange(e) {
   const files = Array.from(e.target.files);
   for (const file of files) {
     if (file && file.type.startsWith('image/')) {
-      selectedFiles.value.push(file);
-      previewUrls.value.push(URL.createObjectURL(file));
+      previewItems.value.push({ url: URL.createObjectURL(file), file });
     }
   }
   e.target.value = ''; // reset input
@@ -453,8 +455,7 @@ function onDrop(e) {
   const files = Array.from(e.dataTransfer.files);
   for (const file of files) {
     if (file && file.type.startsWith('image/')) {
-      selectedFiles.value.push(file);
-      previewUrls.value.push(URL.createObjectURL(file));
+      previewItems.value.push({ url: URL.createObjectURL(file), file });
     }
   }
 }
@@ -499,13 +500,9 @@ function onImgDrop(e) {
     const item = serverSelected.value.splice(from, 1)[0];
     serverSelected.value.splice(to, 0, item);
   } else {
-    // 파일 업로드 모드
-    const item = previewUrls.value.splice(from, 1)[0];
-    previewUrls.value.splice(to, 0, item);
-    if (from < selectedFiles.value.length) {
-      const file = selectedFiles.value.splice(from, 1)[0];
-      selectedFiles.value.splice(Math.min(to, selectedFiles.value.length), 0, file);
-    }
+    // 파일 업로드 모드 — 미리보기와 실제 파일이 같은 항목 안에 들어있어 한 번의 splice로 함께 이동
+    const item = previewItems.value.splice(from, 1)[0];
+    previewItems.value.splice(to, 0, item);
   }
   dragStartIdx.value = -1;
   dragOverIdx.value = -1;
@@ -554,16 +551,12 @@ function removeAssignImg(idx) {
   if (imgTab.value === 'server') {
     serverSelected.value.splice(idx, 1);
   } else {
-    previewUrls.value.splice(idx, 1);
-    if (idx < selectedFiles.value.length) selectedFiles.value.splice(idx, 1);
+    previewItems.value.splice(idx, 1);
   }
 }
 
 function removeFile(index) {
-  previewUrls.value.splice(index, 1);
-  if (index < selectedFiles.value.length) {
-    selectedFiles.value.splice(index, 1);
-  }
+  previewItems.value.splice(index, 1);
 }
 
 async function submitProduct() {
@@ -572,7 +565,7 @@ async function submitProduct() {
   if (!form.value.price || form.value.price <= 0) { errorMsg.value = '가격을 올바르게 입력해주세요. (1원 이상)'; return; }
   if (form.value.stock == null || form.value.stock < 0) { errorMsg.value = '재고를 올바르게 입력해주세요. (0 이상)'; return; }
   if (form.value.discountRate && (form.value.discountRate < 0 || form.value.discountRate > 100)) { errorMsg.value = '할인율은 0~100% 사이로 입력해주세요.'; return; }
-  if (!isEdit.value && selectedFiles.value.length === 0 && serverSelected.value.length === 0) { errorMsg.value = '이미지를 최소 1장 등록하거나 서버 이미지를 선택해주세요.'; return; }
+  if (!isEdit.value && previewItems.value.length === 0 && serverSelected.value.length === 0) { errorMsg.value = '이미지를 최소 1장 등록하거나 서버 이미지를 선택해주세요.'; return; }
   errorMsg.value = '';
   await runLocked(async () => {
   try {
@@ -612,20 +605,28 @@ async function submitProduct() {
       // 서버 이미지 선택 모드
       dto.imageUrl = form.value.thumbnailUrl || serverSelected.value[0];
       dto.imageUrls = serverSelected.value.join(',');
-    } else if (isEdit.value && previewUrls.value.length > 0 && selectedFiles.value.length === 0) {
-      // 수정 모드 + 새 파일 업로드 없음 → 기존 URL 유지
-      const urls = previewUrls.value.filter(u => !u.startsWith('blob:'));
-      if (urls.length > 0) {
-        dto.imageUrl = form.value.thumbnailUrl || urls[0];
-        dto.imageUrls = urls.join(',');
-      }
+    } else if (isEdit.value && imgTab.value === 'upload') {
+      // 업로드 모드(수정) — 기존 이미지 유지분과 새로 추가한 파일이 섞여 있어도 화면에서
+      // 보이는 최종 순서 그대로 보낸다. 새 파일 자리는 아직 서버에 저장되기 전이라 URL을
+      // 모르니 "__NEW__" 자리표시자로 보내고, ProductService.updateProduct가 images 파트로
+      // 저장한 URL을 그 순서대로 채워 넣어 최종 순서를 재구성한다(다른 방향에서 버그를
+      // 찾다가 발견 — 예전엔 새 파일이 하나라도 있으면 기존 이미지를 아예 안 보내서, 둘을
+      // 섞어서 관리하는 것처럼 보이는 화면과 달리 저장하면 기존 이미지가 전부 사라졌음).
+      // previewItems가 비어있어도(화면에서 이미지를 전부 지운 경우) 그대로 빈 배열을 보낸다
+      // — "보냈는데 빈 배열"과 "안 보냄(구버전 클라이언트)"을 서버가 구분해야, 이미지를
+      // 전부 지우고 저장하는 것도 실제로 반영된다(교차검증에서 발견 — length > 0 조건만
+      // 걸려있을 때는 전부 지우고 저장해도 서버에는 예전 이미지가 그대로 남아있었음).
+      dto.imageOrder = previewItems.value.map(item => item.file ? '__NEW__' : item.url);
     }
 
     formData.append('dto', new Blob([JSON.stringify(dto)], { type: 'application/json' }));
 
-    // 파일 업로드 모드 + 새 파일이 있을 때만 전송
-    if (selectedFiles.value.length > 0) {
-      for (const file of selectedFiles.value) {
+    // 새로 추가한 파일만 업로드 — previewItems에서 순서 그대로 뽑아, 위 imageOrder의
+    // "__NEW__" 자리표시자 순서와 반드시 일치해야 한다(ProductService.updateProduct가 그
+    // 순서대로 하나씩 대응시킴).
+    const filesToUpload = previewItems.value.filter(item => item.file).map(item => item.file);
+    if (filesToUpload.length > 0) {
+      for (const file of filesToUpload) {
         formData.append('images', file);
       }
     }
