@@ -179,6 +179,15 @@ onMounted(async () => {
         // 것까지 실제로 재현됨(Playwright로 직접 확인). router.replace를 써야 vue-router
         // 자신의 기억도 함께 갱신돼 뒤로가기에도 반영된다.
         await router.replace({ path: window.location.pathname });
+        // 토스의 successUrl 리다이렉트는 브라우저 풀 네비게이션이라 SPA/Pinia가 통째로
+        // 다시 부팅된다 — main.js가 로그인 상태면 장바구니를 불러오긴 하지만 await 없는
+        // fire-and-forget이라, 그게 끝나기 전에 아래 createOrder가 먼저 실행되면
+        // cartItems.value가 아직 빈 배열이어서 "결제는 됐는데 품목이 없는" 주문 생성
+        // 요청이 나가 서버의 @NotEmpty 검증에 거부당한다 — 실제로는 정상 결제한 고객인데
+        // 순전히 네트워크 타이밍만으로 "결제는 완료됐지만 주문 생성 실패"로 안내되고
+        // 자동환불까지 타는 문제였다(다른 방향에서 버그를 찾다가 발견). createOrder가
+        // cartItems.value를 읽기 전에 직접 기다려서 그 경쟁을 없앤다.
+        await cartStore.fetchCart();
         // 토스가 실제로 승인한 금액(서버가 검증해서 돌려준 값)을 그대로 주문 생성에 넘긴다.
         // URL의 amount 파라미터는 사용자가 손댈 수 있으므로 신뢰하지 않는다.
         // paymentKey도 함께 넘겨서, 이후 주문 생성이 실패했을 때 서버가 이 결제를
