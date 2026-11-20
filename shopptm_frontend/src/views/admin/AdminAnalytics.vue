@@ -10,6 +10,11 @@
           <div><p class="aa-card__num">{{ c.value }}</p><p class="aa-card__label">{{ c.label }}</p></div>
         </div>
       </div>
+      <!-- 백엔드가 180일 지난 페이지뷰 기록을 매일 자동 삭제하므로(PageViewRetentionScheduler),
+           이 숫자들은 전체 누적이 아니라 최근 180일 기준이다. 이 안내가 없으면 그 정리가
+           처음 실행되는 시점에 수치가 한 번 줄어드는 걸 보고 관리자가 "트래픽이 줄었나?"로
+           오해할 수 있다(다른 방향에서 버그를 찾다가 발견). -->
+      <p class="aa-retention-note">※ 아래 수치는 최근 180일 기준입니다(그 이전 기록은 자동 삭제됨)</p>
 
       <div class="aa-grid">
         <!-- 페이지별 (admin 제외) -->
@@ -143,6 +148,7 @@ function prodBarW(v) {
 .aa-head { margin-bottom: 1.5rem; }
 .aa-code { font-size: 0.5625rem; font-weight: 800; letter-spacing: 0.2em; color: #FF2D2D; margin-bottom: 0.375rem; }
 .aa-title { font-size: 1.75rem; font-weight: 900; }
+.aa-retention-note { font-size: 0.6875rem; color: #999; margin: -0.75rem 0 1.25rem; }
 .aa-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
 @media (min-width: 768px) { .aa-cards { grid-template-columns: repeat(4, 1fr); } }
 .aa-card { display: flex; align-items: center; gap: 0.875rem; padding: 1.25rem; background: #fff; border: 1px solid #eee; border-radius: 0.5rem; }
