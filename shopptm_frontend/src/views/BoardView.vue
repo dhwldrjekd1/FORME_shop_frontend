@@ -102,7 +102,7 @@
             <div class="bd-comment__head">
               <span class="bd-comment__author">{{ c.memberName }}</span>
               <span class="bd-comment__date">{{ formatDate(c.createdAt) }}</span>
-              <template v-if="c.memberId === authStore.user?.id">
+              <template v-if="c.memberId === authStore.user?.id || authStore.isAdmin">
                 <button v-if="editingCommentId !== c.id" class="bd-comment__btn" @click="startEditComment(c)">수정</button>
                 <button class="bd-comment__btn bd-comment__btn--del" @click="deleteComment(c.id)">삭제</button>
               </template>
@@ -241,7 +241,11 @@ function goToPage(p) {
 async function viewPost(id) {
   try {
     currentPost.value = await api.get(`/boards/${id}`);
-    isMyPost.value = currentPost.value.memberId === authStore.user?.id;
+    // 백엔드(BoardService.findSelfOrAdminBoard)는 관리자의 남의 글 수정/삭제를 이미
+    // 허용하는데, 이 화면은 본인 여부만 보고 수정/삭제 버튼을 숨기고 있었다 — 관리자가
+    // 공개 게시판에서 남의 글을 봐도 그 버튼 자체가 안 보여서, 실제로는 호출하면 되는
+    // 작업을 못 하는 것처럼 보였다(다른 방향에서 버그를 찾다가 발견).
+    isMyPost.value = currentPost.value.memberId === authStore.user?.id || authStore.isAdmin;
     await loadComments(id);
     mode.value = 'detail';
   } catch (e) { alert('게시글을 불러올 수 없습니다.'); }
