@@ -301,7 +301,7 @@
                   </div>
                   <strong>{{ r.author }}</strong>
                   <span class="dp-rv__date">{{ r.date }}</span>
-                  <template v-if="r.memberId === authStore.user?.id">
+                  <template v-if="r.memberId === authStore.user?.id || authStore.isAdmin">
                     <button v-if="editingRvId !== r.id" class="dp-rv__edit-btn" :disabled="reviewPending.size > 0" @click="startEditRv(r)">수정</button>
                     <button class="dp-rv__edit-btn dp-rv__edit-btn--del" :disabled="reviewPending.has(r.id)" @click="deleteRv(r.id)">삭제</button>
                   </template>
